@@ -1,6 +1,6 @@
 # ZeroCart
 
-> **Status: pre-alpha. Planning is complete; implementation has not started.** Nothing described under 'Planned' exists yet.
+> **Status: pre-alpha. Project skeleton exists (APP-001); features are not implemented yet.**
 
 ZeroCart is an offline-first shopping-list app for Android and iOS, built with Flutter. The goal is to get your cart to zero: capture items the moment you think of them, sort them into per-store lists later, and shop with a simple checklist.
 
@@ -14,7 +14,7 @@ Capture first, organise later. Minimal friction. Local-first and offline. Multip
 
 ## Implemented
 
-Nothing yet. See the roadmap in `docs/implementation-plan.md`.
+- Empty Flutter app shell for Android and iOS (package `zero_cart`, bundle id `com.zero.cart`). See the roadmap in `docs/implementation-plan.md`.
 
 ## Planned for v1
 
@@ -52,7 +52,17 @@ Open `design/shopping-app-prototype.html` in a browser to see the intended desig
 
 ## Getting started
 
-Setup commands will be verified and finalised when the project is created (task APP-001). Expected: install the Flutter stable SDK (record the version here), Android Studio or the Android SDK, and Xcode for iOS; then `flutter pub get`, `dart run build_runner build --delete-conflicting-outputs`, `tool/check.sh`, `flutter run`.
+Verified with **Flutter 3.47.9** (stable channel, Dart 3.13.7).
+
+1. Install the Flutter stable SDK, Android Studio or the Android SDK, and Xcode (macOS) for iOS.
+2. From the repo root: `flutter pub get`
+3. Quality checks (until `tool/check.sh` exists in APP-005):  
+   `dart format --output=none --set-exit-if-changed .`  
+   `flutter analyze`  
+   `flutter test`
+4. Run: `flutter run` (Android emulator/device now; iOS requires macOS)
+
+Later tasks add code generation (`dart run build_runner build --delete-conflicting-outputs`) and `tool/check.sh`.
 
 ## AI-assisted development
 
