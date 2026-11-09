@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>ZeroCart prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DynaPuff:wght@700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#FFFDF5;--s1:#F0F4FC;--s2:#E6ECF8;--on:#1E2230;--ov:#4D5368;--ol:#D8DFEE;--p:#334E8C;--op:#fff;--pc:#DDE6FC;--sc:#C9D8F9;--t:#F67583;--ot:#3A0910;--ok:#A5D5B6;--er:#F9DEDC;--out:#cfd3de}
+.dark{--bg:#14171F;--s1:#1D212C;--s2:#262B38;--on:#E8E9F0;--ov:#B4B8C8;--ol:#3A3F4E;--p:#A5BDF4;--op:#14264F;--pc:#334E8C;--sc:#3A4A78;--t:#FF9AA4;--er:#8C1D18;--out:#0b0d12}
+*{box-sizing:border-box;margin:0}
+body{font:400 16px/1.4 Roboto,'Trebuchet MS',system-ui,sans-serif;background:var(--out);color:var(--on);display:grid;place-items:center;min-height:100vh}
+.app{position:relative;width:100%;max-width:400px;height:min(100vh,860px);background:var(--bg);overflow:hidden;display:flex;flex-direction:column}
+@media(min-width:500px){.app{border-radius:28px;box-shadow:0 8px 40px #0005}}
+button,input,textarea{font:inherit;color:inherit}
+button{background:none;border:0;cursor:pointer;border-radius:12px;min-width:44px;min-height:44px;text-align:inherit}
+button:focus-visible,input:focus-visible,.hd:focus-visible{outline:3px solid var(--p);outline-offset:1px}
+.top{display:flex;align-items:center;gap:4px;padding:8px 12px 4px 16px;min-height:56px}
+.top h1{font-size:20px;font-weight:500;flex:1;margin-left:4px}
+.logo{font:700 28px DynaPuff,Roboto,sans-serif;color:var(--p);flex:1}.logo i{color:var(--t);font-style:normal}
+.disp{font:700 24px/1.25 Roboto,sans-serif;color:var(--p)}
+.ib{font-size:20px;text-align:center}
+.body{flex:1;overflow:auto;padding:0 16px 96px}
+.nav{display:flex;background:var(--s1);padding:8px 8px 12px}
+.nav button{flex:1;display:flex;flex-direction:column;align-items:center;font-size:12px;font-weight:500;position:relative}
+.nav b{padding:2px 22px;border-radius:16px;font-size:18px}.nav .on b{background:var(--sc)}
+.bdg{position:absolute;top:2px;left:56%;background:var(--t);color:var(--ot);border-radius:9px;font-size:11px;padding:0 6px}
+.fab{position:absolute;right:16px;bottom:84px;background:var(--t);color:var(--ot);border-radius:16px;width:56px;height:56px;font-size:28px;text-align:center;box-shadow:0 3px 8px #0004}
+.card{background:var(--s1);border-radius:16px;padding:12px 16px;margin:8px 0;display:block;width:100%}
+.h{font-weight:500;margin:16px 0 0;display:flex;align-items:center;gap:8px}
+.dot{width:12px;height:12px;border-radius:50%;flex:none;display:inline-block}
+.sub{color:var(--ov);font-size:14px}
+.row{display:flex;align-items:flex-start;gap:4px;padding:6px 0;border-bottom:1px solid var(--ol);min-height:56px;background:var(--bg)}
+.row .c{flex:1;min-width:0;cursor:pointer;padding:6px 0}
+.t{font-weight:500;overflow-wrap:anywhere}.d{font-size:14px;color:var(--ov)}
+.done .t{text-decoration:line-through;font-weight:400}.done{opacity:.6}
+.cb{width:24px;height:24px;border:2px solid var(--ov);border-radius:6px;display:inline-grid;place-items:center;font-size:15px;line-height:1}
+.done .cb{background:var(--p);border-color:var(--p);color:var(--op)}
+.hd{min-width:44px;min-height:44px;display:grid;place-items:center;color:var(--ov);cursor:grab;letter-spacing:-2px}
+.row.over{border-top:3px solid var(--p)}
+.pri{background:var(--p);color:var(--op);padding:10px 20px;border-radius:20px;font-weight:500}
+.tb{color:var(--p);font-weight:500;padding:8px 12px}
+.chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--ol);border-radius:16px;padding:6px 14px;margin:0 6px 8px 0;min-height:36px;font-size:14px}
+.chip.on{background:var(--sc);border-color:var(--p)}
+.seg{display:flex;border:1px solid var(--ol);border-radius:20px;overflow:hidden;margin:8px 0}
+.seg button{flex:1;border-radius:0;text-align:center;min-height:40px;font-size:14px}.seg .on{background:var(--sc);font-weight:700}
+.empty{text-align:center;padding:48px 16px}.empty p{color:var(--ov);margin:8px 0 20px}
+.scrim{position:absolute;inset:0;background:#0006;z-index:5}
+.sheet{position:absolute;left:0;right:0;bottom:0;background:var(--s2);border-radius:24px 24px 0 0;padding:8px 20px 24px;z-index:6;max-height:88%;overflow:auto}
+.sheet:before{content:"";display:block;width:36px;height:4px;border-radius:2px;background:var(--ol);margin:0 auto 12px}
+.sheet h2{font-size:20px;font-weight:500;margin-bottom:12px}
+.sheet input{width:100%;padding:12px;border:1px solid var(--ov);border-radius:8px;background:var(--bg);margin-bottom:10px}
+.acts{display:flex;gap:8px;justify-content:flex-end;margin-top:8px;flex-wrap:wrap}
+.lbl{font-size:14px;color:var(--ov);margin:6px 0}
+pre{background:var(--bg);border-radius:12px;padding:12px;white-space:pre-wrap;font:inherit}
+.snack{position:absolute;left:12px;right:12px;bottom:84px;background:var(--on);color:var(--bg);border-radius:8px;padding:6px 6px 6px 16px;display:flex;align-items:center;z-index:7}
+.snack span{flex:1}.snack button{color:var(--t);font-weight:500}
+.add{display:flex;gap:8px;padding:12px 0}.add input{flex:1;padding:12px;border:1px solid var(--ov);border-radius:12px;background:var(--bg)}
+.pt{width:100%;display:flex;align-items:center;gap:8px;font-weight:500;margin-top:16px}
+.tag{background:var(--ok);color:#123B24;border-radius:10px;padding:0 8px;font-size:12px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start;padding-top:6px}
+.sc{position:relative;overflow:hidden;display:flex;flex-direction:column;gap:2px;padding:16px;min-height:170px;border-radius:28px;background:color-mix(in srgb,var(--c) 38%,var(--bg));text-align:left}
+.sc.tall{min-height:230px}.sc:nth-child(even){margin-top:26px}
+.sc:nth-child(4n+1){transform:rotate(-1.2deg)}.sc:nth-child(4n+2){transform:rotate(1deg)}.sc:nth-child(4n+3){transform:rotate(.8deg)}.sc:nth-child(4n){transform:rotate(-.8deg)}
+.blob{position:absolute;right:-26px;top:-26px;width:96px;height:96px;border-radius:50%;background:var(--c)}
+.big{font:700 52px/1 Roboto,sans-serif;margin-top:auto;padding-top:48px}.lab{font-size:14px}
+.nm{font-size:20px;font-weight:700;margin-top:6px;overflow-wrap:anywhere}
+.bar{height:8px;border-radius:4px;background:#fff7;margin:8px 0 2px;display:block}.bar i{display:block;height:100%;border-radius:4px;background:var(--c)}
+.pill{display:block;width:100%;background:var(--sc);border-radius:20px;padding:10px 16px;margin:4px 0 8px}
+@media(prefers-reduced-motion:no-preference){.row{transition:opacity .15s}}
+</style></head><body><div class="app" id="app"></div>
+<script>
+let n=0;const u=()=>'x'+ ++n,E=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const C={tomato:'#E5604F',tangerine:'#F2994A',lemon:'#D9A400',lime:'#7DB84A',teal:'#2BA6A0',sky:'#4A9BE0',grape:'#8E6CCB',bubblegum:'#E96FA6'};
+const S={stores:[{id:'s1',n:'Lidl',c:'lime',a:'Main Street 12',o:'',x:0},{id:'s2',n:'DM',c:'sky',a:'',o:'Check the weekly offers',x:0}],
+lists:[{id:'l1',s:'s1',n:'Weekend groceries',x:0},{id:'l2',s:'s1',n:'Party',x:0},{id:'l3',s:'s1',n:'Next week',x:0},{id:'l4',s:'s2',n:'Drugstore run',x:0},{id:'l5',s:'s1',n:'Easter',x:'finished'}],
+items:[['l1','Milk','2L, lactose-free',0],['l1','Pasta','Whole wheat, 500g',1],['l1','Bread','',0],['l1','Tomatoes','',0],['l2','Chips','',0],['l2','Lemonade','6 bottles',0],['l2','Paper cups','',0],['l3','Coffee','',0],['l4','Toothpaste','',0],['l5','Eggs','',1]].map(a=>({id:u(),l:a[0],t:a[1],d:a[2],p:a[3]})),
+inbox:[{id:u(),t:'Dishwasher tablets',d:''},{id:u(),t:'Lightbulb',d:'E27 warm white'}],
+wish:[{id:u(),s:'s2',t:'Electric toothbrush heads',d:''},{id:u(),s:'s1',t:'Olive oil',d:'Extra virgin'}]};
+const V={tab:'home',st:[],sheet:null,snack:null,pe:1,seg:'stores',theme:'system'};
+const q=s=>document.querySelector(s),val=i=>(q('#'+i)?.value||'').trim(),ST=i=>S.stores.find(s=>s.id==i),LI=i=>S.lists.find(l=>l.id==i);
+const its=l=>S.items.filter(i=>i.l==l),act1=()=>S.lists.filter(l=>!l.x&&!ST(l.s).x),aSt=()=>S.stores.filter(s=>!s.x);
+const dot=c=>`<span class="dot" style="background:${C[c]}"></span>`;
+const B=(a,t,c='',x='')=>`<button data-a="${a}" class="${c}" ${x}>${t}</button>`;
+const G=(v,i)=>`data-v="${v}" data-i="${i??''}"`;
+const tp=(t,back,r='')=>`<div class="top">${back?B('back','←','ib','aria-label="Back"'):''}<h1>${t}</h1>${r}</div>`;
+const free=()=>Object.keys(C).find(k=>!aSt().some(s=>s.c==k))||'sky';
+const empty=(t,p,b='')=>`<div class="empty"><div class="disp">${t}</div><p>${p}</p>${b}</div>`;
+const shareTxt=l=>[LI(l).n,...its(l).filter(i=>!i.p).map(i=>i.t+(i.d?' - '+i.d:''))].join('\n');
+
+const home=()=>{const g=aSt();
+return `<div class="top"><div class="logo">ZeroCart<i>.</i></div>${B('go','⚙','ib',G('set')+' aria-label="Settings"')}</div><div class="body">`+
+(S.inbox.length?B('tab','✎ <b>'+S.inbox.length+' in Inbox</b> · sort them','pill','data-v="inbox"'):'')+
+(g.length?'<div class="grid">'+g.map((s,k)=>{const ls=act1().filter(l=>l.s==s.id),a=ls.flatMap(l=>its(l.id)),left=a.filter(i=>!i.p).length,pct=a.length?100*(a.length-left)/a.length:0;
+return B('go',`<span class="blob"></span><span class="big">${left}</span><span class="lab">${left?'left to buy':ls.length?'cart is empty':'no lists yet'}</span><b class="nm">${E(s.n)}</b><span class="bar"><i style="width:${pct}%"></i></span><span class="sub">${ls.length} list${ls.length==1?'':'s'}</span>`,'sc'+(k%3==0?' tall':''),G('store',s.id)+` style="--c:${C[s.c]}" aria-label="${E(s.n)}, ${left} left, ${ls.length} lists"`)}).join('')+'</div>':
+empty('No stores yet','Create a store to start your first cart.',B('sheet','Create a store','pri',G('sf'))))+'</div>'};
+const inbox=()=>tp('Inbox',0)+'<div class="body">'+(S.inbox.map(i=>`<div class="row"><div class="c" data-a="sheet" ${G('edit',i.id)} data-t="inbox"><div class="t">${E(i.t)}</div>${i.d?`<div class="d">${E(i.d)}</div>`:''}</div>${B('sheet','Assign','tb',G('asg',i.id))}</div>`).join('')||empty('Inbox is empty','Add things the moment you think of them.'))+'</div>';
+const stores=()=>tp('Stores',0,B('go','▤','ib',G('arch')+' aria-label="Archive"'))+'<div class="body">'+[...aSt()].sort((a,b)=>a.n.localeCompare(b.n)).map(s=>B('go',`<span class="h" style="margin:0">${dot(s.c)}${E(s.n)}</span><div class="sub">${S.lists.filter(l=>l.s==s.id&&!l.x).length} active lists</div>`,'card',G('store',s.id))).join('')+B('sheet','+ New store','tb',G('sf'))+'</div>';
+const store=i=>{const s=ST(i),ls=S.lists.filter(l=>l.s==i),w=S.wish.filter(x=>x.s==i).length;
+return tp(E(s.n),1,(s.x?B('act','Restore','tb',G('rst',i)):B('sheet','Edit','tb',G('sf',i))+B('act','Archive','tb',G('ast',i))))+`<div class="body"><div class="sub">${dot(s.c)} ${E(s.a||'No address')}${s.o?' · '+E(s.o):''}</div><div class="h">Shopping lists</div>`+
+ls.filter(l=>!l.x).map(l=>B('go',`<b>${E(l.n)}</b><div class="sub">${its(l.id).filter(x=>!x.p).length} left</div>`,'card',G('list',l.id))).join('')+(s.x?'':B('sheet','+ New list','tb',G('lf',i)))+
+B('go',`<b>Wishlist</b><div class="sub">${w} items for someday</div>`,'card',G('wish',i))+
+`<div class="sub">${ls.filter(l=>l.x).length} archived lists (see Archive)</div></div>`};
+const list=i=>{const l=LI(i),ro=l.x||ST(l.s).x,a=its(i),ac=a.filter(x=>!x.p),pu=a.filter(x=>x.p);
+const row=x=>`<div class="row ${x.p?'done':''}" data-id="${x.id}" ${!x.p&&!ro?'draggable="true"':''}>${ro?'':B('act','<span class="cb">'+(x.p?'✓':'')+'</span>','','data-v="tog" data-i="'+x.id+'" role="checkbox" aria-checked="'+!!x.p+'" aria-label="'+E(x.t)+'"')}<div class="c" ${ro?'':'data-a="sheet" '+G('edit',x.id)+' data-t="item"'}><div class="t">${E(x.t)}</div>${x.d?`<div class="d">${E(x.d)}</div>`:''}</div>${x.p||ro?'':`<span class="hd" tabindex="0" data-id="${x.id}" aria-label="Reorder ${E(x.t)}">⋮⋮</span>`}</div>`;
+return tp(E(l.n),1,(ro?(l.x?B('act','Restore','tb',G('rl',i)):''):B('sheet','⇪','ib',G('share',i)+' aria-label="Share"')+B('sheet','Finish','tb',G('fin',i))+B('act','Archive','tb',G('al',i))))+
+`<div class="body">${l.x?`<span class="tag">${l.x=='finished'?'Finished':'Archived'}</span>`:''}`+ac.map(row).join('')+(ro?'':`<div class="add"><input id="add" placeholder="Add an item" maxlength="50" aria-label="Add an item"></div>`)+
+(ac.length||ro?'':empty('Nothing here yet','Type above and press Enter.'))+
+(pu.length?`<button class="pt" data-a="exp">${V.pe?'▾':'▸'} Purchased (${pu.length})</button>`+(V.pe?pu.map(row).join(''):''):'')+'</div>'};
+const wish=i=>tp('Wishlist · '+E(ST(i).n),1,B('sheet','+ Add','tb',G('wadd',i)))+'<div class="body">'+(S.wish.filter(x=>x.s==i).map(x=>`<div class="row"><div class="c" data-a="sheet" ${G('edit',x.id)} data-t="wish"><div class="t">${E(x.t)}</div>${x.d?`<div class="d">${E(x.d)}</div>`:''}</div>${B('sheet','Add to list','tb',G('wc',x.id))}</div>`).join('')||empty('Wishlist is empty','Keep things for someday here.'))+'</div>';
+const arch=()=>tp('Archive',1)+`<div class="body"><div class="seg">${B('seg','Stores',V.seg=='stores'?'on':'','data-v="stores"')}${B('seg','Lists',V.seg=='lists'?'on':'','data-v="lists"')}</div>`+
+(V.seg=='stores'?S.stores.filter(s=>s.x).map(s=>`<div class="row"><div class="c" data-a="go" ${G('store',s.id)}><div class="t">${dot(s.c)} ${E(s.n)}</div></div>${B('act','Restore','tb',G('rst',s.id))}</div>`).join('')||'<p class="sub">No archived stores.</p>':
+S.lists.filter(l=>l.x).map(l=>{const o=ST(l.s).x;return `<div class="row"><div class="c" data-a="go" ${G('list',l.id)}><div class="t">${E(l.n)}</div><div class="d">${E(ST(l.s).n)} · ${l.x}${o?' · restore the store first':''}</div></div>${B('act','Restore','tb',G('rl',l.id)+(o?' disabled style="opacity:.4"':''))}</div>`}).join('')||'<p class="sub">No archived lists.</p>')+'</div>';
+const set=()=>tp('Settings',1)+`<div class="body"><div class="h">Appearance</div><div class="seg">${['system','light','dark'].map(t=>B('theme',t[0].toUpperCase()+t.slice(1),V.theme==t?'on':'',`data-v="${t}"`)).join('')}</div>
+<div class="h">Backup and restore</div>${B('snk','Export backup','card','data-v="Export is not part of the prototype"')}${B('snk','Import backup','card','data-v="Import is not part of the prototype"')}
+<div class="h">About</div><div class="card"><b>ZeroCart</b><div class="sub">Version 0.0.0 prototype · MIT licence · Open-source licences</div></div></div>`;
+
+const chips=(arr,cur,a,more)=>arr.map(x=>B(a,(x.c?dot(x.c):'')+E(x.n),'chip'+(cur==x.id?' on':''),G('p',x.id))).join('')+more;
+const sheetH=()=>{const h=V.sheet;if(!h)return'';const k=h.k;let t='',b='',a='';const ok=(l,x,d)=>B(x,l,'pri',d||'');const no=B('close','Cancel','tb');
+if(k=='quick'){t='Quick add';b='<input id="t" maxlength="50" placeholder="What do you need?" autofocus><input id="d" maxlength="70" placeholder="Details (optional)">';a=B('qa','Add another','tb','data-v="more"')+ok('Add','qa')}
+if(k=='edit'){const c=S[h.t=='item'?'items':h.t],x=c.find(y=>y.id==h.i);t='Edit';b=`<input id="t" maxlength="50" value="${E(x.t)}"><input id="d" maxlength="70" value="${E(x.d)}" placeholder="Details (optional)">`;a=B('rm','Remove','tb')+ok('Save','sv')}
+if(k=='asg'){const it=S.inbox.find(x=>x.id==h.i),ls=act1().filter(l=>l.s==h.s);t='Assign “'+E(it.t)+'”';b='<div class="lbl">Store</div>'+chips(aSt(),h.ns?'':h.s,'ps',B('ns','+ New store','chip'+(h.ns?' on':'')))+(h.ns?`<input data-m="sn" placeholder="Store name" value="${E(h.sn)}">`:'')+'<div class="lbl">List</div>'+(h.ns?'':chips(ls,h.nl?'':h.l,'pl',''))+B('nl','+ New list','chip'+(h.nl||h.ns?' on':''))+(h.nl||h.ns?`<input data-m="ln" placeholder="List name" value="${E(h.ln)}">`:'');a=no+ok('Add to list','ao')}
+if(k=='sf'){const s=h.i?ST(h.i):{n:'',c:free(),a:'',o:''};h.c=h.c||s.c;t=h.i?'Edit store':'New store';b=`<input id="t" maxlength="40" placeholder="Store name" value="${E(s.n)}"><div>`+Object.keys(C).map(c=>B('pc',dot(c),'chip'+(h.c==c?' on':''),G(c)+' aria-label="'+c+'"')).join('')+`</div><input id="d" placeholder="Address (optional)" value="${E(s.a)}"><input id="o" placeholder="Note (optional)" value="${E(s.o)}">`;a=no+ok('Save','sfo')}
+if(k=='lf'){t='New list';b='<input id="t" maxlength="60" placeholder="List name" autofocus>';a=no+ok('Create','lfo')}
+if(k=='share'){t='Share preview';b=`<pre>${E(shareTxt(h.i))}</pre><div class="sub">Only unpurchased items, in your order. Sent through the native share sheet.</div>`;a=ok('Done','close')}
+if(k=='fin'){const m=its(h.i).filter(x=>!x.p).length;t='Finish shopping';b=m?`<p>${m} items are not purchased.</p><input id="t" maxlength="60" value="Leftovers: ${E(LI(h.i).n)}">`:'<p>Everything is purchased. The list moves to the archive.</p>';a=(m?B('fo','Archive without carrying','tb','data-v="0"'):no)+ok(m?'Carry forward':'Finish','fo','data-v="1"')}
+if(k=='dlg'){t='Archive store?';b=`<p>${h.m} active lists will be hidden until you restore the store.</p>`;a=no+ok('Archive','ast2')}
+if(k=='wadd'){t='Add to wishlist';b='<input id="t" maxlength="50" placeholder="Title"><input id="d" maxlength="70" placeholder="Details (optional)">';a=no+ok('Add','wa')}
+if(k=='wc'){const w=S.wish.find(x=>x.id==h.i),ls=act1().filter(l=>l.s==w.s);t='Add “'+E(w.t)+'” to list';b=chips(ls,h.nl?'':h.l,'pl',B('nl','+ New list','chip'+(h.nl||!ls.length?' on':'')))+(h.nl||!ls.length?`<input data-m="ln" placeholder="List name" value="${E(h.ln)}">`:'');a=no+ok('Add','wco')}
+return `<div class="scrim" data-a="close"></div><div class="sheet" role="dialog" aria-label="${t}"><h2>${t}</h2>${b}<div class="acts">${a}</div></div>`};
+
+function R(){const T=V.st.length?V.st[V.st.length-1]:[V.tab],v=T[0],i=T[1];
+const s={home,inbox,stores,store,list,wish,arch,set}[v](i);
+q('#app').innerHTML=s+(V.st.length||V.sheet?'':`<button class="fab" data-a="sheet" ${G('quick')} aria-label="Quick add">+</button>`)+(V.st.length?'':`<div class="nav">${['home','inbox','stores'].map(t=>`<button data-a="tab" data-v="${t}" class="${V.tab==t?'on':''}"><b>${{home:'⌂',inbox:'✎',stores:'▣'}[t]}</b>${t[0].toUpperCase()+t.slice(1)}${t=='inbox'&&S.inbox.length?`<span class="bdg">${S.inbox.length}</span>`:''}</button>`).join('')}</div>`)+sheetH()+(V.snack?`<div class="snack" role="status"><span>${E(V.snack.m)}</span>${V.snack.u?B('undo','Undo'):''}</div>`:'');
+document.documentElement.className=V.theme=='dark'||(V.theme=='system'&&matchMedia('(prefers-color-scheme:dark)').matches)?'dark':'';
+const f=q('[autofocus]');if(f)f.focus();if(V.f){q('#add')?.focus();V.f=0}}
+let tm;const snk=(m,u)=>{clearTimeout(tm);V.snack={m,u};tm=setTimeout(()=>{V.snack=null;R()},5000)};
+const rm=(c,id)=>{const a=S[c],x=a.findIndex(y=>y.id==id),o=a.splice(x,1)[0];snk('Removed '+o.t,()=>S[c].splice(x,0,o))};
+const mv=(id,to,after)=>{const a=S.items,x=a.findIndex(y=>y.id==id),o=a.splice(x,1)[0];a.splice(a.findIndex(y=>y.id==to)+(after?1:0),0,o)};
+const mk=(l,t,d)=>S.items.push({id:u(),l,t,d,p:0});
+const A={
+tab:d=>{V.tab=d.v;V.st=[]},go:d=>V.st.push([d.v,d.i]),back:()=>V.st.pop(),close:()=>V.sheet=null,sheet:d=>V.sheet={k:d.v,i:d.i,t:d.t,...(d.v=='asg'?{s:aSt()[0].id,l:act1().find(l=>l.s==aSt()[0].id)?.id}:{}),...(d.v=='wc'?{l:act1().find(l=>l.s==S.wish.find(w=>w.id==d.i).s)?.id}:{})},
+seg:d=>V.seg=d.v,theme:d=>V.theme=d.v,exp:()=>V.pe=!V.pe,snk:d=>snk(d.v),undo:()=>{V.snack.u();V.snack=null},
+qa:d=>{const t=val('t');if(!t)return;S.inbox.unshift({id:u(),t,d:val('d')});V.sheet=d.v=='more'?{k:'quick'}:null},
+sv:()=>{const h=V.sheet,x=S[h.t=='item'?'items':h.t].find(y=>y.id==h.i),t=val('t');if(!t)return;x.t=t;x.d=val('d');V.sheet=null},
+rm:()=>{const h=V.sheet;V.sheet=null;rm(h.t=='item'?'items':h.t,h.i)},
+tog:d=>{const x=S.items.find(y=>y.id==d.i);x.p=x.p?0:1},
+ps:d=>{const h=V.sheet;h.ns=0;h.s=d.i;h.l=act1().find(l=>l.s==d.i)?.id;h.nl=0},pl:d=>{V.sheet.l=d.i;V.sheet.nl=0},ns:()=>V.sheet.ns=1,nl:()=>V.sheet.nl=1,
+ao:()=>{const h=V.sheet,it=S.inbox.find(x=>x.id==h.i);let s=h.s,l=h.l;if(h.ns&&!h.sn)return;if((h.nl||h.ns)&&!h.ln)return;if(!l&&!h.nl&&!h.ns)return;
+if(h.ns){s=u();S.stores.push({id:s,n:h.sn,c:free(),a:'',o:'',x:0})}if(h.nl||h.ns){l=u();S.lists.push({id:l,s,n:h.ln,x:0})}
+mk(l,it.t,it.d);S.inbox=S.inbox.filter(x=>x!=it);V.sheet=null;snk('Added to '+LI(l).n)},
+pc:d=>V.sheet.c=d.v,sfo:()=>{const h=V.sheet,n=val('t');if(!n)return;if(h.i)Object.assign(ST(h.i),{n,c:h.c,a:val('d'),o:val('o')});else S.stores.push({id:u(),n,c:h.c,a:val('d'),o:val('o'),x:0});V.sheet=null},
+lfo:()=>{const n=val('t');if(!n)return;const id=u();S.lists.push({id,s:V.sheet.i,n,x:0});V.sheet=null;V.st.push(['list',id])},
+fo:d=>{const id=V.sheet.i,l=LI(id),left=its(id).filter(x=>!x.p);l.x='finished';if(d.v=='1'&&left.length){const nid=u();S.lists.push({id:nid,s:l.s,n:val('t')||'Leftovers',x:0});left.forEach(x=>mk(nid,x.t,x.d))}V.sheet=null;V.st.pop();snk('List finished')},
+al:()=>{const l=LI(V.st.at(-1)[1]);l.x='manual';V.st.pop();snk('List archived',()=>l.x=0)},rl:d=>{const l=LI(d.i);if(ST(l.s).x)return;l.x=0},
+ast:d=>{const m=S.lists.filter(l=>l.s==d.i&&!l.x).length;if(m)V.sheet={k:'dlg',i:d.i,m};else{ST(d.i).x=1;V.st.pop()}},ast2:()=>{ST(V.sheet.i).x=1;V.sheet=null;V.st.pop()},rst:d=>{ST(d.i).x=0},
+wa:()=>{const t=val('t');if(!t)return;S.wish.push({id:u(),s:V.sheet.i,t,d:val('d')});V.sheet=null},
+pl2:0,wco:()=>{const h=V.sheet,w=S.wish.find(x=>x.id==h.i);let l=h.l;if(h.nl||!l){if(!h.ln)return;l=u();S.lists.push({id:l,s:w.s,n:h.ln,x:0})}mk(l,w.t,w.d);V.sheet=null;snk('Added to '+LI(l).n)}};
+document.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b||b.disabled)return;const a=b.dataset.a=='act'?b.dataset.v:b.dataset.a;(A[a]||(()=>{}))(b.dataset);R()});
+document.addEventListener('input',e=>{if(e.target.dataset.m)V.sheet[e.target.dataset.m]=e.target.value});
+document.addEventListener('keydown',e=>{const t=e.target;
+if(t.id=='add'&&e.key=='Enter'&&t.value.trim()){mk(V.st.at(-1)[1],t.value.trim(),'');V.f=1;R();const c=q('.body');c.scrollTop=c.scrollHeight}
+if(t.classList.contains('hd')&&(e.key=='ArrowUp'||e.key=='ArrowDown')){e.preventDefault();const id=t.dataset.id,l=S.items.find(x=>x.id==id).l,ac=its(l).filter(x=>!x.p),x=ac.findIndex(y=>y.id==id),o=ac[x+(e.key=='ArrowUp'?-1:1)];if(o){mv(id,o.id,e.key=='ArrowDown');R();q('.hd[data-id="'+id+'"]').focus()}}});
+let dg=null,sx=0;
+document.addEventListener('dragstart',e=>{dg=e.target.closest?.('.row')?.dataset.id});
+document.addEventListener('dragover',e=>{if(dg&&e.target.closest('.row[draggable]'))e.preventDefault()});
+document.addEventListener('drop',e=>{const r=e.target.closest('.row[draggable]');if(dg&&r&&r.dataset.id!=dg){const a=S.items;mv(dg,r.dataset.id,a.findIndex(x=>x.id==dg)<a.findIndex(x=>x.id==r.dataset.id));R()}dg=null});
+document.addEventListener('touchstart',e=>sx=e.touches[0].clientX,{passive:true});
+document.addEventListener('touchend',e=>{const r=e.target.closest?.('.row[draggable]');if(r&&e.changedTouches[0].clientX-sx<-80){rm('items',r.dataset.id);R()}});
+matchMedia('(prefers-color-scheme:dark)').addEventListener?.('change',R);R();
+</script></body></html>

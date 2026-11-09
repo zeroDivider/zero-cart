@@ -1,0 +1,13 @@
+---
+description: Layering, state and structure rules for Dart code
+globs: lib/**/*.dart
+alwaysApply: false
+---
+
+- Dependency direction: `ui -> providers/controllers -> repositories -> data`. A feature never imports another feature's `ui/`.
+- Widgets only render `AsyncValue`s and call controller or repository methods. No business rules, no Drift queries, no `DateTime.now()` (use `nowProvider`).
+- State is Riverpod (ADR-0001): `StreamProvider` for database reads, `Notifier` for UI-only state, plain classes for repositories. Never `ref.read` inside `build`. Repository providers are not auto-disposed.
+- Undo callbacks run from SnackBars that outlive screens: capture the repository before navigating.
+- Do not add a domain layer, repository interfaces, freezed, json_serializable or any other state library (ADR-0003).
+- Prefer `const`, small widgets and narrow `ref.watch` scopes. Split files before they pass about 300 lines.
+- Folder layout follows `docs/architecture.md` section 2.3.

@@ -1,0 +1,12 @@
+---
+description: Test conventions for ZeroCart
+globs: test/**,integration_test/**
+alwaysApply: false
+---
+
+- Follow `docs/testing-strategy.md`. Test files mirror `lib/`. Names describe behaviour, for example `restores_item_at_original_position_after_reorder`.
+- Data behaviour is tested on a real in-memory Drift database, not mocks. Fake only the platform edges: share, file picker, clock, id generator.
+- Every business rule and invariant in `docs/data-model.md` has a test, including failure and rollback paths.
+- Widget tests pump the app with provider overrides; use semantics finders and the accessibility guideline matchers where the task asks.
+- Goldens are tagged `golden`, generated and compared on the CI platform only.
+- Never delete, skip or loosen a test to make a check pass. If a test is wrong, say so in the report and fix it with a reason.

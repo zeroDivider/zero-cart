@@ -1,0 +1,12 @@
+---
+description: Design tokens, accessibility and localisation rules for UI code
+globs: lib/features/**/ui/**,lib/app/**,lib/core/widgets/**
+alwaysApply: false
+---
+
+- Visual values come from `docs/design-system.md` through `lib/app/theme/` (`ColorScheme`, `TextTheme`, `AppTokens`). No `Color(0x...)`, magic sizes or font names in feature code.
+- User-visible strings go through gen-l10n. Counts use ICU plurals (Serbian needs one, few, other). No hard-coded strings, including semantics labels and tooltips.
+- Layouts must survive 200% text scale and longer Serbian strings: no fixed heights, titles wrap, nothing is clipped.
+- Every tappable target is at least 48 x 48 dp. Every gesture has a non-gesture path and a semantic action (D-22). Colour never carries meaning alone (D-23).
+- Forms are bottom sheets; dialogs only for store archive with active lists and replace-all restore. Destructive actions use Undo (D-07).
+- Follow `design/shopping-app-prototype.html` for layout; the design-system tokens win when they differ.

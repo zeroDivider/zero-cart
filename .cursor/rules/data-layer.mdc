@@ -1,0 +1,13 @@
+---
+description: Drift, transactions, ordering and migration rules
+globs: lib/data/**,lib/features/**/*_repository.dart,drift_schemas/**,test/data/**
+alwaysApply: false
+---
+
+- Schema and invariants are defined in `docs/data-model.md`. Match them exactly, including CHECK constraints and foreign keys. `PRAGMA foreign_keys = ON` in `beforeOpen`.
+- Every operation touching more than one row or table runs in one `db.transaction`. Targets (list, store) are validated inside that transaction.
+- Ordering: one dense `position` per list; purchase changes only `is_purchased`; reorder uses `computeDenseReorder`; read order is `(position, created_at, id)` (ADR-0004).
+- Removal is a hard delete returning a snapshot; Undo re-inserts it unchanged.
+- Ids are UUID v4 strings from the id generator; timestamps come from the injected clock, in UTC.
+- A schema change needs a `schemaVersion` bump, a stepwise migration, a new snapshot in `drift_schemas/`, a migration test, and updates to `docs/data-model.md` and `docs/backup-format.md` if the export is affected.
+- Raw SQL only inside `lib/data/` or repositories, never in widgets.

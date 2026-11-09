@@ -1,0 +1,10 @@
+---
+description: Always-on workflow, commit and honesty rules for ZeroCart
+alwaysApply: true
+---
+
+- Follow `AGENTS.md`. It is the single source for workflow, commits and hard stops; do not restate or override it here.
+- Work on exactly one task from `docs/implementation-plan.md` per chat. Do not expand scope.
+- Commit after every coherent step with a Conventional Commit and the task id. Never push, amend, rebase or merge.
+- Run `tool/check.sh` before reporting. Report only what you actually ran.
+- If docs and code disagree, stop and log it in `docs/deviations.md`.
