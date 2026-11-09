@@ -12,71 +12,41 @@
 .swiftpm/
 migrate_working_dir/
 
-# IDE (Cursor and VS Code user settings are not shared)
+# IntelliJ / IDE (Cursor and VS Code user settings are not shared)
 *.iml
 *.ipr
 *.iws
 .idea/
 .vscode/
 
-# Flutter / Dart / pub
+# Flutter / Dart / Pub
 **/doc/api/
+**/ios/Flutter/.last_build_id
 .dart_tool/
 .flutter-plugins
 .flutter-plugins-dependencies
 .pub-cache/
 .pub/
-build/
-coverage/
+/build/
+/coverage/
+
+# Symbolication
+app.*.symbols
+
+# Obfuscation
+app.*.map.json
+
+# Android Studio build artifacts
+/android/app/debug
+/android/app/profile
+/android/app/release
+
+# Widget Preview
+.widget_preview/
 
 # Generated code (not committed; drift_schemas/ IS committed)
 *.g.dart
 lib/l10n/generated/
-
-# Android
-**/android/**/gradle-wrapper.jar
-.gradle/
-**/android/captures/
-**/android/gradlew
-**/android/gradlew.bat
-**/android/local.properties
-**/android/key.properties
-**/android/app/debug
-**/android/app/profile
-**/android/app/release
-*.jks
-*.keystore
-GeneratedPluginRegistrant.java
-
-# iOS / Xcode
-**/ios/**/*.mode1v3
-**/ios/**/*.mode2v3
-**/ios/**/*.moved-aside
-**/ios/**/*.pbxuser
-**/ios/**/*.perspectivev3
-**/ios/**/*sync/
-**/ios/**/.sconsign.dblite
-**/ios/**/.tags*
-**/ios/**/.vagrant/
-**/ios/**/DerivedData/
-**/ios/**/Icon?
-**/ios/**/Pods/
-**/ios/**/.symlinks/
-**/ios/**/profile
-**/ios/**/xcuserdata
-**/ios/.generated/
-**/ios/Flutter/.last_build_id
-**/ios/Flutter/App.framework
-**/ios/Flutter/Flutter.framework
-**/ios/Flutter/Flutter.podspec
-**/ios/Flutter/Generated.xcconfig
-**/ios/Flutter/ephemeral/
-**/ios/Flutter/app.flx
-**/ios/Flutter/app.zip
-**/ios/Flutter/flutter_assets/
-**/ios/Flutter/flutter_export_environment.sh
-**/ios/ServiceDefinitions.json
-**/ios/Runner/GeneratedPluginRegistrant.*
 
 # Secrets and local config
 .env
@@ -84,3 +54,9 @@ GeneratedPluginRegistrant.java
 *.pem
 *.p12
 *.mobileprovision
+*.jks
+*.keystore
+
+# Local Android config
+**/android/local.properties
+**/android/key.properties
