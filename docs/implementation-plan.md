@@ -1,4 +1,4 @@
-# ZeroCart Planning Pack, Part 3: Implementation Plan
+# Implementation plan
 
 This is `docs/implementation-plan.md`: 27 tasks (APP-001 to APP-027) in 9 phases, ordered by dependency. Status: draft for your review. Part 4 supplies AGENTS.md, `.cursor/rules/`, `docs/testing-strategy.md` and `docs/backup-format.md`, which tasks below refer to.
 
