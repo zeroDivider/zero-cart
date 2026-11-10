@@ -9,6 +9,8 @@ analyzer:
     - build/**
     - android/**
     - ios/**
+    # Drift schema tooling output (APP-006); not hand-maintained.
+    - test/data/generated_migrations/**
 
 linter:
   rules:
