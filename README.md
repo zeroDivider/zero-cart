@@ -15,6 +15,7 @@ Capture first, organise later. Minimal friction. Local-first and offline. Multip
 ## Implemented
 
 - Empty Flutter app shell for Android and iOS (package `zero_cart`, bundle id `com.zero.cart`). See the roadmap in `docs/implementation-plan.md`.
+- Bundled fonts: Roboto (UI) and DynaPuff (wordmark), with licences registered for the in-app licences page.
 
 ## Planned for v1
 
@@ -70,7 +71,7 @@ This project is planned with Claude and implemented with Cursor Agent, under hum
 
 ## Licence and credits
 
-Source code: MIT, see `LICENSE`. Fonts are bundled under their own licences: **DynaPuff** (SIL Open Font License) for the wordmark and **Roboto** for the interface (licence to be confirmed from the downloaded files and recorded here and in the in-app licences page). Dependency licences are shown by the in-app licences page.
+Source code: MIT, see `LICENSE`. Fonts are bundled under their own licences (texts in `assets/fonts/`): **DynaPuff** (SIL Open Font License 1.1) for the wordmark and **Roboto** for the interface (notice supplied with the font files: unrestricted use in apps). Both are registered with Flutter's `LicenseRegistry` and appear on the in-app licences page. Dependency licences are shown there as well.
 
 ## Contributing
 
