@@ -8,17 +8,22 @@ environment:
   flutter: 3.47.9
 
 dependencies:
+  drift: ^2.35.4
+  drift_flutter: ^0.3.1
   flutter:
     sdk: flutter
   flutter_localizations:
     sdk: flutter
   go_router: 18.1.4
   intl: ^0.20.3
+  path_provider: ^2.1.6
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
+  drift_dev: ^2.35.3
+  build_runner: ^2.17.1
 
 flutter:
   generate: true
