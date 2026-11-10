@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:go_router/go_router.dart';
 import 'package:zero_cart/app/locale_resolution.dart';
 import 'package:zero_cart/app/root_scaffold_messenger.dart';
 import 'package:zero_cart/app/router.dart';

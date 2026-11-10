@@ -11,13 +11,13 @@ import '../support/test_app.dart';
 void main() {
   testWidgets('tabs switch and keep branch widgets mounted', (tester) async {
     final router = AppRouter.create();
-    await pumpTestApp(tester, router: router);
+    final harness = await pumpTestApp(tester, router: router);
 
     expect(find.byType(HomeScreen), findsOneWidget);
     expect(find.byType(InboxScreen), findsNothing);
 
     await tester.tap(find.text('Inbox'));
-    await tester.pumpAndSettle();
+    await pumpApp(tester, harness);
 
     expect(find.byType(InboxScreen), findsOneWidget);
     expect(find.byType(HomeScreen, skipOffstage: false), findsOneWidget);
@@ -27,7 +27,7 @@ void main() {
     );
 
     await tester.tap(find.text('Stores'));
-    await tester.pumpAndSettle();
+    await pumpApp(tester, harness);
 
     expect(find.byType(StoresScreen), findsOneWidget);
     expect(find.byType(InboxScreen, skipOffstage: false), findsOneWidget);
@@ -37,36 +37,38 @@ void main() {
     );
 
     await tester.tap(find.text('Home'));
-    await tester.pumpAndSettle();
+    await pumpApp(tester, harness);
 
     expect(find.byType(HomeScreen), findsOneWidget);
     expect(router.routerDelegate.currentConfiguration.uri.path, AppRoutes.home);
+    await harness.dispose(tester);
   });
 
   testWidgets('settings icon appears only on Home', (tester) async {
-    await pumpTestApp(tester);
+    final harness = await pumpTestApp(tester);
 
     expect(find.byKey(const Key('home_settings_button')), findsOneWidget);
 
     await tester.tap(find.text('Inbox'));
-    await tester.pumpAndSettle();
+    await pumpApp(tester, harness);
     expect(find.byKey(const Key('home_settings_button')), findsNothing);
 
     await tester.tap(find.text('Stores'));
-    await tester.pumpAndSettle();
+    await pumpApp(tester, harness);
     expect(find.byKey(const Key('home_settings_button')), findsNothing);
 
     await tester.tap(find.text('Home'));
-    await tester.pumpAndSettle();
+    await pumpApp(tester, harness);
     expect(find.byKey(const Key('home_settings_button')), findsOneWidget);
+    await harness.dispose(tester);
   });
 
   testWidgets('back from settings returns to Home', (tester) async {
     final router = AppRouter.create();
-    await pumpTestApp(tester, router: router);
+    final harness = await pumpTestApp(tester, router: router);
 
     await tester.tap(find.byKey(const Key('home_settings_button')));
-    await tester.pumpAndSettle();
+    await pumpApp(tester, harness);
 
     expect(find.byType(SettingsPlaceholderScreen), findsOneWidget);
     expect(router.canPop(), isTrue);
@@ -76,11 +78,12 @@ void main() {
     );
 
     router.pop();
-    await tester.pumpAndSettle();
+    await pumpApp(tester, harness);
 
     expect(find.byType(SettingsPlaceholderScreen), findsNothing);
     expect(find.byType(HomeScreen), findsOneWidget);
     expect(router.canPop(), isFalse);
     expect(router.routerDelegate.currentConfiguration.uri.path, AppRoutes.home);
+    await harness.dispose(tester);
   });
 }

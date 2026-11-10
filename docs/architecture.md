@@ -30,6 +30,8 @@ ui (widgets) -> providers/controllers -> repositories -> Drift database
 - **Data:** Drift tables and generated row classes.
 - **Domain layer: not justified.** There is one data source, no rule shared across several stores, and the generated rows are adequate models. Rows are used directly in the UI (annotate with `@DataClassName` for clean names: `Store`, `ShoppingList`, `ListItem`, `InboxItem`, `WishlistItem`). No repository interfaces; tests use an in-memory Drift database instead. Pure logic (dense reorder computation, share-text formatting, backup validation) lives in plain functions under `core/` so it is unit-testable without a database.
 
+**Worked example: Inbox.** Capture flows through every layer once: `main.dart` opens `AppDatabase` and wraps the app in `ProviderScope` with `appDatabaseProvider` (plus `nowProvider` / `idGeneratorProvider` in `lib/data/providers.dart`). `InboxRepository` in `lib/features/inbox/inbox_repository.dart` owns normalize/reject, insert, update, hard-delete snapshot, and restore; `inbox_providers.dart` exposes the app-lifetime repository and `inboxItemsProvider` (`StreamProvider`, newest first). UI in `lib/features/inbox/ui/` (`quick_add_sheet.dart`, `inbox_edit_sheet.dart`, `inbox_screen.dart`) renders the stream and calls the repository; the shell FAB and badge live in `lib/app/scaffold_with_nav_bar.dart`. Shared swipe-Undo uses `lib/core/widgets/swipe_to_remove_row.dart` and `remove_undo_snackbar.dart` with `rootScaffoldMessengerKey`.
+
 ## 2.3 Folder structure
 
 ```

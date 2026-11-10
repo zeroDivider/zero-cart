@@ -19,14 +19,14 @@ void main() {
     ];
     idCounter = 0;
     repo = InboxRepository(
-      db: db,
-      clock: () {
+      database: db,
+      now: () {
         if (clockTicks.isEmpty) {
           fail('clock exhausted');
         }
         return clockTicks.removeAt(0);
       },
-      idGenerator: () {
+      newId: () {
         idCounter += 1;
         return 'id-$idCounter';
       },

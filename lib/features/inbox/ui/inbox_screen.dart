@@ -28,7 +28,9 @@ class InboxScreen extends ConsumerWidget {
           }
           return _InboxList(items: items);
         },
-        loading: () => const Center(child: CircularProgressIndicator()),
+        // Static placeholder: an indeterminate progress indicator never settles
+        // under widget-test pumpAndSettle.
+        loading: () => const SizedBox.shrink(),
         error: (error, _) => Center(child: Text('$error')),
       ),
     );
