@@ -1,0 +1,748 @@
+{
+  "_meta": {
+    "description": "This file contains a serialized version of schema entities for drift.",
+    "version": "1.3.0"
+  },
+  "options": {
+    "store_date_time_values_as_text": true
+  },
+  "entities": [
+    {
+      "id": 0,
+      "references": [],
+      "type": "table",
+      "data": {
+        "name": "stores",
+        "was_declared_in_moor": false,
+        "columns": [
+          {
+            "name": "id",
+            "getter_name": "id",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": null,
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "name",
+            "getter_name": "name",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": null,
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "color_key",
+            "getter_name": "colorKey",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": null,
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "address",
+            "getter_name": "address",
+            "moor_type": "string",
+            "nullable": true,
+            "customConstraints": null,
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "note",
+            "getter_name": "note",
+            "moor_type": "string",
+            "nullable": true,
+            "customConstraints": null,
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "archived_at",
+            "getter_name": "archivedAt",
+            "moor_type": "dateTime",
+            "nullable": true,
+            "customConstraints": null,
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "created_at",
+            "getter_name": "createdAt",
+            "moor_type": "dateTime",
+            "nullable": false,
+            "customConstraints": null,
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "updated_at",
+            "getter_name": "updatedAt",
+            "moor_type": "dateTime",
+            "nullable": false,
+            "customConstraints": null,
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          }
+        ],
+        "is_virtual": false,
+        "without_rowid": false,
+        "constraints": [
+          "CHECK (length(trim(name)) BETWEEN 1 AND 40)"
+        ],
+        "explicit_pk": [
+          "id"
+        ]
+      }
+    },
+    {
+      "id": 1,
+      "references": [
+        0
+      ],
+      "type": "table",
+      "data": {
+        "name": "shopping_lists",
+        "was_declared_in_moor": false,
+        "columns": [
+          {
+            "name": "id",
+            "getter_name": "id",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": null,
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "store_id",
+            "getter_name": "storeId",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": null,
+            "defaultConstraints": "REFERENCES stores (id) ON DELETE CASCADE",
+            "dialectAwareDefaultConstraints": {
+              "sqlite": "REFERENCES stores (id) ON DELETE CASCADE"
+            },
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": [
+              {
+                "foreign_key": {
+                  "to": {
+                    "table": "stores",
+                    "column": "id"
+                  },
+                  "initially_deferred": false,
+                  "on_update": null,
+                  "on_delete": "cascade"
+                }
+              }
+            ]
+          },
+          {
+            "name": "name",
+            "getter_name": "name",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": null,
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "archived_at",
+            "getter_name": "archivedAt",
+            "moor_type": "dateTime",
+            "nullable": true,
+            "customConstraints": null,
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "archive_reason",
+            "getter_name": "archiveReason",
+            "moor_type": "string",
+            "nullable": true,
+            "customConstraints": null,
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "created_at",
+            "getter_name": "createdAt",
+            "moor_type": "dateTime",
+            "nullable": false,
+            "customConstraints": null,
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "updated_at",
+            "getter_name": "updatedAt",
+            "moor_type": "dateTime",
+            "nullable": false,
+            "customConstraints": null,
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          }
+        ],
+        "is_virtual": false,
+        "without_rowid": false,
+        "constraints": [
+          "CHECK (length(trim(name)) BETWEEN 1 AND 60)",
+          "CHECK (archive_reason IS NULL OR archive_reason IN ('manual', 'finished'))",
+          "CHECK ((archived_at IS NULL) = (archive_reason IS NULL))"
+        ],
+        "explicit_pk": [
+          "id"
+        ]
+      }
+    },
+    {
+      "id": 2,
+      "references": [
+        1
+      ],
+      "type": "table",
+      "data": {
+        "name": "list_items",
+        "was_declared_in_moor": false,
+        "columns": [
+          {
+            "name": "id",
+            "getter_name": "id",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": null,
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "list_id",
+            "getter_name": "listId",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": null,
+            "defaultConstraints": "REFERENCES shopping_lists (id) ON DELETE CASCADE",
+            "dialectAwareDefaultConstraints": {
+              "sqlite": "REFERENCES shopping_lists (id) ON DELETE CASCADE"
+            },
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": [
+              {
+                "foreign_key": {
+                  "to": {
+                    "table": "shopping_lists",
+                    "column": "id"
+                  },
+                  "initially_deferred": false,
+                  "on_update": null,
+                  "on_delete": "cascade"
+                }
+              }
+            ]
+          },
+          {
+            "name": "title",
+            "getter_name": "title",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": null,
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "description",
+            "getter_name": "description",
+            "moor_type": "string",
+            "nullable": true,
+            "customConstraints": null,
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "is_purchased",
+            "getter_name": "isPurchased",
+            "moor_type": "bool",
+            "nullable": false,
+            "customConstraints": null,
+            "defaultConstraints": "CHECK (\"is_purchased\" IN (0, 1))",
+            "dialectAwareDefaultConstraints": {
+              "sqlite": "CHECK (\"is_purchased\" IN (0, 1))"
+            },
+            "default_dart": "const CustomExpression('0')",
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "position",
+            "getter_name": "position",
+            "moor_type": "int",
+            "nullable": false,
+            "customConstraints": null,
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "created_at",
+            "getter_name": "createdAt",
+            "moor_type": "dateTime",
+            "nullable": false,
+            "customConstraints": null,
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "updated_at",
+            "getter_name": "updatedAt",
+            "moor_type": "dateTime",
+            "nullable": false,
+            "customConstraints": null,
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          }
+        ],
+        "is_virtual": false,
+        "without_rowid": false,
+        "constraints": [
+          "CHECK (length(trim(title)) BETWEEN 1 AND 50)",
+          "CHECK (description IS NULL OR length(description) BETWEEN 1 AND 70)"
+        ],
+        "explicit_pk": [
+          "id"
+        ]
+      }
+    },
+    {
+      "id": 3,
+      "references": [],
+      "type": "table",
+      "data": {
+        "name": "inbox_items",
+        "was_declared_in_moor": false,
+        "columns": [
+          {
+            "name": "id",
+            "getter_name": "id",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": null,
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "title",
+            "getter_name": "title",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": null,
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "description",
+            "getter_name": "description",
+            "moor_type": "string",
+            "nullable": true,
+            "customConstraints": null,
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "created_at",
+            "getter_name": "createdAt",
+            "moor_type": "dateTime",
+            "nullable": false,
+            "customConstraints": null,
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "updated_at",
+            "getter_name": "updatedAt",
+            "moor_type": "dateTime",
+            "nullable": false,
+            "customConstraints": null,
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          }
+        ],
+        "is_virtual": false,
+        "without_rowid": false,
+        "constraints": [],
+        "explicit_pk": [
+          "id"
+        ]
+      }
+    },
+    {
+      "id": 4,
+      "references": [
+        0
+      ],
+      "type": "table",
+      "data": {
+        "name": "wishlist_items",
+        "was_declared_in_moor": false,
+        "columns": [
+          {
+            "name": "id",
+            "getter_name": "id",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": null,
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "store_id",
+            "getter_name": "storeId",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": null,
+            "defaultConstraints": "REFERENCES stores (id) ON DELETE CASCADE",
+            "dialectAwareDefaultConstraints": {
+              "sqlite": "REFERENCES stores (id) ON DELETE CASCADE"
+            },
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": [
+              {
+                "foreign_key": {
+                  "to": {
+                    "table": "stores",
+                    "column": "id"
+                  },
+                  "initially_deferred": false,
+                  "on_update": null,
+                  "on_delete": "cascade"
+                }
+              }
+            ]
+          },
+          {
+            "name": "title",
+            "getter_name": "title",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": null,
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "description",
+            "getter_name": "description",
+            "moor_type": "string",
+            "nullable": true,
+            "customConstraints": null,
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "created_at",
+            "getter_name": "createdAt",
+            "moor_type": "dateTime",
+            "nullable": false,
+            "customConstraints": null,
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "updated_at",
+            "getter_name": "updatedAt",
+            "moor_type": "dateTime",
+            "nullable": false,
+            "customConstraints": null,
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          }
+        ],
+        "is_virtual": false,
+        "without_rowid": false,
+        "constraints": [],
+        "explicit_pk": [
+          "id"
+        ]
+      }
+    },
+    {
+      "id": 5,
+      "references": [],
+      "type": "table",
+      "data": {
+        "name": "app_settings",
+        "was_declared_in_moor": false,
+        "columns": [
+          {
+            "name": "key",
+            "getter_name": "key",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": null,
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "value",
+            "getter_name": "value",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": null,
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          }
+        ],
+        "is_virtual": false,
+        "without_rowid": false,
+        "constraints": [],
+        "explicit_pk": [
+          "key"
+        ]
+      }
+    },
+    {
+      "id": 6,
+      "references": [
+        0
+      ],
+      "type": "index",
+      "data": {
+        "on": 0,
+        "name": "idx_stores_archived_at",
+        "sql": null,
+        "unique": false,
+        "columns": [
+          {
+            "column": "archived_at",
+            "order_by": null
+          }
+        ]
+      }
+    },
+    {
+      "id": 7,
+      "references": [
+        1
+      ],
+      "type": "index",
+      "data": {
+        "on": 1,
+        "name": "idx_shopping_lists_store_archived",
+        "sql": null,
+        "unique": false,
+        "columns": [
+          {
+            "column": "store_id",
+            "order_by": null
+          },
+          {
+            "column": "archived_at",
+            "order_by": null
+          }
+        ]
+      }
+    },
+    {
+      "id": 8,
+      "references": [
+        2
+      ],
+      "type": "index",
+      "data": {
+        "on": 2,
+        "name": "idx_list_items_list_position",
+        "sql": null,
+        "unique": false,
+        "columns": [
+          {
+            "column": "list_id",
+            "order_by": null
+          },
+          {
+            "column": "position",
+            "order_by": null
+          }
+        ]
+      }
+    },
+    {
+      "id": 9,
+      "references": [
+        3
+      ],
+      "type": "index",
+      "data": {
+        "on": 3,
+        "name": "idx_inbox_items_created_at",
+        "sql": null,
+        "unique": false,
+        "columns": [
+          {
+            "column": "created_at",
+            "order_by": null
+          }
+        ]
+      }
+    },
+    {
+      "id": 10,
+      "references": [
+        4
+      ],
+      "type": "index",
+      "data": {
+        "on": 4,
+        "name": "idx_wishlist_items_store_created",
+        "sql": null,
+        "unique": false,
+        "columns": [
+          {
+            "column": "store_id",
+            "order_by": null
+          },
+          {
+            "column": "created_at",
+            "order_by": null
+          }
+        ]
+      }
+    }
+  ],
+  "fixed_sql": [
+    {
+      "name": "stores",
+      "sql": [
+        {
+          "dialect": "sqlite",
+          "sql": "CREATE TABLE IF NOT EXISTS \"stores\" (\"id\" TEXT NOT NULL, \"name\" TEXT NOT NULL, \"color_key\" TEXT NOT NULL, \"address\" TEXT NULL, \"note\" TEXT NULL, \"archived_at\" TEXT NULL, \"created_at\" TEXT NOT NULL, \"updated_at\" TEXT NOT NULL, PRIMARY KEY (\"id\"), CHECK (length(trim(name)) BETWEEN 1 AND 40));"
+        }
+      ]
+    },
+    {
+      "name": "shopping_lists",
+      "sql": [
+        {
+          "dialect": "sqlite",
+          "sql": "CREATE TABLE IF NOT EXISTS \"shopping_lists\" (\"id\" TEXT NOT NULL, \"store_id\" TEXT NOT NULL REFERENCES stores (id) ON DELETE CASCADE, \"name\" TEXT NOT NULL, \"archived_at\" TEXT NULL, \"archive_reason\" TEXT NULL, \"created_at\" TEXT NOT NULL, \"updated_at\" TEXT NOT NULL, PRIMARY KEY (\"id\"), CHECK (length(trim(name)) BETWEEN 1 AND 60), CHECK (archive_reason IS NULL OR archive_reason IN ('manual', 'finished')), CHECK ((archived_at IS NULL) = (archive_reason IS NULL)));"
+        }
+      ]
+    },
+    {
+      "name": "list_items",
+      "sql": [
+        {
+          "dialect": "sqlite",
+          "sql": "CREATE TABLE IF NOT EXISTS \"list_items\" (\"id\" TEXT NOT NULL, \"list_id\" TEXT NOT NULL REFERENCES shopping_lists (id) ON DELETE CASCADE, \"title\" TEXT NOT NULL, \"description\" TEXT NULL, \"is_purchased\" INTEGER NOT NULL DEFAULT 0 CHECK (\"is_purchased\" IN (0, 1)), \"position\" INTEGER NOT NULL, \"created_at\" TEXT NOT NULL, \"updated_at\" TEXT NOT NULL, PRIMARY KEY (\"id\"), CHECK (length(trim(title)) BETWEEN 1 AND 50), CHECK (description IS NULL OR length(description) BETWEEN 1 AND 70));"
+        }
+      ]
+    },
+    {
+      "name": "inbox_items",
+      "sql": [
+        {
+          "dialect": "sqlite",
+          "sql": "CREATE TABLE IF NOT EXISTS \"inbox_items\" (\"id\" TEXT NOT NULL, \"title\" TEXT NOT NULL, \"description\" TEXT NULL, \"created_at\" TEXT NOT NULL, \"updated_at\" TEXT NOT NULL, PRIMARY KEY (\"id\"));"
+        }
+      ]
+    },
+    {
+      "name": "wishlist_items",
+      "sql": [
+        {
+          "dialect": "sqlite",
+          "sql": "CREATE TABLE IF NOT EXISTS \"wishlist_items\" (\"id\" TEXT NOT NULL, \"store_id\" TEXT NOT NULL REFERENCES stores (id) ON DELETE CASCADE, \"title\" TEXT NOT NULL, \"description\" TEXT NULL, \"created_at\" TEXT NOT NULL, \"updated_at\" TEXT NOT NULL, PRIMARY KEY (\"id\"));"
+        }
+      ]
+    },
+    {
+      "name": "app_settings",
+      "sql": [
+        {
+          "dialect": "sqlite",
+          "sql": "CREATE TABLE IF NOT EXISTS \"app_settings\" (\"key\" TEXT NOT NULL, \"value\" TEXT NOT NULL, PRIMARY KEY (\"key\"));"
+        }
+      ]
+    },
+    {
+      "name": "idx_stores_archived_at",
+      "sql": [
+        {
+          "dialect": "sqlite",
+          "sql": "CREATE INDEX idx_stores_archived_at ON stores (archived_at)"
+        }
+      ]
+    },
+    {
+      "name": "idx_shopping_lists_store_archived",
+      "sql": [
+        {
+          "dialect": "sqlite",
+          "sql": "CREATE INDEX idx_shopping_lists_store_archived ON shopping_lists (store_id, archived_at)"
+        }
+      ]
+    },
+    {
+      "name": "idx_list_items_list_position",
+      "sql": [
+        {
+          "dialect": "sqlite",
+          "sql": "CREATE INDEX idx_list_items_list_position ON list_items (list_id, position)"
+        }
+      ]
+    },
+    {
+      "name": "idx_inbox_items_created_at",
+      "sql": [
+        {
+          "dialect": "sqlite",
+          "sql": "CREATE INDEX idx_inbox_items_created_at ON inbox_items (created_at)"
+        }
+      ]
+    },
+    {
+      "name": "idx_wishlist_items_store_created",
+      "sql": [
+        {
+          "dialect": "sqlite",
+          "sql": "CREATE INDEX idx_wishlist_items_store_created ON wishlist_items (store_id, created_at)"
+        }
+      ]
+    }
+  ]
+}
