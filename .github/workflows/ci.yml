@@ -1,0 +1,26 @@
+# Quality gate for pull requests and pushes to main (APP-005).
+# Flutter version is read from pubspec.yaml (environment.flutter).
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v6
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version-file: pubspec.yaml
+          cache: true
+          pub-cache: true
+
+      - name: Run quality gate
+        run: bash tool/check.sh
