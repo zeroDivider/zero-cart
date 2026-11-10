@@ -2,7 +2,7 @@
 
 ## 3.1 Conventions
 
-Ids are UUID v4 text generated in the app. Timestamps are UTC (`created_at`, `updated_at` on every entity; backups serialise ISO-8601 UTC). Enumerations are text with CHECK constraints. Empty descriptions are stored as NULL. Foreign keys are enforced.
+Ids are UUID v4 text generated in the app. Timestamps are UTC (`created_at`, `updated_at` on every entity; backups serialise ISO-8601 UTC). **Drift storage (APP-006):** `DateTime` columns are stored as ISO-8601 text (`store_date_time_values_as_text: true` in `build.yaml`), not as Unix-second integers, so UTC-ness is preserved and the on-disk values stay close to the backup format. Enumerations are text with CHECK constraints. Empty descriptions are stored as NULL. Foreign keys are enforced.
 
 ## 3.2 Tables
 

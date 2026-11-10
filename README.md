@@ -16,6 +16,7 @@ Capture first, organise later. Minimal friction. Local-first and offline. Multip
 
 - Empty Flutter app shell for Android and iOS (package `zero_cart`, bundle id `com.zero.cart`). See the roadmap in `docs/implementation-plan.md`.
 - Bundled fonts: Roboto (UI) and DynaPuff (wordmark), with licences registered for the in-app licences page.
+- Drift SQLite schema v1 (`lib/data/`): six tables with foreign keys, CHECKs and indexes; file DB `zero_cart.sqlite` and in-memory constructor for tests.
 
 ## Planned for v1
 
@@ -57,10 +58,10 @@ Verified with **Flutter 3.47.9** (stable channel, Dart 3.13.7). The Flutter vers
 
 1. Install the Flutter stable SDK matching the pin above, Android Studio or the Android SDK, and Xcode (macOS) for iOS.
 2. From the repo root: `flutter pub get`
-3. Quality gate: `bash tool/check.sh` (pub get, gen-l10n, format, analyze, tests). GitHub Actions runs the same script on every pull request and on pushes to `main`.
+3. Quality gate: `bash tool/check.sh` (pub get, gen-l10n, Drift `build_runner`, format, analyze, tests). GitHub Actions runs the same script on every pull request and on pushes to `main`.
 4. Run: `flutter run` (Android emulator/device now; iOS requires macOS)
 
-Later tasks add Drift code generation (`dart run build_runner build --delete-conflicting-outputs`), which will also be wired into `tool/check.sh`.
+Drift generates `lib/data/database.g.dart` (not committed). After changing tables, run `dart run build_runner build`, then dump the schema with `dart run drift_dev schema dump lib/data/database.dart drift_schemas/drift_schema_v1.json` when the version changes, and regenerate migration helpers with `dart run drift_dev schema generate drift_schemas/ test/data/generated_migrations/`.
 
 ## AI-assisted development
 
