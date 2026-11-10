@@ -12,6 +12,7 @@ import 'package:zero_cart/l10n/generated/app_localizations.dart';
 Future<void> showInboxEditSheet(BuildContext context, InboxItem item) {
   return showModalBottomSheet<void>(
     context: context,
+    useRootNavigator: true,
     isScrollControlled: true,
     showDragHandle: true,
     builder: (sheetContext) {
