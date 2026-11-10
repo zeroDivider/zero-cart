@@ -1,6 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:zero_cart/app/app.dart';
-import 'package:zero_cart/app/router.dart';
 import 'package:zero_cart/features/home/ui/home_screen.dart';
 
 void main() {
