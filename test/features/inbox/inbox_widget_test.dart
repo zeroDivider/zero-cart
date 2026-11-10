@@ -115,6 +115,10 @@ void main() {
     await tester.tap(find.text('Eggs'));
     await pumpApp(tester, harness);
 
+    // Sheet is on the root navigator so the shell FAB cannot intercept CTAs.
+    expect(find.byType(InboxEditSheet), findsOneWidget);
+    expect(find.byType(FloatingActionButton).hitTestable(), findsNothing);
+
     await tester.enterText(
       find.byKey(const Key('inbox_edit_title')),
       'Eggs free-range',
