@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:zero_cart/core/widgets/quick_add_fab.dart';
 import 'package:zero_cart/l10n/generated/app_localizations.dart';
 
-/// Stores tab placeholder with Quick add FAB.
+/// Stores tab placeholder. Quick add FAB lives on the tab shell.
 class StoresScreen extends StatelessWidget {
   const StoresScreen({super.key});
 
@@ -17,7 +16,6 @@ class StoresScreen extends StatelessWidget {
           style: Theme.of(context).textTheme.headlineSmall,
         ),
       ),
-      floatingActionButton: const QuickAddFab(),
     );
   }
 }

@@ -1,17 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:zero_cart/l10n/generated/app_localizations.dart';
 
-/// Coral Quick add FAB on the three tab screens. No-op until APP-008.
+/// Coral Quick add FAB (D-02). [onPressed] is supplied by the shell or screen.
 class QuickAddFab extends StatelessWidget {
-  const QuickAddFab({super.key, this.onPressed});
+  const QuickAddFab({
+    super.key,
+    required this.heroTag,
+    required this.onPressed,
+  });
 
-  final VoidCallback? onPressed;
+  /// Distinct hero tag when more than one FAB may be mounted.
+  final Object heroTag;
+  final VoidCallback onPressed;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     return FloatingActionButton(
-      onPressed: onPressed ?? () {},
+      heroTag: heroTag,
+      onPressed: onPressed,
       tooltip: l10n.quickAdd,
       child: const Icon(Icons.add),
     );
