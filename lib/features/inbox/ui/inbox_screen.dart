@@ -86,7 +86,7 @@ class _InboxList extends ConsumerWidget {
     final l10n = AppLocalizations.of(context);
     final colorScheme = Theme.of(context).colorScheme;
     final tokens = Theme.of(context).extension<AppTokens>()!;
-    final repository = ref.read(inboxRepositoryProvider);
+    final repository = ref.watch(inboxRepositoryProvider);
 
     return ListView.separated(
       itemCount: items.length,
