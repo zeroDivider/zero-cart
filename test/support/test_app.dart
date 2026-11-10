@@ -28,8 +28,8 @@ class TestAppHarness {
   TestAppHarness({
     required this.db,
     required this.refreshInbox,
-    required StreamController<List<InboxItem>> inboxController,
-  }) : _inboxController = inboxController;
+    required StreamController<List<InboxItem>> inboxUpdates,
+  }) : _inboxController = inboxUpdates;
 
   final AppDatabase db;
   final Future<void> Function() refreshInbox;
@@ -106,7 +106,7 @@ Future<TestAppHarness> pumpTestApp(
   return TestAppHarness(
     db: db,
     refreshInbox: refreshInbox,
-    inboxController: inboxController,
+    inboxUpdates: inboxController,
   );
 }
 
