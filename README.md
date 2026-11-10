@@ -53,17 +53,14 @@ Open `design/shopping-app-prototype.html` in a browser to see the intended desig
 
 ## Getting started
 
-Verified with **Flutter 3.47.9** (stable channel, Dart 3.13.7).
+Verified with **Flutter 3.47.9** (stable channel, Dart 3.13.7). The Flutter version is pinned in `pubspec.yaml` (`environment.flutter`) and CI reads that same value.
 
-1. Install the Flutter stable SDK, Android Studio or the Android SDK, and Xcode (macOS) for iOS.
+1. Install the Flutter stable SDK matching the pin above, Android Studio or the Android SDK, and Xcode (macOS) for iOS.
 2. From the repo root: `flutter pub get`
-3. Quality checks (until `tool/check.sh` exists in APP-005):  
-   `dart format --output=none --set-exit-if-changed .`  
-   `flutter analyze`  
-   `flutter test`
+3. Quality gate: `bash tool/check.sh` (pub get, gen-l10n, format, analyze, tests). GitHub Actions runs the same script on every pull request and on pushes to `main`.
 4. Run: `flutter run` (Android emulator/device now; iOS requires macOS)
 
-Later tasks add code generation (`dart run build_runner build --delete-conflicting-outputs`) and `tool/check.sh`.
+Later tasks add Drift code generation (`dart run build_runner build --delete-conflicting-outputs`), which will also be wired into `tool/check.sh`.
 
 ## AI-assisted development
 
