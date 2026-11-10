@@ -9,7 +9,7 @@ void main() {
 
   test('Clock typedef accepts a fixed instant for tests', () {
     final fixed = DateTime.utc(2026, 11, 10, 12);
-    Clock clock = () => fixed;
+    DateTime clock() => fixed;
     expect(clock(), fixed);
   });
 }
