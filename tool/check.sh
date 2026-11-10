@@ -7,9 +7,11 @@ cd "$(dirname "$0")/.."
 echo "==> dart pub get"
 dart pub get
 
-# Code generation: gen-l10n now; build_runner once Drift exists (APP-006).
 echo "==> flutter gen-l10n"
 flutter gen-l10n
+
+echo "==> dart run build_runner build"
+dart run build_runner build
 
 echo "==> dart format --output=none --set-exit-if-changed ."
 dart format --output=none --set-exit-if-changed .
