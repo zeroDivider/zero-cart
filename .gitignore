@@ -60,3 +60,6 @@ lib/l10n/generated/
 # Local Android config
 **/android/local.properties
 **/android/key.properties
+
+# Local verification artifacts
+/tmp/
