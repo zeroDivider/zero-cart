@@ -71,7 +71,7 @@ This project is planned with Claude and implemented with Cursor Agent, under hum
 
 ## Licence and credits
 
-Source code: MIT, see `LICENSE`. Fonts are bundled under their own licences (texts in `assets/fonts/`): **DynaPuff** (SIL Open Font License 1.1) for the wordmark and **Roboto** for the interface (notice supplied with the font files: unrestricted use in apps). Both are registered with Flutter's `LicenseRegistry` and appear on the in-app licences page. Dependency licences are shown there as well.
+Source code: MIT, see `LICENSE`. Fonts are bundled under their own licences (texts in `assets/fonts/`): **DynaPuff** (SIL Open Font License 1.1) for the wordmark and **Roboto** (Apache License 2.0) for the interface. Both are registered with Flutter's `LicenseRegistry` and appear on the in-app licences page. Dependency licences are shown there as well.
 
 ## Contributing
 
