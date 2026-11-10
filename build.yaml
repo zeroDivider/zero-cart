@@ -1,0 +1,13 @@
+targets:
+  $default:
+    builders:
+      drift_dev:
+        options:
+          # ISO-8601 text preserves UTC and aligns with backup timestamps.
+          # Documented in docs/data-model.md §3.1.
+          store_date_time_values_as_text: true
+          databases:
+            # Named entry for make-migrations; APP-006 keeps the flat snapshot
+            # path required by the task via `drift_dev schema dump`.
+            zero_cart: lib/data/database.dart
+
