@@ -15,7 +15,12 @@ Future<void> showInboxEditSheet(BuildContext context, InboxItem item) {
     isScrollControlled: true,
     showDragHandle: true,
     builder: (sheetContext) {
-      return InboxEditSheet(item: item);
+      return Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.viewInsetsOf(sheetContext).bottom,
+        ),
+        child: InboxEditSheet(item: item),
+      );
     },
   );
 }
@@ -121,73 +126,78 @@ class _InboxEditSheetState extends ConsumerState<InboxEditSheet> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final tokens = Theme.of(context).extension<AppTokens>()!;
-    final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
     final canSave = !_titleIsBlank && !_submitting;
 
-    return Padding(
-      padding: EdgeInsets.only(
-        left: tokens.spacing16,
-        right: tokens.spacing16,
-        bottom: bottomInset + tokens.spacing16,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(l10n.editItem, style: Theme.of(context).textTheme.titleLarge),
-          SizedBox(height: tokens.spacing16),
-          TextField(
-            key: const Key('inbox_edit_title'),
-            controller: _titleController,
-            textInputAction: TextInputAction.done,
-            maxLength: maxItemTitleLength,
-            decoration: InputDecoration(
-              labelText: l10n.itemTitleLabel,
-              hintText: l10n.itemTitleHint,
-              errorText: _titleError,
+    return SafeArea(
+      top: false,
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(
+          tokens.spacing16,
+          tokens.spacing8,
+          tokens.spacing16,
+          tokens.spacing16,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(l10n.editItem, style: Theme.of(context).textTheme.titleLarge),
+            SizedBox(height: tokens.spacing16),
+            TextField(
+              key: const Key('inbox_edit_title'),
+              controller: _titleController,
+              textInputAction: TextInputAction.done,
+              maxLength: maxItemTitleLength,
               buildCounter: _titleCounter,
-            ),
-            onSubmitted: (_) {
-              if (canSave || _titleIsBlank) {
-                _save();
-              }
-            },
-          ),
-          SizedBox(height: tokens.spacing12),
-          TextField(
-            key: const Key('inbox_edit_description'),
-            controller: _descriptionController,
-            maxLength: maxItemDescriptionLength,
-            decoration: InputDecoration(
-              labelText: l10n.itemDescriptionLabel,
-              hintText: l10n.itemDescriptionHint,
-            ),
-          ),
-          if (_writeError != null) ...[
-            SizedBox(height: tokens.spacing8),
-            Text(
-              _writeError!,
-              style: Theme.of(context).textTheme.bodySmall
-                  ?.copyWith(color: Theme.of(context).colorScheme.error),
-            ),
-          ],
-          SizedBox(height: tokens.spacing16),
-          Row(
-            children: [
-              TextButton(
-                key: const Key('inbox_edit_remove'),
-                onPressed: _submitting ? null : _remove,
-                child: Text(l10n.remove),
+              decoration: InputDecoration(
+                labelText: l10n.itemTitleLabel,
+                hintText: l10n.itemTitleHint,
+                errorText: _titleError,
               ),
-              const Spacer(),
-              FilledButton(
-                key: const Key('inbox_edit_save'),
-                onPressed: canSave ? _save : (_titleIsBlank ? _save : null),
-                child: Text(l10n.save),
+              onSubmitted: (_) {
+                if (canSave || _titleIsBlank) {
+                  _save();
+                }
+              },
+            ),
+            SizedBox(height: tokens.spacing12),
+            TextField(
+              key: const Key('inbox_edit_description'),
+              controller: _descriptionController,
+              maxLength: maxItemDescriptionLength,
+              decoration: InputDecoration(
+                labelText: l10n.itemDescriptionLabel,
+                hintText: l10n.itemDescriptionHint,
+                counterText: '',
+              ),
+            ),
+            if (_writeError != null) ...[
+              SizedBox(height: tokens.spacing8),
+              Text(
+                _writeError!,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.error,
+                ),
               ),
             ],
-          ),
-        ],
+            SizedBox(height: tokens.spacing16),
+            Row(
+              children: [
+                TextButton(
+                  key: const Key('inbox_edit_remove'),
+                  onPressed: _submitting ? null : _remove,
+                  child: Text(l10n.remove),
+                ),
+                const Spacer(),
+                FilledButton(
+                  key: const Key('inbox_edit_save'),
+                  onPressed: canSave ? _save : (_titleIsBlank ? _save : null),
+                  child: Text(l10n.save),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -199,7 +209,7 @@ class _InboxEditSheetState extends ConsumerState<InboxEditSheet> {
     required int? maxLength,
   }) {
     if (currentLength < 40 || maxLength == null) {
-      return null;
+      return const SizedBox.shrink();
     }
     return Text('$currentLength / $maxLength');
   }

@@ -12,7 +12,12 @@ Future<void> showQuickAddSheet(BuildContext context) {
     isScrollControlled: true,
     showDragHandle: true,
     builder: (sheetContext) {
-      return const QuickAddSheet();
+      return Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.viewInsetsOf(sheetContext).bottom,
+        ),
+        child: const QuickAddSheet(),
+      );
     },
   );
 }
@@ -117,82 +122,89 @@ class _QuickAddSheetState extends ConsumerState<QuickAddSheet> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final tokens = Theme.of(context).extension<AppTokens>()!;
-    final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
     final canSubmit = !_titleIsBlank && !_submitting;
 
-    return Padding(
-      padding: EdgeInsets.only(
-        left: tokens.spacing16,
-        right: tokens.spacing16,
-        bottom: bottomInset + tokens.spacing16,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(l10n.quickAdd, style: Theme.of(context).textTheme.titleLarge),
-          SizedBox(height: tokens.spacing16),
-          TextField(
-            key: const Key('quick_add_title'),
-            controller: _titleController,
-            focusNode: _titleFocus,
-            autofocus: true,
-            textInputAction: TextInputAction.done,
-            maxLength: maxItemTitleLength,
-            decoration: InputDecoration(
-              labelText: l10n.itemTitleLabel,
-              hintText: l10n.itemTitleHint,
-              errorText: _titleError,
+    return SafeArea(
+      top: false,
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(
+          tokens.spacing16,
+          tokens.spacing8,
+          tokens.spacing16,
+          tokens.spacing16,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(l10n.quickAdd, style: Theme.of(context).textTheme.titleLarge),
+            SizedBox(height: tokens.spacing16),
+            TextField(
+              key: const Key('quick_add_title'),
+              controller: _titleController,
+              focusNode: _titleFocus,
+              autofocus: true,
+              textInputAction: TextInputAction.done,
+              maxLength: maxItemTitleLength,
               buildCounter: _titleCounter,
-            ),
-            onSubmitted: (_) {
-              if (canSubmit) {
-                _submit(addAnother: false);
-              } else if (_titleIsBlank) {
-                _submit(addAnother: false);
-              }
-            },
-          ),
-          SizedBox(height: tokens.spacing12),
-          TextField(
-            key: const Key('quick_add_description'),
-            controller: _descriptionController,
-            textInputAction: TextInputAction.done,
-            maxLength: maxItemDescriptionLength,
-            decoration: InputDecoration(
-              labelText: l10n.itemDescriptionLabel,
-              hintText: l10n.itemDescriptionHint,
-            ),
-          ),
-          if (_writeError != null) ...[
-            SizedBox(height: tokens.spacing8),
-            Text(
-              _writeError!,
-              style: Theme.of(context).textTheme.bodySmall
-                  ?.copyWith(color: Theme.of(context).colorScheme.error),
-            ),
-          ],
-          SizedBox(height: tokens.spacing16),
-          Row(
-            children: [
-              TextButton(
-                key: const Key('quick_add_another'),
-                onPressed: canSubmit
-                    ? () => _submit(addAnother: true)
-                    : (_titleIsBlank ? () => _submit(addAnother: true) : null),
-                child: Text(l10n.addAnother),
+              decoration: InputDecoration(
+                labelText: l10n.itemTitleLabel,
+                hintText: l10n.itemTitleHint,
+                errorText: _titleError,
               ),
-              const Spacer(),
-              FilledButton(
-                key: const Key('quick_add_submit'),
-                onPressed: canSubmit
-                    ? () => _submit(addAnother: false)
-                    : (_titleIsBlank ? () => _submit(addAnother: false) : null),
-                child: Text(l10n.add),
+              onSubmitted: (_) {
+                if (canSubmit || _titleIsBlank) {
+                  _submit(addAnother: false);
+                }
+              },
+            ),
+            SizedBox(height: tokens.spacing12),
+            TextField(
+              key: const Key('quick_add_description'),
+              controller: _descriptionController,
+              textInputAction: TextInputAction.done,
+              maxLength: maxItemDescriptionLength,
+              decoration: InputDecoration(
+                labelText: l10n.itemDescriptionLabel,
+                hintText: l10n.itemDescriptionHint,
+                counterText: '',
+              ),
+            ),
+            if (_writeError != null) ...[
+              SizedBox(height: tokens.spacing8),
+              Text(
+                _writeError!,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.error,
+                ),
               ),
             ],
-          ),
-        ],
+            SizedBox(height: tokens.spacing16),
+            Row(
+              children: [
+                TextButton(
+                  key: const Key('quick_add_another'),
+                  onPressed: canSubmit
+                      ? () => _submit(addAnother: true)
+                      : (_titleIsBlank
+                            ? () => _submit(addAnother: true)
+                            : null),
+                  child: Text(l10n.addAnother),
+                ),
+                const Spacer(),
+                FilledButton(
+                  key: const Key('quick_add_submit'),
+                  onPressed: canSubmit
+                      ? () => _submit(addAnother: false)
+                      : (_titleIsBlank
+                            ? () => _submit(addAnother: false)
+                            : null),
+                  child: Text(l10n.add),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -204,7 +216,7 @@ class _QuickAddSheetState extends ConsumerState<QuickAddSheet> {
     required int? maxLength,
   }) {
     if (currentLength < 40 || maxLength == null) {
-      return null;
+      return const SizedBox.shrink();
     }
     return Text('$currentLength / $maxLength');
   }

@@ -6,8 +6,9 @@ import 'support/test_app.dart';
 
 void main() {
   testWidgets('app shell builds on Home', (tester) async {
-    await pumpTestApp(tester);
+    final harness = await pumpTestApp(tester);
     expect(find.byType(ZeroCartApp), findsOneWidget);
     expect(find.byType(HomeScreen), findsOneWidget);
+    await harness.dispose(tester);
   });
 }

@@ -7,12 +7,12 @@ import 'package:zero_cart/data/database.dart';
 /// Business rules and Drift access for inbox capture items.
 class InboxRepository {
   InboxRepository({
-    required AppDatabase db,
-    required Clock clock,
-    required IdGenerator idGenerator,
-  }) : _db = db,
-       _clock = clock,
-       _idGenerator = idGenerator;
+    required AppDatabase database,
+    required Clock now,
+    required IdGenerator newId,
+  }) : _db = database,
+       _clock = now,
+       _idGenerator = newId;
 
   final AppDatabase _db;
   final Clock _clock;
