@@ -5,5 +5,5 @@ import 'package:zero_cart/app/font_licences.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   registerBundledFontLicences();
-  runApp(const ZeroCartApp());
+  runApp(ZeroCartApp());
 }

@@ -7,19 +7,19 @@ import 'package:zero_cart/l10n/generated/app_localizations.dart';
 
 /// Root widget: themes, localisation, and go_router.
 class ZeroCartApp extends StatelessWidget {
-  const ZeroCartApp({super.key, this.router});
+  ZeroCartApp({super.key, GoRouter? router})
+    : router = router ?? AppRouter.create();
 
-  /// Optional override for tests.
-  final GoRouter? router;
+  /// Router for the app; injectable in tests.
+  final GoRouter router;
 
   @override
   Widget build(BuildContext context) {
-    final goRouter = router ?? AppRouter.create();
     return MaterialApp.router(
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
       themeMode: ThemeMode.system,
-      routerConfig: goRouter,
+      routerConfig: router,
       localeResolutionCallback: resolveAppLocale,
       supportedLocales: appSupportedLocales,
       localizationsDelegates: const [
