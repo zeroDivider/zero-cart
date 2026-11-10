@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:go_router/go_router.dart';
 import 'package:zero_cart/app/locale_resolution.dart';
+import 'package:zero_cart/app/root_scaffold_messenger.dart';
 import 'package:zero_cart/app/router.dart';
 import 'package:zero_cart/app/theme/app_theme.dart';
 import 'package:zero_cart/l10n/generated/app_localizations.dart';
@@ -16,6 +18,7 @@ class ZeroCartApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
+      scaffoldMessengerKey: rootScaffoldMessengerKey,
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
       themeMode: ThemeMode.system,

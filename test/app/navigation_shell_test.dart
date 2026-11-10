@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:zero_cart/app/app.dart';
 import 'package:zero_cart/app/router.dart';
 import 'package:zero_cart/features/home/ui/home_screen.dart';
 import 'package:zero_cart/features/inbox/ui/inbox_screen.dart';
 import 'package:zero_cart/features/settings/ui/settings_placeholder_screen.dart';
 import 'package:zero_cart/features/stores/ui/stores_screen.dart';
 
+import '../support/test_app.dart';
+
 void main() {
   testWidgets('tabs switch and keep branch widgets mounted', (tester) async {
     final router = AppRouter.create();
-    await tester.pumpWidget(ZeroCartApp(router: router));
-    await tester.pumpAndSettle();
+    await pumpTestApp(tester, router: router);
 
     expect(find.byType(HomeScreen), findsOneWidget);
     expect(find.byType(InboxScreen), findsNothing);
@@ -44,8 +44,7 @@ void main() {
   });
 
   testWidgets('settings icon appears only on Home', (tester) async {
-    await tester.pumpWidget(ZeroCartApp(router: AppRouter.create()));
-    await tester.pumpAndSettle();
+    await pumpTestApp(tester);
 
     expect(find.byKey(const Key('home_settings_button')), findsOneWidget);
 
@@ -64,8 +63,7 @@ void main() {
 
   testWidgets('back from settings returns to Home', (tester) async {
     final router = AppRouter.create();
-    await tester.pumpWidget(ZeroCartApp(router: router));
-    await tester.pumpAndSettle();
+    await pumpTestApp(tester, router: router);
 
     await tester.tap(find.byKey(const Key('home_settings_button')));
     await tester.pumpAndSettle();

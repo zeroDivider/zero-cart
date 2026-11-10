@@ -55,5 +55,70 @@
   "aboutPlaceholder": "About",
   "@aboutPlaceholder": {
     "description": "Placeholder title for the about screen"
+  },
+  "itemTitleLabel": "Title",
+  "@itemTitleLabel": {
+    "description": "Label for item title field in add/edit sheets"
+  },
+  "itemTitleHint": "What do you need?",
+  "@itemTitleHint": {
+    "description": "Hint for item title field"
+  },
+  "itemDescriptionLabel": "Details",
+  "@itemDescriptionLabel": {
+    "description": "Label for optional item description field"
+  },
+  "itemDescriptionHint": "Details (optional)",
+  "@itemDescriptionHint": {
+    "description": "Hint for optional item description field"
+  },
+  "add": "Add",
+  "@add": {
+    "description": "Primary confirm button on Quick add sheet"
+  },
+  "addAnother": "Add another",
+  "@addAnother": {
+    "description": "Secondary button that saves and keeps Quick add open"
+  },
+  "save": "Save",
+  "@save": {
+    "description": "Primary confirm button on edit sheets"
+  },
+  "remove": "Remove",
+  "@remove": {
+    "description": "Destructive remove action and semantic label"
+  },
+  "undo": "Undo",
+  "@undo": {
+    "description": "SnackBar action to restore a removed row"
+  },
+  "editItem": "Edit item",
+  "@editItem": {
+    "description": "Title of the inbox edit bottom sheet"
+  },
+  "titleRequired": "Enter a title",
+  "@titleRequired": {
+    "description": "Inline validation error when title is empty"
+  },
+  "writeFailed": "Couldn't save. Try again.",
+  "@writeFailed": {
+    "description": "Inline error when a write to the database fails"
+  },
+  "removedItem": "Removed {title}",
+  "@removedItem": {
+    "description": "SnackBar message after removing an item",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "inboxEmptyTitle": "Inbox is empty",
+  "@inboxEmptyTitle": {
+    "description": "Empty-state headline on the Inbox tab"
+  },
+  "inboxEmptyBody": "Add things the moment you think of them.",
+  "@inboxEmptyBody": {
+    "description": "Empty-state supporting text on the Inbox tab"
   }
 }

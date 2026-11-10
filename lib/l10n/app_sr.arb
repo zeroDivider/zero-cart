@@ -13,5 +13,27 @@
   "listDetailsPlaceholder": "Lista",
   "wishlistPlaceholder": "Lista želja",
   "archivePlaceholder": "Arhiva",
-  "aboutPlaceholder": "O aplikaciji"
+  "aboutPlaceholder": "O aplikaciji",
+  "itemTitleLabel": "Naziv",
+  "itemTitleHint": "Šta ti treba?",
+  "itemDescriptionLabel": "Detalji",
+  "itemDescriptionHint": "Detalji (opciono)",
+  "add": "Dodaj",
+  "addAnother": "Dodaj još",
+  "save": "Sačuvaj",
+  "remove": "Ukloni",
+  "undo": "Opozovi",
+  "editItem": "Izmeni stavku",
+  "titleRequired": "Unesi naziv",
+  "writeFailed": "Nije sačuvano. Pokušaj ponovo.",
+  "removedItem": "Uklonjeno {title}",
+  "@removedItem": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "inboxEmptyTitle": "Sanduče je prazno",
+  "inboxEmptyBody": "Dodaj stvari čim ti padnu na pamet."
 }

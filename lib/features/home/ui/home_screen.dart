@@ -3,10 +3,9 @@ import 'package:go_router/go_router.dart';
 import 'package:zero_cart/app/router.dart';
 import 'package:zero_cart/app/theme/app_text.dart';
 import 'package:zero_cart/app/theme/app_tokens.dart';
-import 'package:zero_cart/core/widgets/quick_add_fab.dart';
 import 'package:zero_cart/l10n/generated/app_localizations.dart';
 
-/// Home tab: wordmark, settings entry (D-01), placeholder body, Quick add FAB.
+/// Home tab: wordmark, settings entry (D-01), placeholder body.
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
@@ -50,7 +49,6 @@ class HomeScreen extends StatelessWidget {
           style: Theme.of(context).textTheme.headlineSmall,
         ),
       ),
-      floatingActionButton: const QuickAddFab(),
     );
   }
 }
