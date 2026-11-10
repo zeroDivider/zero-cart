@@ -1,0 +1,59 @@
+{
+  "@@locale": "en",
+  "appTitle": "ZeroCart",
+  "@appTitle": {
+    "description": "App name and Home wordmark"
+  },
+  "navHome": "Home",
+  "@navHome": {
+    "description": "NavigationBar label for the Home tab"
+  },
+  "navInbox": "Inbox",
+  "@navInbox": {
+    "description": "NavigationBar label for the Inbox tab"
+  },
+  "navStores": "Stores",
+  "@navStores": {
+    "description": "NavigationBar label for the Stores tab"
+  },
+  "settings": "Settings",
+  "@settings": {
+    "description": "Settings screen title and Home app-bar icon semantics"
+  },
+  "quickAdd": "Quick add",
+  "@quickAdd": {
+    "description": "Floating action button label and semantics on tab screens"
+  },
+  "homePlaceholder": "Home",
+  "@homePlaceholder": {
+    "description": "Placeholder body title on the Home tab"
+  },
+  "inboxPlaceholder": "Inbox",
+  "@inboxPlaceholder": {
+    "description": "Placeholder body title on the Inbox tab"
+  },
+  "storesPlaceholder": "Stores",
+  "@storesPlaceholder": {
+    "description": "Placeholder body title on the Stores tab"
+  },
+  "storeDetailsPlaceholder": "Store",
+  "@storeDetailsPlaceholder": {
+    "description": "Placeholder title for store details"
+  },
+  "listDetailsPlaceholder": "List",
+  "@listDetailsPlaceholder": {
+    "description": "Placeholder title for list details"
+  },
+  "wishlistPlaceholder": "Wishlist",
+  "@wishlistPlaceholder": {
+    "description": "Placeholder title for store wishlist"
+  },
+  "archivePlaceholder": "Archive",
+  "@archivePlaceholder": {
+    "description": "Placeholder title for the archive screen"
+  },
+  "aboutPlaceholder": "About",
+  "@aboutPlaceholder": {
+    "description": "Placeholder title for the about screen"
+  }
+}

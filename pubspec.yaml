@@ -9,6 +9,10 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  go_router: 18.1.4
+  intl: ^0.20.3
 
 dev_dependencies:
   flutter_test:
@@ -16,6 +20,7 @@ dev_dependencies:
   flutter_lints: ^6.0.0
 
 flutter:
+  generate: true
   uses-material-design: true
   assets:
     - assets/fonts/Roboto-LICENSE.txt
