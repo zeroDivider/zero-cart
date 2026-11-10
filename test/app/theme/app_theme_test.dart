@@ -179,10 +179,7 @@ void main() {
     });
 
     test('snack bar is floating', () {
-      expect(
-        AppTheme.light.snackBarTheme.behavior,
-        SnackBarBehavior.floating,
-      );
+      expect(AppTheme.light.snackBarTheme.behavior, SnackBarBehavior.floating);
     });
 
     test('divider uses outlineVariant', () {
@@ -203,7 +200,7 @@ void main() {
         continue;
       }
       final normalized = entity.path.replaceAll('\\', '/');
-      if (normalized.contains('/lib/app/theme/')) {
+      if (normalized.contains('lib/app/theme/')) {
         continue;
       }
       final contents = entity.readAsStringSync();

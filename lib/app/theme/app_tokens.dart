@@ -190,7 +190,11 @@ class AppTokens extends ThemeExtension<AppTokens> {
       },
       success: Color.lerp(success, other.success, t)!,
       onSuccess: Color.lerp(onSuccess, other.onSuccess, t)!,
-      successContainer: Color.lerp(successContainer, other.successContainer, t)!,
+      successContainer: Color.lerp(
+        successContainer,
+        other.successContainer,
+        t,
+      )!,
       onSuccessContainer: Color.lerp(
         onSuccessContainer,
         other.onSuccessContainer,
