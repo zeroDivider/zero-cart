@@ -1,3 +1,17 @@
 {
-  "@@locale": "sr_Latn"
+  "@@locale": "sr_Latn",
+  "appTitle": "ZeroCart",
+  "navHome": "Početna",
+  "navInbox": "Sanduče",
+  "navStores": "Prodavnice",
+  "settings": "Podešavanja",
+  "quickAdd": "Brzo dodavanje",
+  "homePlaceholder": "Početna",
+  "inboxPlaceholder": "Sanduče",
+  "storesPlaceholder": "Prodavnice",
+  "storeDetailsPlaceholder": "Prodavnica",
+  "listDetailsPlaceholder": "Lista",
+  "wishlistPlaceholder": "Lista želja",
+  "archivePlaceholder": "Arhiva",
+  "aboutPlaceholder": "O aplikaciji"
 }
