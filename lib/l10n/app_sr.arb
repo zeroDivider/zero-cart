@@ -35,5 +35,36 @@
     }
   },
   "inboxEmptyTitle": "Sanduče je prazno",
-  "inboxEmptyBody": "Dodaj stvari čim ti padnu na pamet."
+  "inboxEmptyBody": "Dodaj stvari čim ti padnu na pamet.",
+  "newStore": "Nova prodavnica",
+  "editStore": "Izmeni prodavnicu",
+  "storeNameLabel": "Naziv",
+  "storeNameHint": "Naziv prodavnice",
+  "storeNameRequired": "Unesi naziv prodavnice",
+  "storeColorLabel": "Boja",
+  "storeColorSemantics": "Boja {colorKey}",
+  "@storeColorSemantics": {
+    "placeholders": {
+      "colorKey": {
+        "type": "String"
+      }
+    }
+  },
+  "storeAddressLabel": "Adresa",
+  "storeAddressHint": "Adresa (opciono)",
+  "storeNoteLabel": "Beleška",
+  "storeNoteHint": "Beleška (opciono)",
+  "cancel": "Otkaži",
+  "archive": "Arhiva",
+  "storesEmptyTitle": "Još nema prodavnica",
+  "storesEmptyBody": "Napravi prodavnicu da započneš prvu korpu.",
+  "createStore": "Napravi prodavnicu",
+  "storeActiveLists": "{count, plural, one{{count} aktivna lista} few{{count} aktivne liste} other{{count} aktivnih listi}}",
+  "@storeActiveLists": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 }
