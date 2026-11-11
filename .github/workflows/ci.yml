@@ -24,3 +24,16 @@ jobs:
 
       - name: Run quality gate
         run: bash tool/check.sh
+
+      # Coverage is tracked, not enforced (docs/testing-strategy.md).
+      - name: Collect coverage
+        run: bash tool/coverage.sh
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: coverage/lcov.filtered.info
+          flags: flutter
+          name: zero-cart
+          fail_ci_if_error: false
