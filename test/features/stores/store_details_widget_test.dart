@@ -161,6 +161,46 @@ void main() {
     await harness.dispose(tester);
   });
 
+  testWidgets('archive dialog uses plural copy for multiple lists', (
+    tester,
+  ) async {
+    final harness = await pumpTestApp(
+      tester,
+      router: AppRouter.create(initialLocation: AppRoutes.stores),
+    );
+    final store = await tester.runAsync(
+      () => _repo(harness).create(name: 'Lidl', colorKey: 'lime'),
+    );
+    await tester.runAsync(() async {
+      await insertActiveList(
+        harness.db,
+        id: 'list-1',
+        storeId: store!.id,
+        name: 'Weekend',
+      );
+      await insertActiveList(
+        harness.db,
+        id: 'list-2',
+        storeId: store.id,
+        name: 'Party',
+      );
+    });
+    await pumpApp(tester, harness);
+
+    await tester.tap(find.byKey(Key('store_row_${store!.id}')));
+    await pumpApp(tester, harness);
+    await _tapButton(tester, const Key('store_details_archive'), harness);
+
+    expect(find.byKey(const Key('archive_store_dialog')), findsOneWidget);
+    expect(
+      find.text('2 active lists will be hidden until you restore the store.'),
+      findsOneWidget,
+    );
+    await tester.tap(find.text('Cancel'));
+    await pumpApp(tester, harness);
+    await harness.dispose(tester);
+  });
+
   testWidgets('cancel archive dialog leaves store active', (tester) async {
     final harness = await pumpTestApp(
       tester,
