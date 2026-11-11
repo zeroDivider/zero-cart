@@ -125,30 +125,34 @@ class _ArchivedStoreRow extends ConsumerWidget {
         child: Row(
           children: [
             Expanded(
-              child: InkWell(
-                key: Key('archived_store_row_${store.id}'),
-                onTap: () =>
-                    context.push(AppRoutes.storeDetailsLocation(store.id)),
-                child: Padding(
-                  padding: EdgeInsets.symmetric(vertical: tokens.spacing8),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: tokens.spacing16,
-                        height: tokens.spacing16,
-                        decoration: BoxDecoration(
-                          color: tokens.storeColor(store.colorKey),
-                          shape: BoxShape.circle,
+              child: Semantics(
+                button: true,
+                label: store.name,
+                child: InkWell(
+                  key: Key('archived_store_row_${store.id}'),
+                  onTap: () =>
+                      context.push(AppRoutes.storeDetailsLocation(store.id)),
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(vertical: tokens.spacing8),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: tokens.spacing16,
+                          height: tokens.spacing16,
+                          decoration: BoxDecoration(
+                            color: tokens.storeColor(store.colorKey),
+                            shape: BoxShape.circle,
+                          ),
                         ),
-                      ),
-                      SizedBox(width: tokens.spacing12),
-                      Expanded(
-                        child: Text(
-                          store.name,
-                          style: Theme.of(context).textTheme.bodyLarge,
+                        SizedBox(width: tokens.spacing12),
+                        Expanded(
+                          child: Text(
+                            store.name,
+                            style: Theme.of(context).textTheme.bodyLarge,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
