@@ -182,6 +182,10 @@
   "@archive": {
     "description": "Archive screen title and Stores app-bar action semantics"
   },
+  "archiveAction": "Archive",
+  "@archiveAction": {
+    "description": "Confirm action to archive a store from store details"
+  },
   "storesEmptyTitle": "No stores yet",
   "@storesEmptyTitle": {
     "description": "Empty-state headline on the Stores tab"
@@ -202,5 +206,62 @@
         "type": "int"
       }
     }
+  },
+  "edit": "Edit",
+  "@edit": {
+    "description": "App-bar action to edit a store from store details"
+  },
+  "restore": "Restore",
+  "@restore": {
+    "description": "Action to restore an archived store or list"
+  },
+  "archiveStoreTitle": "Archive store?",
+  "@archiveStoreTitle": {
+    "description": "Title of the archive-store confirmation dialog"
+  },
+  "archiveStoreBody": "{count, plural, one{{count} active list will be hidden until you restore the store.} other{{count} active lists will be hidden until you restore the store.}}",
+  "@archiveStoreBody": {
+    "description": "Body of the archive-store dialog naming the active-list count",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "storeListsSection": "Shopping lists",
+  "@storeListsSection": {
+    "description": "Section header for lists on store details"
+  },
+  "storeWishlistSection": "Wishlist",
+  "@storeWishlistSection": {
+    "description": "Section header for wishlist on store details"
+  },
+  "storeListsPlaceholder": "Lists will show here.",
+  "@storeListsPlaceholder": {
+    "description": "Placeholder under Shopping lists until APP-011"
+  },
+  "storeWishlistPlaceholder": "Wishlist will show here.",
+  "@storeWishlistPlaceholder": {
+    "description": "Placeholder under Wishlist until APP-016"
+  },
+  "archiveSegmentStores": "Stores",
+  "@archiveSegmentStores": {
+    "description": "Archive screen segment for archived stores"
+  },
+  "archiveSegmentLists": "Lists",
+  "@archiveSegmentLists": {
+    "description": "Archive screen segment for archived lists"
+  },
+  "archiveStoresEmpty": "No archived stores.",
+  "@archiveStoresEmpty": {
+    "description": "Empty state when no archived stores exist"
+  },
+  "archiveListsPlaceholder": "Archived lists will show here.",
+  "@archiveListsPlaceholder": {
+    "description": "Lists segment placeholder until APP-017"
+  },
+  "storeNotFound": "Store not found",
+  "@storeNotFound": {
+    "description": "Body when store details has no matching id"
   }
 }

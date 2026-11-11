@@ -57,6 +57,7 @@
   "storeNoteHint": "Beleška (opciono)",
   "cancel": "Otkaži",
   "archive": "Arhiva",
+  "archiveAction": "Arhiviraj",
   "storesEmptyTitle": "Još nema prodavnica",
   "storesEmptyBody": "Napravi prodavnicu da započneš prvu korpu.",
   "createStore": "Napravi prodavnicu",
@@ -67,5 +68,25 @@
         "type": "int"
       }
     }
-  }
+  },
+  "edit": "Izmeni",
+  "restore": "Vrati",
+  "archiveStoreTitle": "Arhivirati prodavnicu?",
+  "archiveStoreBody": "{count, plural, one{{count} aktivna lista biće sakrivena dok ne vratiš prodavnicu.} few{{count} aktivne liste biće sakrivene dok ne vratiš prodavnicu.} other{{count} aktivnih listi biće sakriveno dok ne vratiš prodavnicu.}}",
+  "@archiveStoreBody": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "storeListsSection": "Liste za kupovinu",
+  "storeWishlistSection": "Lista želja",
+  "storeListsPlaceholder": "Liste će se prikazati ovde.",
+  "storeWishlistPlaceholder": "Lista želja će se prikazati ovde.",
+  "archiveSegmentStores": "Prodavnice",
+  "archiveSegmentLists": "Liste",
+  "archiveStoresEmpty": "Nema arhiviranih prodavnica.",
+  "archiveListsPlaceholder": "Arhivirane liste će se prikazati ovde.",
+  "storeNotFound": "Prodavnica nije pronađena"
 }
