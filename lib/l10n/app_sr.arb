@@ -37,6 +37,7 @@
   "inboxEmptyTitle": "Sanduče je prazno",
   "inboxEmptyBody": "Dodaj stvari čim ti padnu na pamet.",
   "newStore": "Nova prodavnica",
+  "newStoreAction": "+ Nova prodavnica",
   "editStore": "Izmeni prodavnicu",
   "storeNameLabel": "Naziv",
   "storeNameHint": "Naziv prodavnice",
