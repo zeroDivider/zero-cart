@@ -243,11 +243,11 @@ class _ColorChip extends StatelessWidget {
         key: Key('store_color_$colorKey'),
         onTap: onSelected,
         borderRadius: BorderRadius.circular(tokens.radiusPill),
-        child: ConstrainedBox(
-          constraints: BoxConstraints(
-            minWidth: tokens.spacing48,
-            minHeight: tokens.spacing48,
-          ),
+        // Fixed 48dp target — Center under loose Wrap constraints expands to
+        // full width and stacks every colour in its own row.
+        child: SizedBox(
+          width: tokens.spacing48,
+          height: tokens.spacing48,
           child: Center(
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 150),
