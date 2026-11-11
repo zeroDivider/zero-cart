@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:zero_cart/app/router.dart';
 import 'package:zero_cart/app/theme/app_tokens.dart';
-import 'package:zero_cart/features/archive/ui/archive_placeholder_screen.dart';
+import 'package:zero_cart/features/archive/ui/archive_screen.dart';
 import 'package:zero_cart/features/stores/stores_repository.dart';
 import 'package:zero_cart/features/stores/ui/store_form_sheet.dart';
 import 'package:zero_cart/features/stores/ui/stores_screen.dart';
@@ -167,7 +167,7 @@ void main() {
 
     await tester.tap(find.byKey(const Key('stores_archive')));
     await pumpApp(tester, harness);
-    expect(find.byType(ArchivePlaceholderScreen), findsOneWidget);
+    expect(find.byType(ArchiveScreen), findsOneWidget);
     await harness.dispose(tester);
   });
 
