@@ -120,5 +120,83 @@
   "inboxEmptyBody": "Add things the moment you think of them.",
   "@inboxEmptyBody": {
     "description": "Empty-state supporting text on the Inbox tab"
+  },
+  "newStore": "New store",
+  "@newStore": {
+    "description": "Title of the create-store sheet and Stores tab action"
+  },
+  "editStore": "Edit store",
+  "@editStore": {
+    "description": "Title of the edit-store bottom sheet"
+  },
+  "storeNameLabel": "Name",
+  "@storeNameLabel": {
+    "description": "Label for store name field"
+  },
+  "storeNameHint": "Store name",
+  "@storeNameHint": {
+    "description": "Hint for store name field"
+  },
+  "storeNameRequired": "Enter a store name",
+  "@storeNameRequired": {
+    "description": "Inline validation error when store name is empty"
+  },
+  "storeColorLabel": "Colour",
+  "@storeColorLabel": {
+    "description": "Label above store colour chips"
+  },
+  "storeColorSemantics": "{colorKey} colour",
+  "@storeColorSemantics": {
+    "description": "Semantics label for a store colour chip",
+    "placeholders": {
+      "colorKey": {
+        "type": "String"
+      }
+    }
+  },
+  "storeAddressLabel": "Address",
+  "@storeAddressLabel": {
+    "description": "Label for optional store address field"
+  },
+  "storeAddressHint": "Address (optional)",
+  "@storeAddressHint": {
+    "description": "Hint for optional store address field"
+  },
+  "storeNoteLabel": "Note",
+  "@storeNoteLabel": {
+    "description": "Label for optional store note field"
+  },
+  "storeNoteHint": "Note (optional)",
+  "@storeNoteHint": {
+    "description": "Hint for optional store note field"
+  },
+  "cancel": "Cancel",
+  "@cancel": {
+    "description": "Secondary dismiss button on form sheets"
+  },
+  "archive": "Archive",
+  "@archive": {
+    "description": "Archive screen title and Stores app-bar action semantics"
+  },
+  "storesEmptyTitle": "No stores yet",
+  "@storesEmptyTitle": {
+    "description": "Empty-state headline on the Stores tab"
+  },
+  "storesEmptyBody": "Create a store to start your first cart.",
+  "@storesEmptyBody": {
+    "description": "Empty-state supporting text on the Stores tab"
+  },
+  "createStore": "Create a store",
+  "@createStore": {
+    "description": "Primary empty-state action on the Stores tab"
+  },
+  "storeActiveLists": "{count, plural, one{{count} active list} other{{count} active lists}}",
+  "@storeActiveLists": {
+    "description": "Subtitle under a store row showing active list count",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   }
 }

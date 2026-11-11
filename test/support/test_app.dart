@@ -12,6 +12,7 @@ import 'package:zero_cart/core/ids.dart';
 import 'package:zero_cart/data/database.dart';
 import 'package:zero_cart/data/providers.dart';
 import 'package:zero_cart/features/inbox/inbox_providers.dart';
+import 'package:zero_cart/features/stores/stores_providers.dart';
 
 bool _driftMultiDbWarningSilenced = false;
 
@@ -28,17 +29,23 @@ class TestAppHarness {
   TestAppHarness({
     required this.db,
     required this.refreshInbox,
+    required this.refreshStores,
     required StreamController<List<InboxItem>> inboxUpdates,
-  }) : _inboxController = inboxUpdates;
+    required StreamController<List<Store>> storeUpdates,
+  }) : _inboxController = inboxUpdates,
+       _storeController = storeUpdates;
 
   final AppDatabase db;
   final Future<void> Function() refreshInbox;
+  final Future<void> Function() refreshStores;
   final StreamController<List<InboxItem>> _inboxController;
+  final StreamController<List<Store>> _storeController;
 
   Future<void> dispose(WidgetTester tester) async {
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump();
     await _inboxController.close();
+    await _storeController.close();
     await tester.runAsync(db.close);
   }
 }
@@ -46,7 +53,7 @@ class TestAppHarness {
 /// Pumps [ZeroCartApp] with an in-memory database and faked clock/ids.
 ///
 /// Drift's `.watch()` does not emit under FakeAsync on Windows widget tests, so
-/// [inboxItemsProvider] is fed by a broadcast stream refreshed via [pumpApp]
+/// stream providers are fed by broadcast streams refreshed via [pumpApp]
 /// after real repository writes (still against [TestAppHarness.db]).
 Future<TestAppHarness> pumpTestApp(
   WidgetTester tester, {
@@ -73,6 +80,7 @@ Future<TestAppHarness> pumpTestApp(
       };
 
   final inboxController = StreamController<List<InboxItem>>.broadcast();
+  final storeController = StreamController<List<Store>>.broadcast();
 
   Future<void> refreshInbox() async {
     final rows =
@@ -86,6 +94,20 @@ Future<TestAppHarness> pumpTestApp(
     }
   }
 
+  Future<void> refreshStores() async {
+    final rows =
+        await (db.select(db.stores)
+              ..where((t) => t.archivedAt.isNull())
+              ..orderBy([
+                (t) => OrderingTerm.asc(t.name.collate(Collate.noCase)),
+                (t) => OrderingTerm.asc(t.id),
+              ]))
+            .get();
+    if (!storeController.isClosed) {
+      storeController.add(rows);
+    }
+  }
+
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
@@ -93,20 +115,26 @@ Future<TestAppHarness> pumpTestApp(
         nowProvider.overrideWithValue(fixedClock),
         idGeneratorProvider.overrideWithValue(ids),
         inboxItemsProvider.overrideWith((ref) => inboxController.stream),
+        activeStoresProvider.overrideWith((ref) => storeController.stream),
         ...overrides,
       ],
       child: ZeroCartApp(router: router),
     ),
   );
 
-  await tester.runAsync(refreshInbox);
+  await tester.runAsync(() async {
+    await refreshInbox();
+    await refreshStores();
+  });
   await tester.pump();
   await tester.pump(const Duration(milliseconds: 50));
 
   return TestAppHarness(
     db: db,
     refreshInbox: refreshInbox,
+    refreshStores: refreshStores,
     inboxUpdates: inboxController,
+    storeUpdates: storeController,
   );
 }
 
@@ -116,7 +144,10 @@ Future<void> pumpApp(WidgetTester tester, [TestAppHarness? harness]) async {
     await Future<void>.delayed(const Duration(milliseconds: 20));
   });
   if (harness != null) {
-    await tester.runAsync(harness.refreshInbox);
+    await tester.runAsync(() async {
+      await harness.refreshInbox();
+      await harness.refreshStores();
+    });
   }
   await tester.pump();
   await tester.pump(const Duration(milliseconds: 50));
