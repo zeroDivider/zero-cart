@@ -57,6 +57,13 @@ These are authoritative but not immutable. If a change is needed, stop, explain 
 
 Never claim a command ran or a test passed unless you ran it in this session. In every report, list what you could not verify.
 
+## Context budget
+- Read only your task's section in docs/implementation-plan.md (search "### APP-0NN") and only the requirement, decision and ADR sections it cites. Never open whole documents.
+- Read targeted files; do not re-read files you just wrote.
+- Run tests with compact output (flutter test --reporter compact). Let the verifier subagent run analyze, build_runner and long suites; never paste long logs into the chat.
+- If a task needs more than about 15 changed files, or the context is getting large, stop at the next clean commit, report what remains, and propose splitting the task.
+- Keep reports short.
+
 ## Auto model note
 
 The model may change between tasks and even within one. Rely on the repository documents, not on chat history. Start every task in a fresh chat.
