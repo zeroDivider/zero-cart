@@ -123,7 +123,7 @@ void main() {
     final longTitle = 'T' * 60;
     final longDesc = 'D' * 80;
     final item = await repo.add(title: longTitle, description: longDesc);
-    expect(item.title.length, 50);
-    expect(item.description!.length, 70);
+    expect(item.title, 'T' * 50);
+    expect(item.description, 'D' * 70);
   });
 }

@@ -52,9 +52,12 @@ class TestAppHarness {
 
 /// Pumps [ZeroCartApp] with an in-memory database and faked clock/ids.
 ///
-/// Drift's `.watch()` does not emit under FakeAsync on Windows widget tests, so
-/// stream providers are fed by broadcast streams refreshed via [pumpApp]
-/// after real repository writes (still against [TestAppHarness.db]).
+/// Widget tests using this harness cover UI → repository → DB behaviour.
+/// They do **not** prove live Drift `.watch()` → Riverpod wiring: under
+/// FakeAsync on Windows, `.watch()` does not emit, so [inboxItemsProvider]
+/// and [activeStoresProvider] are bridged by broadcast streams that
+/// [pumpApp] refreshes after real writes against [TestAppHarness.db].
+/// See `inbox_providers_test.dart` for a live-stream check without FakeAsync.
 Future<TestAppHarness> pumpTestApp(
   WidgetTester tester, {
   GoRouter? router,
