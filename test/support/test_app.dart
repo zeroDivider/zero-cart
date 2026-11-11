@@ -24,6 +24,18 @@ void _silenceDriftMultiDbWarning() {
   _driftMultiDbWarningSilenced = true;
 }
 
+List<Store> _sortedByName(Iterable<Store> stores) {
+  final rows = stores.toList()
+    ..sort((a, b) {
+      final byName = a.name.toLowerCase().compareTo(b.name.toLowerCase());
+      if (byName != 0) {
+        return byName;
+      }
+      return a.id.compareTo(b.id);
+    });
+  return rows;
+}
+
 /// Harness returned by [pumpTestApp].
 class TestAppHarness {
   TestAppHarness({
@@ -32,20 +44,28 @@ class TestAppHarness {
     required this.refreshStores,
     required StreamController<List<InboxItem>> inboxUpdates,
     required StreamController<List<Store>> storeUpdates,
+    required StreamController<List<Store>> archivedStoreUpdates,
+    required StreamController<List<Store>> allStoreUpdates,
   }) : _inboxController = inboxUpdates,
-       _storeController = storeUpdates;
+       _storeController = storeUpdates,
+       _archivedStoreController = archivedStoreUpdates,
+       _allStoreController = allStoreUpdates;
 
   final AppDatabase db;
   final Future<void> Function() refreshInbox;
   final Future<void> Function() refreshStores;
   final StreamController<List<InboxItem>> _inboxController;
   final StreamController<List<Store>> _storeController;
+  final StreamController<List<Store>> _archivedStoreController;
+  final StreamController<List<Store>> _allStoreController;
 
   Future<void> dispose(WidgetTester tester) async {
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump();
     await _inboxController.close();
     await _storeController.close();
+    await _archivedStoreController.close();
+    await _allStoreController.close();
     await tester.runAsync(db.close);
   }
 }
@@ -54,9 +74,10 @@ class TestAppHarness {
 ///
 /// Widget tests using this harness cover UI → repository → DB behaviour.
 /// They do **not** prove live Drift `.watch()` → Riverpod wiring: under
-/// FakeAsync on Windows, `.watch()` does not emit, so [inboxItemsProvider]
-/// and [activeStoresProvider] are bridged by broadcast streams that
-/// [pumpApp] refreshes after real writes against [TestAppHarness.db].
+/// FakeAsync on Windows, `.watch()` does not emit, so [inboxItemsProvider],
+/// [activeStoresProvider], [archivedStoresProvider] and [storeByIdProvider]
+/// are bridged by broadcast streams that [pumpApp] refreshes after real
+/// writes against [TestAppHarness.db].
 /// See `inbox_providers_test.dart` for a live-stream check without FakeAsync.
 Future<TestAppHarness> pumpTestApp(
   WidgetTester tester, {
@@ -84,6 +105,13 @@ Future<TestAppHarness> pumpTestApp(
 
   final inboxController = StreamController<List<InboxItem>>.broadcast();
   final storeController = StreamController<List<Store>>.broadcast();
+  final archivedStoreController = StreamController<List<Store>>.broadcast();
+  final allStoreController = StreamController<List<Store>>.broadcast();
+
+  var latestInbox = <InboxItem>[];
+  var latestActive = <Store>[];
+  var latestArchived = <Store>[];
+  var latestAll = <Store>[];
 
   Future<void> refreshInbox() async {
     final rows =
@@ -92,22 +120,56 @@ Future<TestAppHarness> pumpTestApp(
               (t) => OrderingTerm.desc(t.id),
             ]))
             .get();
+    latestInbox = rows;
     if (!inboxController.isClosed) {
       inboxController.add(rows);
     }
   }
 
   Future<void> refreshStores() async {
-    final rows =
-        await (db.select(db.stores)
-              ..where((t) => t.archivedAt.isNull())
-              ..orderBy([
-                (t) => OrderingTerm.asc(t.name.collate(Collate.noCase)),
-                (t) => OrderingTerm.asc(t.id),
-              ]))
-            .get();
+    final rows = await db.select(db.stores).get();
+    latestAll = rows;
+    latestActive = _sortedByName(rows.where((s) => s.archivedAt == null));
+    latestArchived = _sortedByName(rows.where((s) => s.archivedAt != null));
+    if (!allStoreController.isClosed) {
+      allStoreController.add(latestAll);
+    }
     if (!storeController.isClosed) {
-      storeController.add(rows);
+      storeController.add(latestActive);
+    }
+    if (!archivedStoreController.isClosed) {
+      archivedStoreController.add(latestArchived);
+    }
+  }
+
+  Stream<List<InboxItem>> inboxBridge() async* {
+    yield latestInbox;
+    yield* inboxController.stream;
+  }
+
+  Stream<List<Store>> activeStoresBridge() async* {
+    yield latestActive;
+    yield* storeController.stream;
+  }
+
+  Stream<List<Store>> archivedStoresBridge() async* {
+    yield latestArchived;
+    yield* archivedStoreController.stream;
+  }
+
+  Stream<Store?> storeByIdBridge(String id) async* {
+    Store? find() {
+      for (final store in latestAll) {
+        if (store.id == id) {
+          return store;
+        }
+      }
+      return null;
+    }
+
+    yield find();
+    await for (final _ in allStoreController.stream) {
+      yield find();
     }
   }
 
@@ -117,8 +179,10 @@ Future<TestAppHarness> pumpTestApp(
         appDatabaseProvider.overrideWithValue(db),
         nowProvider.overrideWithValue(fixedClock),
         idGeneratorProvider.overrideWithValue(ids),
-        inboxItemsProvider.overrideWith((ref) => inboxController.stream),
-        activeStoresProvider.overrideWith((ref) => storeController.stream),
+        inboxItemsProvider.overrideWith((ref) => inboxBridge()),
+        activeStoresProvider.overrideWith((ref) => activeStoresBridge()),
+        archivedStoresProvider.overrideWith((ref) => archivedStoresBridge()),
+        storeByIdProvider.overrideWith((ref, id) => storeByIdBridge(id)),
         ...overrides,
       ],
       child: ZeroCartApp(router: router),
@@ -138,6 +202,8 @@ Future<TestAppHarness> pumpTestApp(
     refreshStores: refreshStores,
     inboxUpdates: inboxController,
     storeUpdates: storeController,
+    archivedStoreUpdates: archivedStoreController,
+    allStoreUpdates: allStoreController,
   );
 }
 
