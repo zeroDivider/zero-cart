@@ -123,7 +123,11 @@
   },
   "newStore": "New store",
   "@newStore": {
-    "description": "Title of the create-store sheet and Stores tab action"
+    "description": "Title of the create-store sheet"
+  },
+  "newStoreAction": "+ New store",
+  "@newStoreAction": {
+    "description": "Stores tab button that opens the create-store sheet"
   },
   "editStore": "Edit store",
   "@editStore": {

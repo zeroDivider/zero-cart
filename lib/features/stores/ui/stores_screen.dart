@@ -109,7 +109,7 @@ class _StoresList extends ConsumerWidget {
               child: TextButton(
                 key: const Key('stores_new_store'),
                 onPressed: () => _createStore(context, ref),
-                child: Text('+ ${l10n.newStore}'),
+                child: Text(l10n.newStoreAction),
               ),
             ),
           );
