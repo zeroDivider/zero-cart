@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:zero_cart/app/scaffold_with_nav_bar.dart';
-import 'package:zero_cart/features/archive/ui/archive_placeholder_screen.dart';
+import 'package:zero_cart/features/archive/ui/archive_screen.dart';
 import 'package:zero_cart/features/home/ui/home_screen.dart';
 import 'package:zero_cart/features/inbox/ui/inbox_screen.dart';
 import 'package:zero_cart/features/lists/ui/list_placeholder_screen.dart';
 import 'package:zero_cart/features/settings/ui/about_placeholder_screen.dart';
 import 'package:zero_cart/features/settings/ui/settings_placeholder_screen.dart';
-import 'package:zero_cart/features/stores/ui/store_details_placeholder_screen.dart';
+import 'package:zero_cart/features/stores/ui/store_details_screen.dart';
 import 'package:zero_cart/features/stores/ui/stores_screen.dart';
 import 'package:zero_cart/features/wishlist/ui/wishlist_placeholder_screen.dart';
 
@@ -74,7 +74,7 @@ abstract final class AppRouter {
           parentNavigatorKey: rootNavigatorKey,
           builder: (context, state) {
             final id = state.pathParameters['id']!;
-            return StoreDetailsPlaceholderScreen(storeId: id);
+            return StoreDetailsScreen(storeId: id);
           },
           routes: [
             GoRoute(
@@ -98,7 +98,7 @@ abstract final class AppRouter {
         GoRoute(
           path: AppRoutes.archive,
           parentNavigatorKey: rootNavigatorKey,
-          builder: (context, state) => const ArchivePlaceholderScreen(),
+          builder: (context, state) => const ArchiveScreen(),
         ),
         GoRoute(
           path: AppRoutes.settings,
