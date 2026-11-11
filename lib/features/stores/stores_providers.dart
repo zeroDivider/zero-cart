@@ -17,6 +17,11 @@ final activeStoresProvider = StreamProvider<List<Store>>((ref) {
   return ref.watch(storesRepositoryProvider).watchActive();
 });
 
+/// Archived stores, alphabetical case-insensitive.
+final archivedStoresProvider = StreamProvider<List<Store>>((ref) {
+  return ref.watch(storesRepositoryProvider).watchArchived();
+});
+
 /// One store by id (null if missing).
 final storeByIdProvider = StreamProvider.family<Store?, String>((ref, id) {
   return ref.watch(storesRepositoryProvider).watchById(id);

@@ -77,6 +77,28 @@ void main() {
     await sub.cancel();
   });
 
+  test('watchArchived orders case-insensitively and excludes active', () async {
+    final events = <List<Store>>[];
+    final sub = repo.watchArchived().listen(events.add);
+
+    final dm = await repo.create(name: 'dm', colorKey: 'sky');
+    final lidl = await repo.create(name: 'Lidl', colorKey: 'lime');
+    await repo.create(name: 'aldi', colorKey: 'tomato');
+    await pumpEventQueue();
+    expect(events.last, isEmpty);
+
+    await repo.archive(lidl.id);
+    await repo.archive(dm.id);
+    await pumpEventQueue();
+    expect(events.last.map((s) => s.name), ['dm', 'Lidl']);
+
+    await repo.restore(dm.id);
+    await pumpEventQueue();
+    expect(events.last.map((s) => s.name), ['Lidl']);
+
+    await sub.cancel();
+  });
+
   test('nextFreeColorKey returns first unused then cycles', () async {
     expect(await repo.nextFreeColorKey(), 'tomato');
 
@@ -160,7 +182,12 @@ void main() {
   });
 
   test('archive is cascade-free; restore clears archivedAt only', () async {
-    final store = await repo.create(name: 'Lidl', colorKey: 'lime');
+    final store = await repo.create(
+      name: 'Lidl',
+      colorKey: 'lime',
+      address: 'Main St',
+      note: 'Weekly',
+    );
     await insertList(id: 'list-1', storeId: store.id, name: 'Weekend');
     await insertList(
       id: 'list-2',
@@ -206,6 +233,10 @@ void main() {
       db.stores,
     )..where((t) => t.id.equals(store.id))).getSingle();
     expect(archived.archivedAt, isNotNull);
+    expect(archived.name, 'Lidl');
+    expect(archived.colorKey, 'lime');
+    expect(archived.address, 'Main St');
+    expect(archived.note, 'Weekly');
 
     final afterLists = await db.select(db.shoppingLists).get();
     final afterItems = await db.select(db.listItems).get();
@@ -231,6 +262,9 @@ void main() {
     )..where((t) => t.id.equals(store.id))).getSingle();
     expect(restored.archivedAt, isNull);
     expect(restored.updatedAt, updatedAtBeforeRestore);
+    expect(restored.name, 'Lidl');
+    expect(restored.address, 'Main St');
+    expect(restored.note, 'Weekly');
     expect(archivedAtBeforeRestore, isNotNull);
   });
 

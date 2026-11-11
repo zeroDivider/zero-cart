@@ -31,6 +31,17 @@ class StoresRepository {
         .watch();
   }
 
+  /// Archived stores, alphabetical case-insensitive (Archive Stores segment).
+  Stream<List<Store>> watchArchived() {
+    return (_db.select(_db.stores)
+          ..where((t) => t.archivedAt.isNotNull())
+          ..orderBy([
+            (t) => OrderingTerm.asc(t.name.collate(Collate.noCase)),
+            (t) => OrderingTerm.asc(t.id),
+          ]))
+        .watch();
+  }
+
   /// Single store by id, or null if missing.
   Stream<Store?> watchById(String id) {
     return (_db.select(_db.stores)..where((t) => t.id.equals(id))).watch().map(
