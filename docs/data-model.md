@@ -6,7 +6,7 @@ Ids are UUID v4 text generated in the app. Timestamps are UTC (`created_at`, `up
 
 ## 3.2 Tables
 
-**stores**: `id` TEXT PK; `name` TEXT NOT NULL, CHECK trimmed length 1..40; `color_key` TEXT NOT NULL (one of eight palette keys: tomato, tangerine, lemon, lime, teal, sky, grape, bubblegum; validated in app and on restore); `address` TEXT NULL; `note` TEXT NULL; `archived_at` NULL; `created_at`; `updated_at`. Index on `archived_at`. Default colour for a new store: first palette key not used by an active store, else cycle.
+**stores**: `id` TEXT PK; `name` TEXT NOT NULL, CHECK trimmed length 1..40; `color_key` TEXT NOT NULL (one of eight palette keys: tomato, tangerine, lemon, lime, teal, sky, grape, bubblegum; validated in app and on restore); `address` TEXT NULL; `note` TEXT NULL; `archived_at` NULL; `created_at`; `updated_at`. Index on `archived_at`. Default colour for a new store: first palette key not used by an active store; if every key is used, cycle with `palette[activeCount % 8]` (not a fixed sky fallback).
 
 **shopping\_lists**: `id` PK; `store_id` FK to stores, ON DELETE CASCADE, NOT NULL; `name` CHECK 1..60; `archived_at` NULL; `archive_reason` TEXT NULL CHECK IN ('manual','finished'); CHECK `(archived_at IS NULL) = (archive_reason IS NULL)`; `created_at`; `updated_at` (touched on add, assign, copy and carry-forward, not on check toggles; used to preselect the most recent list). Index `(store_id, archived_at)`.
 
