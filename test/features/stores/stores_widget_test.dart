@@ -4,8 +4,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:zero_cart/app/router.dart';
 import 'package:zero_cart/app/theme/app_tokens.dart';
 import 'package:zero_cart/features/archive/ui/archive_placeholder_screen.dart';
-import 'package:zero_cart/features/stores/store_draft.dart';
-import 'package:zero_cart/features/stores/stores_providers.dart';
 import 'package:zero_cart/features/stores/stores_repository.dart';
 import 'package:zero_cart/features/stores/ui/store_form_sheet.dart';
 import 'package:zero_cart/features/stores/ui/stores_screen.dart';
@@ -98,10 +96,22 @@ void main() {
 
     expect(find.text('Aldi'), findsOneWidget);
     expect(find.text('DM'), findsOneWidget);
+
+    final rows = await tester.runAsync(
+      () => harness.db.select(harness.db.stores).get(),
+    );
+    expect(rows, hasLength(2));
+    final byName = [...rows!]
+      ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+    expect(byName.map((s) => s.name), ['Aldi', 'DM']);
+    expect(
+      {for (final s in byName) s.name: s.colorKey},
+      {'Aldi': 'tomato', 'DM': 'tangerine'},
+    );
     await harness.dispose(tester);
   });
 
-  testWidgets('edit form updates store name on the Stores list', (
+  testWidgets('editStore persists draft and refreshes the Stores list', (
     tester,
   ) async {
     final harness = await pumpTestApp(
@@ -117,7 +127,8 @@ void main() {
     expect(find.text('Lidl'), findsOneWidget);
 
     final context = tester.element(find.byType(StoresScreen));
-    final draftFuture = showStoreFormSheet(context, existing: created);
+    final ref = context as WidgetRef;
+    final editFuture = editStore(context, ref, created!);
     await pumpApp(tester, harness);
     expect(find.byType(StoreFormSheet), findsOneWidget);
     expect(find.text('Edit store'), findsOneWidget);
@@ -133,20 +144,18 @@ void main() {
     await pumpApp(tester, harness);
     await _tapButton(tester, const Key('store_form_save'), harness);
 
-    final draft = await tester.runAsync(() => draftFuture);
-    expect(draft, isA<StoreDraft>());
-    expect(draft!.name, 'Lidl City');
-    expect(draft.note, 'Weekly offers');
-
-    await tester.runAsync(() async {
-      await ProviderScope.containerOf(tester.element(find.byType(StoresScreen)))
-          .read(storesRepositoryProvider)
-          .updateFromDraft(created!.id, draft);
-    });
+    final saved = await tester.runAsync(() => editFuture);
+    expect(saved, isTrue);
     await pumpApp(tester, harness);
 
     expect(find.text('Lidl City'), findsOneWidget);
     expect(find.text('Lidl'), findsNothing);
+
+    final row = await tester.runAsync(
+      () => harness.db.select(harness.db.stores).getSingle(),
+    );
+    expect(row!.name, 'Lidl City');
+    expect(row.note, 'Weekly offers');
     await harness.dispose(tester);
   });
 

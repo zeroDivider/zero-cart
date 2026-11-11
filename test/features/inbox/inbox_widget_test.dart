@@ -158,16 +158,21 @@ void main() {
 
     expect(find.text('Butter'), findsNothing);
     expect(find.text('Removed Butter'), findsOneWidget);
-
-    final snackBarAction = tester.widget<SnackBarAction>(
-      find.byType(SnackBarAction),
+    final afterRemove = await tester.runAsync(
+      () => harness.db.select(harness.db.inboxItems).get(),
     );
+    expect(afterRemove, isEmpty);
+
+    await tester.tap(find.text('Undo'));
     await tester.runAsync(() async {
-      snackBarAction.onPressed();
       await Future<void>.delayed(const Duration(milliseconds: 50));
     });
     await pumpApp(tester, harness);
     expect(find.text('Butter'), findsOneWidget);
+    final afterUndo = await tester.runAsync(
+      () => harness.db.select(harness.db.inboxItems).get(),
+    );
+    expect(afterUndo!.single.title, 'Butter');
     await harness.dispose(tester);
   });
 
@@ -198,6 +203,12 @@ void main() {
 
   testWidgets('badge hides at zero and caps at 99+', (tester) async {
     final empty = await pumpTestApp(tester);
+    final emptyBadges = tester.widgetList<Badge>(find.byType(Badge)).toList();
+    expect(emptyBadges, isNotEmpty);
+    for (final badge in emptyBadges) {
+      expect(badge.isLabelVisible, isFalse);
+    }
+    expect(find.text('0'), findsNothing);
     expect(find.text('99+'), findsNothing);
     await empty.dispose(tester);
 
@@ -222,6 +233,8 @@ void main() {
     );
     await tester.pump();
     expect(find.text('99+'), findsWidgets);
+    final capped = tester.widgetList<Badge>(find.byType(Badge));
+    expect(capped.any((b) => b.isLabelVisible), isTrue);
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump();
     await tester.runAsync(db.close);
