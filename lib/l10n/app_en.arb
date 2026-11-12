@@ -312,5 +312,94 @@
   "storeNotFound": "Store not found",
   "@storeNotFound": {
     "description": "Body when store details has no matching id"
+  },
+  "listNotFound": "List not found",
+  "@listNotFound": {
+    "description": "Body when list details has no matching id"
+  },
+  "listEmptyTitle": "Nothing here yet",
+  "@listEmptyTitle": {
+    "description": "Empty-state headline on an empty shopping list"
+  },
+  "listEmptyBody": "Type above and press Enter.",
+  "@listEmptyBody": {
+    "description": "Empty-state supporting text on an empty shopping list"
+  },
+  "addItemHint": "Add an item",
+  "@addItemHint": {
+    "description": "Hint and semantics for the inline list add row"
+  },
+  "addItemDetailsToggle": "Details",
+  "@addItemDetailsToggle": {
+    "description": "Toggle that reveals the description field on the add row"
+  },
+  "purchasedSection": "Purchased ({count})",
+  "@purchasedSection": {
+    "description": "Collapsible header for purchased items",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "itemSemanticsWithDescription": "{title}, {description}, {state}",
+  "@itemSemanticsWithDescription": {
+    "description": "Accessibility label for a list item with a description",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "description": {
+        "type": "String"
+      },
+      "state": {
+        "type": "String"
+      }
+    }
+  },
+  "itemSemanticsTitleOnly": "{title}, {state}",
+  "@itemSemanticsTitleOnly": {
+    "description": "Accessibility label for a list item without a description",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "state": {
+        "type": "String"
+      }
+    }
+  },
+  "itemPurchasedState": "purchased",
+  "@itemPurchasedState": {
+    "description": "Purchased state fragment for item semantics"
+  },
+  "itemNotPurchasedState": "not purchased",
+  "@itemNotPurchasedState": {
+    "description": "Unpurchased state fragment for item semantics"
+  },
+  "itemCheckboxSemantics": "{title}",
+  "@itemCheckboxSemantics": {
+    "description": "Accessibility label for an item checkbox",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "reorderHandlePlaceholder": "Reorder",
+  "@reorderHandlePlaceholder": {
+    "description": "Semantics for the drag-handle placeholder until APP-013"
+  },
+  "listMenuRename": "Rename",
+  "@listMenuRename": {
+    "description": "List app-bar menu action to rename the list"
+  },
+  "listMenuArchive": "Archive",
+  "@listMenuArchive": {
+    "description": "List app-bar menu action to archive the list"
+  },
+  "purchaseWriteFailed": "Couldn't update. Try again.",
+  "@purchaseWriteFailed": {
+    "description": "SnackBar when setPurchased fails and the checkbox reverts"
   }
 }

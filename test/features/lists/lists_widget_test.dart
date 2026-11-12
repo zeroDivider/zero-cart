@@ -5,7 +5,8 @@ import 'package:zero_cart/app/router.dart';
 import 'package:zero_cart/data/database.dart';
 import 'package:zero_cart/features/lists/lists_repository.dart';
 import 'package:zero_cart/features/lists/list_form_sheet.dart';
-import 'package:zero_cart/features/lists/ui/list_placeholder_screen.dart';
+import 'package:zero_cart/features/lists/ui/item_edit_sheet.dart';
+import 'package:zero_cart/features/lists/ui/list_screen.dart';
 import 'package:zero_cart/features/stores/stores_repository.dart';
 import 'package:zero_cart/features/stores/ui/store_active_lists_section.dart';
 import 'package:zero_cart/features/stores/ui/store_details_screen.dart';
@@ -51,6 +52,7 @@ Future<void> _insertItem(
   required String title,
   required bool purchased,
   required int position,
+  String? description,
 }) async {
   final now = DateTime.utc(2026, 1, 1, 9);
   await db
@@ -60,12 +62,39 @@ Future<void> _insertItem(
           id: id,
           listId: listId,
           title: title,
+          description: Value(description),
           isPurchased: Value(purchased),
           position: position,
           createdAt: now,
           updatedAt: now,
         ),
       );
+}
+
+Future<(Store, ShoppingList)> _seedList(
+  WidgetTester tester,
+  TestAppHarness harness, {
+  String listName = 'Weekend',
+}) async {
+  final store = await tester.runAsync(
+    () => _stores(harness).create(name: 'Lidl', colorKey: 'lime'),
+  );
+  final list = await tester.runAsync(
+    () => _lists(harness).create(storeId: store!.id, name: listName),
+  );
+  return (store!, list!);
+}
+
+Future<void> _openList(
+  WidgetTester tester,
+  TestAppHarness harness,
+  Store store,
+  ShoppingList list,
+) async {
+  await tester.tap(find.byKey(Key('store_row_${store.id}')));
+  await pumpApp(tester, harness);
+  await tester.tap(find.byKey(Key('store_list_card_${list.id}')));
+  await pumpApp(tester, harness);
 }
 
 void main() {
@@ -111,7 +140,7 @@ void main() {
 
     await tester.tap(find.byKey(Key('store_list_card_${list!.id}')));
     await pumpApp(tester, harness);
-    expect(find.byType(ListPlaceholderScreen), findsOneWidget);
+    expect(find.byType(ListScreen), findsOneWidget);
     await harness.dispose(tester);
   });
 
@@ -138,7 +167,7 @@ void main() {
     await pumpApp(tester, harness);
     await _tapButton(tester, const Key('list_form_save'), harness);
 
-    expect(find.byType(ListPlaceholderScreen), findsOneWidget);
+    expect(find.byType(ListScreen), findsOneWidget);
 
     final lists = await tester.runAsync(
       () => harness.db.select(harness.db.shoppingLists).get(),
@@ -174,6 +203,240 @@ void main() {
     expect(find.byType(StoreDetailsScreen), findsOneWidget);
     expect(find.byKey(const Key('store_details_new_list')), findsNothing);
     expect(find.text('No active lists yet.'), findsOneWidget);
+    await harness.dispose(tester);
+  });
+
+  testWidgets('list screen adds an item on Enter and keeps the add field', (
+    tester,
+  ) async {
+    final harness = await pumpTestApp(
+      tester,
+      router: AppRouter.create(initialLocation: AppRoutes.stores),
+    );
+    final (store, list) = await _seedList(tester, harness);
+    await pumpApp(tester, harness);
+    await _openList(tester, harness, store, list);
+
+    expect(find.byType(ListScreen), findsOneWidget);
+    expect(find.text('Nothing here yet'), findsOneWidget);
+    expect(find.byKey(const Key('list_add_title')), findsOneWidget);
+
+    await tester.enterText(find.byKey(const Key('list_add_title')), 'Milk');
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await pumpApp(tester, harness);
+
+    expect(find.text('Milk'), findsWidgets);
+    expect(find.byKey(const Key('list_add_title')), findsOneWidget);
+    final addField = tester.widget<TextField>(
+      find.byKey(const Key('list_add_title')),
+    );
+    expect(addField.controller?.text, isEmpty);
+
+    final items = await tester.runAsync(
+      () => (harness.db.select(
+        harness.db.listItems,
+      )..where((t) => t.listId.equals(list.id))).get(),
+    );
+    expect(items, hasLength(1));
+    expect(items!.first.title, 'Milk');
+    expect(items.first.position, 1);
+    await harness.dispose(tester);
+  });
+
+  testWidgets('checking moves item to Purchased; unchecking restores place', (
+    tester,
+  ) async {
+    final harness = await pumpTestApp(
+      tester,
+      router: AppRouter.create(initialLocation: AppRoutes.stores),
+    );
+    final (store, list) = await _seedList(tester, harness);
+    await tester.runAsync(() async {
+      await _insertItem(
+        harness.db,
+        id: 'a',
+        listId: list.id,
+        title: 'Milk',
+        purchased: false,
+        position: 1,
+      );
+      await _insertItem(
+        harness.db,
+        id: 'b',
+        listId: list.id,
+        title: 'Bread',
+        purchased: false,
+        position: 2,
+      );
+      await _insertItem(
+        harness.db,
+        id: 'c',
+        listId: list.id,
+        title: 'Eggs',
+        purchased: false,
+        position: 3,
+      );
+    });
+    await pumpApp(tester, harness);
+    await _openList(tester, harness, store, list);
+
+    await tester.tap(find.byKey(const Key('item_checkbox_b')));
+    await pumpApp(tester, harness);
+
+    expect(find.text('Purchased (1)'), findsOneWidget);
+    expect(find.byKey(const Key('item_handle_b')), findsNothing);
+
+    final purchased = await tester.runAsync(
+      () => (harness.db.select(
+        harness.db.listItems,
+      )..where((t) => t.id.equals('b'))).getSingle(),
+    );
+    expect(purchased!.isPurchased, isTrue);
+    expect(purchased.position, 2);
+
+    await tester.tap(find.byKey(const Key('item_checkbox_b')));
+    await pumpApp(tester, harness);
+
+    final unchecked = await tester.runAsync(
+      () => (harness.db.select(
+        harness.db.listItems,
+      )..where((t) => t.id.equals('b'))).getSingle(),
+    );
+    expect(unchecked!.isPurchased, isFalse);
+    expect(unchecked.position, 2);
+    expect(find.byKey(const Key('item_handle_b')), findsOneWidget);
+    await harness.dispose(tester);
+  });
+
+  testWidgets('edit sheet Save updates title and description', (tester) async {
+    final harness = await pumpTestApp(
+      tester,
+      router: AppRouter.create(initialLocation: AppRoutes.stores),
+    );
+    final (store, list) = await _seedList(tester, harness);
+    await tester.runAsync(() async {
+      await _insertItem(
+        harness.db,
+        id: 'milk',
+        listId: list.id,
+        title: 'Milk',
+        description: '1L',
+        purchased: false,
+        position: 1,
+      );
+    });
+    await pumpApp(tester, harness);
+    await _openList(tester, harness, store, list);
+
+    await tester.tap(find.byKey(const Key('item_content_milk')));
+    await pumpApp(tester, harness);
+    expect(find.byType(ItemEditSheet), findsOneWidget);
+
+    await tester.enterText(
+      find.byKey(const Key('item_edit_title')),
+      'Oat milk',
+    );
+    await tester.enterText(
+      find.byKey(const Key('item_edit_description')),
+      '2L lactose-free',
+    );
+    await _tapButton(tester, const Key('item_edit_save'), harness);
+
+    expect(find.byType(ItemEditSheet), findsNothing);
+    expect(find.text('Oat milk'), findsOneWidget);
+    expect(find.text('2L lactose-free'), findsOneWidget);
+
+    final row = await tester.runAsync(
+      () => (harness.db.select(
+        harness.db.listItems,
+      )..where((t) => t.id.equals('milk'))).getSingle(),
+    );
+    expect(row!.title, 'Oat milk');
+    expect(row.description, '2L lactose-free');
+    await harness.dispose(tester);
+  });
+
+  testWidgets('Purchased section collapses and expands', (tester) async {
+    final harness = await pumpTestApp(
+      tester,
+      router: AppRouter.create(initialLocation: AppRoutes.stores),
+    );
+    final (store, list) = await _seedList(tester, harness);
+    await tester.runAsync(() async {
+      await _insertItem(
+        harness.db,
+        id: 'active',
+        listId: list.id,
+        title: 'Milk',
+        purchased: false,
+        position: 1,
+      );
+      await _insertItem(
+        harness.db,
+        id: 'done',
+        listId: list.id,
+        title: 'Bread',
+        purchased: true,
+        position: 2,
+      );
+    });
+    await pumpApp(tester, harness);
+    await _openList(tester, harness, store, list);
+
+    expect(find.text('Purchased (1)'), findsOneWidget);
+    expect(find.byKey(const Key('item_content_done')), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('purchased_section_header')));
+    await pumpApp(tester, harness);
+    expect(find.byKey(const Key('item_content_done')), findsNothing);
+    expect(find.text('Purchased (1)'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('purchased_section_header')));
+    await pumpApp(tester, harness);
+    expect(find.byKey(const Key('item_content_done')), findsOneWidget);
+    await harness.dispose(tester);
+  });
+
+  testWidgets('archived list hides the add row', (tester) async {
+    const listId = 'archived-list';
+    final harness = await pumpTestApp(
+      tester,
+      router: AppRouter.create(
+        initialLocation: AppRoutes.listDetailsLocation(listId),
+      ),
+    );
+    await tester.runAsync(() async {
+      final store = await _stores(harness)
+          .create(name: 'Lidl', colorKey: 'lime');
+      await harness.db
+          .into(harness.db.shoppingLists)
+          .insert(
+            ShoppingListsCompanion.insert(
+              id: listId,
+              storeId: store.id,
+              name: 'Weekend',
+              archivedAt: Value(DateTime.utc(2026, 1, 1, 14)),
+              archiveReason: const Value('manual'),
+              createdAt: DateTime.utc(2026, 1, 1, 13),
+              updatedAt: DateTime.utc(2026, 1, 1, 14),
+            ),
+          );
+      await _insertItem(
+        harness.db,
+        id: 'milk',
+        listId: listId,
+        title: 'Milk',
+        purchased: false,
+        position: 1,
+      );
+    });
+    await pumpApp(tester, harness);
+
+    expect(find.byType(ListScreen), findsOneWidget);
+    expect(find.text('Weekend'), findsOneWidget);
+    expect(find.byKey(const Key('list_add_title')), findsNothing);
+    expect(find.byKey(const Key('item_checkbox_milk')), findsNothing);
+    expect(find.byKey(const Key('list_menu')), findsNothing);
     await harness.dispose(tester);
   });
 }
