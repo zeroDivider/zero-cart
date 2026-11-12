@@ -6,7 +6,7 @@ import 'package:zero_cart/data/database.dart';
 import 'package:zero_cart/features/lists/active_list_progress.dart';
 import 'package:zero_cart/features/lists/list_exceptions.dart';
 
-/// List lifecycle operations (LI-1, LI-2, LI-5; item ops come in APP-012).
+/// List lifecycle and item operations (LI-1, LI-2, LI-5; IT-1 to IT-4, IT-7).
 class ListsRepository {
   ListsRepository({
     required AppDatabase database,
@@ -201,5 +201,155 @@ ORDER BY sl.created_at ASC, sl.id ASC
         ),
       );
     });
+  }
+
+  /// Items for [listId] ordered by `(position, created_at, id)` (ADR-0004).
+  Stream<List<ListItem>> watchItems(String listId) {
+    return (_db.select(_db.listItems)
+          ..where((t) => t.listId.equals(listId))
+          ..orderBy([
+            (t) => OrderingTerm.asc(t.position),
+            (t) => OrderingTerm.asc(t.createdAt),
+            (t) => OrderingTerm.asc(t.id),
+          ]))
+        .watch();
+  }
+
+  /// Appends an active item at max(position)+1 and touches the list (D-04).
+  ///
+  /// Rejects archived lists inside the transaction (D-13).
+  Future<ListItem> addItem({
+    required String listId,
+    required String title,
+    String? description,
+  }) {
+    final normalizedTitle = normalizeTitle(title);
+    if (normalizedTitle.isEmpty) {
+      throw ArgumentError.value(title, 'title', 'must not be empty');
+    }
+    final normalizedDescription = normalizeDescription(description);
+
+    return _db.transaction(() async {
+      final list = await (_db.select(
+        _db.shoppingLists,
+      )..where((t) => t.id.equals(listId))).getSingleOrNull();
+      if (list == null) {
+        throw StateError('List $listId not found');
+      }
+      if (list.archivedAt != null) {
+        throw ListArchivedException(listId);
+      }
+
+      final maxRow = await _db
+          .customSelect(
+            'SELECT MAX(position) AS max_pos FROM list_items WHERE list_id = ?',
+            variables: [Variable.withString(listId)],
+            readsFrom: {_db.listItems},
+          )
+          .getSingle();
+      final maxPos = maxRow.readNullable<int>('max_pos') ?? 0;
+      final position = maxPos + 1;
+
+      final now = _clock();
+      final id = _idGenerator();
+      await _db
+          .into(_db.listItems)
+          .insert(
+            ListItemsCompanion.insert(
+              id: id,
+              listId: listId,
+              title: normalizedTitle,
+              description: Value(normalizedDescription),
+              isPurchased: const Value(false),
+              position: position,
+              createdAt: now,
+              updatedAt: now,
+            ),
+          );
+      await (_db.update(_db.shoppingLists)..where((t) => t.id.equals(listId)))
+          .write(ShoppingListsCompanion(updatedAt: Value(now)));
+
+      return ListItem(
+        id: id,
+        listId: listId,
+        title: normalizedTitle,
+        description: normalizedDescription,
+        isPurchased: false,
+        position: position,
+        createdAt: now,
+        updatedAt: now,
+      );
+    });
+  }
+
+  /// Updates title/description; position and purchased state unchanged (IT-4).
+  ///
+  /// Rejects archived lists (D-13).
+  Future<ListItem> updateItem({
+    required String id,
+    required String title,
+    String? description,
+  }) {
+    final normalizedTitle = normalizeTitle(title);
+    if (normalizedTitle.isEmpty) {
+      throw ArgumentError.value(title, 'title', 'must not be empty');
+    }
+    final normalizedDescription = normalizeDescription(description);
+
+    return _db.transaction(() async {
+      final existing = await (_db.select(
+        _db.listItems,
+      )..where((t) => t.id.equals(id))).getSingleOrNull();
+      if (existing == null) {
+        throw StateError('List item $id not found');
+      }
+      await _assertListActive(existing.listId);
+
+      final now = _clock();
+      final updated = existing.copyWith(
+        title: normalizedTitle,
+        description: Value(normalizedDescription),
+        updatedAt: now,
+      );
+      await _db.update(_db.listItems).replace(updated);
+      return updated;
+    });
+  }
+
+  /// Toggles purchased; [ListItem.position] is never changed (D-03).
+  ///
+  /// Rejects archived lists (D-13).
+  Future<void> setPurchased(String id, bool isPurchased) {
+    return _db.transaction(() async {
+      final existing = await (_db.select(
+        _db.listItems,
+      )..where((t) => t.id.equals(id))).getSingleOrNull();
+      if (existing == null) {
+        throw StateError('List item $id not found');
+      }
+      await _assertListActive(existing.listId);
+      if (existing.isPurchased == isPurchased) {
+        return;
+      }
+      final now = _clock();
+      await (_db.update(_db.listItems)..where((t) => t.id.equals(id))).write(
+        ListItemsCompanion(
+          isPurchased: Value(isPurchased),
+          updatedAt: Value(now),
+        ),
+      );
+    });
+  }
+
+  Future<void> _assertListActive(String listId) async {
+    final list = await (_db.select(
+      _db.shoppingLists,
+    )..where((t) => t.id.equals(listId))).getSingleOrNull();
+    if (list == null) {
+      throw StateError('List $listId not found');
+    }
+    if (list.archivedAt != null) {
+      throw ListArchivedException(listId);
+    }
   }
 }
