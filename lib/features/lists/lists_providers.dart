@@ -26,3 +26,24 @@ final listByIdProvider = StreamProvider.family<ShoppingList?, String>((
 ) {
   return ref.watch(listsRepositoryProvider).watchById(id);
 });
+
+/// Items for a list ordered by `(position, created_at, id)`.
+final listItemsProvider = StreamProvider.family<List<ListItem>, String>((
+  ref,
+  listId,
+) {
+  return ref.watch(listsRepositoryProvider).watchItems(listId);
+});
+
+/// Whether the Purchased section is expanded (default true per IT-3).
+class PurchasedExpandedNotifier extends Notifier<bool> {
+  @override
+  bool build() => true;
+
+  void toggle() => state = !state;
+}
+
+final purchasedExpandedProvider = NotifierProvider.autoDispose
+    .family<PurchasedExpandedNotifier, bool, String>(
+      (listId) => PurchasedExpandedNotifier(),
+    );

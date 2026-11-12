@@ -4,7 +4,7 @@ import 'package:zero_cart/app/scaffold_with_nav_bar.dart';
 import 'package:zero_cart/features/archive/ui/archive_screen.dart';
 import 'package:zero_cart/features/home/ui/home_screen.dart';
 import 'package:zero_cart/features/inbox/ui/inbox_screen.dart';
-import 'package:zero_cart/features/lists/ui/list_placeholder_screen.dart';
+import 'package:zero_cart/features/lists/ui/list_screen.dart';
 import 'package:zero_cart/features/settings/ui/about_placeholder_screen.dart';
 import 'package:zero_cart/features/settings/ui/settings_placeholder_screen.dart';
 import 'package:zero_cart/features/stores/ui/store_details_screen.dart';
@@ -92,7 +92,7 @@ abstract final class AppRouter {
           parentNavigatorKey: rootNavigatorKey,
           builder: (context, state) {
             final id = state.pathParameters['id']!;
-            return ListPlaceholderScreen(listId: id);
+            return ListScreen(listId: id);
           },
         ),
         GoRoute(
