@@ -197,7 +197,7 @@ void main() {
     await sub.cancel();
   });
 
-  test('watchById emits list then null after missing', () async {
+  test('watchById emits list and updates on rename', () async {
     final store = await stores.create(name: 'Lidl', colorKey: 'lime');
     final list = await lists.create(storeId: store.id, name: 'Weekend');
     final events = <ShoppingList?>[];
