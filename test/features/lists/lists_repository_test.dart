@@ -212,4 +212,161 @@ void main() {
 
     await sub.cancel();
   });
+
+  test('addItem uses max+1 position and touches list updated_at', () async {
+    final store = await stores.create(name: 'Lidl', colorKey: 'lime');
+    final list = await lists.create(storeId: store.id, name: 'Weekend');
+    final before = await (db.select(
+      db.shoppingLists,
+    )..where((t) => t.id.equals(list.id))).getSingle();
+
+    final first = await lists.addItem(
+      listId: list.id,
+      title: '  Milk\n2L  ',
+      description: '  lactose-free  ',
+    );
+    expect(first.position, 1);
+    expect(first.title, 'Milk 2L');
+    expect(first.description, 'lactose-free');
+    expect(first.isPurchased, isFalse);
+
+    await insertItem(
+      id: 'seed-purchased',
+      listId: list.id,
+      title: 'Bread',
+      purchased: true,
+      position: 5,
+    );
+    final second = await lists.addItem(listId: list.id, title: 'Eggs');
+    expect(second.position, 6);
+
+    final after = await (db.select(
+      db.shoppingLists,
+    )..where((t) => t.id.equals(list.id))).getSingle();
+    expect(after.updatedAt.isAfter(before.updatedAt), isTrue);
+
+    expect(
+      () => lists.addItem(listId: list.id, title: '   '),
+      throwsA(isA<ArgumentError>()),
+    );
+  });
+
+  test('addItem rejects archived lists without writing', () async {
+    final store = await stores.create(name: 'Lidl', colorKey: 'lime');
+    final list = await lists.create(storeId: store.id, name: 'Weekend');
+    await lists.archive(list.id);
+    final before = await (db.select(
+      db.shoppingLists,
+    )..where((t) => t.id.equals(list.id))).getSingle();
+
+    expect(
+      () => lists.addItem(listId: list.id, title: 'Milk'),
+      throwsA(isA<ListArchivedException>()),
+    );
+
+    final items = await (db.select(
+      db.listItems,
+    )..where((t) => t.listId.equals(list.id))).get();
+    expect(items, isEmpty);
+    final after = await (db.select(
+      db.shoppingLists,
+    )..where((t) => t.id.equals(list.id))).getSingle();
+    expect(after.updatedAt, before.updatedAt);
+  });
+
+  test('setPurchased leaves position alone', () async {
+    final store = await stores.create(name: 'Lidl', colorKey: 'lime');
+    final list = await lists.create(storeId: store.id, name: 'Weekend');
+    final a = await lists.addItem(listId: list.id, title: 'Milk');
+    final b = await lists.addItem(listId: list.id, title: 'Bread');
+    final c = await lists.addItem(listId: list.id, title: 'Eggs');
+
+    await lists.setPurchased(b.id, true);
+    final purchased = await (db.select(
+      db.listItems,
+    )..where((t) => t.id.equals(b.id))).getSingle();
+    expect(purchased.isPurchased, isTrue);
+    expect(purchased.position, b.position);
+
+    final ordered = await lists.watchItems(list.id).first;
+    expect(ordered.map((i) => i.id).toList(), [a.id, b.id, c.id]);
+
+    await lists.setPurchased(b.id, false);
+    final unchecked = await (db.select(
+      db.listItems,
+    )..where((t) => t.id.equals(b.id))).getSingle();
+    expect(unchecked.isPurchased, isFalse);
+    expect(unchecked.position, b.position);
+  });
+
+  test('updateItem normalizes fields and rejects archived lists', () async {
+    final store = await stores.create(name: 'Lidl', colorKey: 'lime');
+    final list = await lists.create(storeId: store.id, name: 'Weekend');
+    final item = await lists.addItem(listId: list.id, title: 'Milk');
+
+    final updated = await lists.updateItem(
+      id: item.id,
+      title: '  Pasta\n500g  ',
+      description: '  ',
+    );
+    expect(updated.title, 'Pasta 500g');
+    expect(updated.description, isNull);
+    expect(updated.position, item.position);
+    expect(updated.isPurchased, isFalse);
+
+    await lists.archive(list.id);
+    expect(
+      () => lists.updateItem(id: item.id, title: 'Again'),
+      throwsA(isA<ListArchivedException>()),
+    );
+    expect(
+      () => lists.setPurchased(item.id, true),
+      throwsA(isA<ListArchivedException>()),
+    );
+  });
+
+  test('watchItems orders by position then created_at then id', () async {
+    final store = await stores.create(name: 'Lidl', colorKey: 'lime');
+    final list = await lists.create(storeId: store.id, name: 'Weekend');
+    final now = DateTime.utc(2026, 1, 1, 10);
+    await db
+        .into(db.listItems)
+        .insert(
+          ListItemsCompanion.insert(
+            id: 'b',
+            listId: list.id,
+            title: 'B',
+            position: 1,
+            createdAt: now.add(const Duration(seconds: 1)),
+            updatedAt: now,
+          ),
+        );
+    await db
+        .into(db.listItems)
+        .insert(
+          ListItemsCompanion.insert(
+            id: 'a',
+            listId: list.id,
+            title: 'A',
+            position: 1,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+    await db
+        .into(db.listItems)
+        .insert(
+          ListItemsCompanion.insert(
+            id: 'c',
+            listId: list.id,
+            title: 'C',
+            position: 2,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+
+    final ordered = await lists.watchItems(list.id).first;
+    expect(ordered.map((i) => i.id).toList(), ['a', 'b', 'c']);
+  });
 }
