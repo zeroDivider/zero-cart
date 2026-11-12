@@ -386,9 +386,17 @@
       }
     }
   },
-  "reorderHandlePlaceholder": "Reorder",
-  "@reorderHandlePlaceholder": {
-    "description": "Semantics for the drag-handle placeholder until APP-013"
+  "reorderHandle": "Reorder",
+  "@reorderHandle": {
+    "description": "Semantics label for the item drag handle (IT-5)"
+  },
+  "moveItemUp": "Move up",
+  "@moveItemUp": {
+    "description": "Accessibility custom action to move an active item up"
+  },
+  "moveItemDown": "Move down",
+  "@moveItemDown": {
+    "description": "Accessibility custom action to move an active item down"
   },
   "listMenuRename": "Rename",
   "@listMenuRename": {
