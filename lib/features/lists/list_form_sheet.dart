@@ -7,7 +7,8 @@ import 'package:zero_cart/l10n/generated/app_localizations.dart';
 
 /// Opens the list form. Returns a [ListDraft] on Save/Create, or null if dismissed.
 ///
-/// Does not write to the database — callers perform create/rename (APP-015 reuse).
+/// Lives outside `ui/` so other features (e.g. store details) can open it without
+/// importing `features/lists/ui/` (architecture §2.3). Callers write via repository.
 Future<ListDraft?> showListFormSheet(
   BuildContext context, {
   ShoppingList? existing,
