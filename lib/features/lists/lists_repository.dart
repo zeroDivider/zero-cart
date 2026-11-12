@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 import 'package:zero_cart/core/clock.dart';
 import 'package:zero_cart/core/ids.dart';
+import 'package:zero_cart/core/ordering.dart';
 import 'package:zero_cart/core/text_normalize.dart';
 import 'package:zero_cart/data/database.dart';
 import 'package:zero_cart/features/lists/active_list_progress.dart';
@@ -338,6 +339,38 @@ ORDER BY sl.created_at ASC, sl.id ASC
           updatedAt: Value(now),
         ),
       );
+    });
+  }
+
+  /// Dense-renumbers active items into existing active slots (D-06, op 4).
+  ///
+  /// Aborts with [StaleOrderException] when [orderedActiveIds] does not match
+  /// the current active set. Rejects archived lists (D-13). Purchased rows keep
+  /// their slot indices; only changed positions are written.
+  Future<void> reorderActive(String listId, List<String> orderedActiveIds) {
+    return _db.transaction(() async {
+      await _assertListActive(listId);
+      final all =
+          await (_db.select(_db.listItems)
+                ..where((t) => t.listId.equals(listId))
+                ..orderBy([
+                  (t) => OrderingTerm.asc(t.position),
+                  (t) => OrderingTerm.asc(t.createdAt),
+                  (t) => OrderingTerm.asc(t.id),
+                ]))
+              .get();
+      final changes = computeDenseReorder([
+        for (final item in all)
+          OrderableItem(
+            id: item.id,
+            position: item.position,
+            isPurchased: item.isPurchased,
+          ),
+      ], orderedActiveIds);
+      for (final entry in changes.entries) {
+        await (_db.update(_db.listItems)..where((t) => t.id.equals(entry.key)))
+            .write(ListItemsCompanion(position: Value(entry.value)));
+      }
     });
   }
 
