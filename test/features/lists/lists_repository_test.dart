@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:zero_cart/core/ordering.dart';
 import 'package:zero_cart/data/database.dart';
 import 'package:zero_cart/features/lists/list_exceptions.dart';
 import 'package:zero_cart/features/lists/lists_repository.dart';
@@ -368,5 +369,171 @@ void main() {
 
     final ordered = await lists.watchItems(list.id).first;
     expect(ordered.map((i) => i.id).toList(), ['a', 'b', 'c']);
+  });
+
+  test('reorderActive densifies ties and keeps purchased slots', () async {
+    final store = await stores.create(name: 'Lidl', colorKey: 'lime');
+    final list = await lists.create(storeId: store.id, name: 'Weekend');
+    final now = DateTime.utc(2026, 1, 1, 10);
+    await db
+        .into(db.listItems)
+        .insert(
+          ListItemsCompanion.insert(
+            id: 'b',
+            listId: list.id,
+            title: 'B',
+            position: 1,
+            createdAt: now.add(const Duration(seconds: 1)),
+            updatedAt: now,
+          ),
+        );
+    await db
+        .into(db.listItems)
+        .insert(
+          ListItemsCompanion.insert(
+            id: 'a',
+            listId: list.id,
+            title: 'A',
+            position: 1,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+    await db
+        .into(db.listItems)
+        .insert(
+          ListItemsCompanion.insert(
+            id: 'c',
+            listId: list.id,
+            title: 'C',
+            isPurchased: const Value(true),
+            position: 2,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+
+    // Load order with ties: a, b, c(purchased). Move b before a.
+    await lists.reorderActive(list.id, ['b', 'a']);
+    final ordered = await lists.watchItems(list.id).first;
+    expect(ordered.map((i) => i.id).toList(), ['b', 'a', 'c']);
+    expect(ordered.map((i) => i.position).toList(), [1, 2, 3]);
+    expect(ordered.last.isPurchased, isTrue);
+  });
+
+  test(
+    'reorderActive with purchased in the middle preserves relative order',
+    () async {
+      final store = await stores.create(name: 'Lidl', colorKey: 'lime');
+      final list = await lists.create(storeId: store.id, name: 'Weekend');
+      await insertItem(
+        id: 'a',
+        listId: list.id,
+        title: 'A',
+        purchased: false,
+        position: 1,
+      );
+      await insertItem(
+        id: 'p1',
+        listId: list.id,
+        title: 'P1',
+        purchased: true,
+        position: 2,
+      );
+      await insertItem(
+        id: 'b',
+        listId: list.id,
+        title: 'B',
+        purchased: false,
+        position: 3,
+      );
+      await insertItem(
+        id: 'p2',
+        listId: list.id,
+        title: 'P2',
+        purchased: true,
+        position: 4,
+      );
+      await insertItem(
+        id: 'c',
+        listId: list.id,
+        title: 'C',
+        purchased: false,
+        position: 5,
+      );
+
+      await lists.reorderActive(list.id, ['c', 'a', 'b']);
+      final ordered = await lists.watchItems(list.id).first;
+      expect(ordered.map((i) => i.id).toList(), ['c', 'p1', 'a', 'p2', 'b']);
+      expect(ordered.map((i) => (i.id, i.position, i.isPurchased)).toList(), [
+        ('c', 1, false),
+        ('p1', 2, true),
+        ('a', 3, false),
+        ('p2', 4, true),
+        ('b', 5, false),
+      ]);
+    },
+  );
+
+  test('reorderActive aborts on stale input without writing', () async {
+    final store = await stores.create(name: 'Lidl', colorKey: 'lime');
+    final list = await lists.create(storeId: store.id, name: 'Weekend');
+    final a = await lists.addItem(listId: list.id, title: 'A');
+    final b = await lists.addItem(listId: list.id, title: 'B');
+
+    await expectLater(
+      lists.reorderActive(list.id, [b.id]),
+      throwsA(isA<StaleOrderException>()),
+    );
+    await expectLater(
+      lists.reorderActive(list.id, [a.id, b.id, 'missing']),
+      throwsA(isA<StaleOrderException>()),
+    );
+
+    final ordered = await lists.watchItems(list.id).first;
+    expect(ordered.map((i) => i.id).toList(), [a.id, b.id]);
+    expect(ordered.map((i) => i.position).toList(), [1, 2]);
+  });
+
+  test(
+    'check, reorder others, uncheck returns to stored position slot',
+    () async {
+      final store = await stores.create(name: 'Lidl', colorKey: 'lime');
+      final list = await lists.create(storeId: store.id, name: 'Weekend');
+      final a = await lists.addItem(listId: list.id, title: 'A');
+      final b = await lists.addItem(listId: list.id, title: 'B');
+      final c = await lists.addItem(listId: list.id, title: 'C');
+
+      await lists.setPurchased(b.id, true);
+      await lists.reorderActive(list.id, [c.id, a.id]);
+
+      final afterReorder = await lists.watchItems(list.id).first;
+      expect(afterReorder.map((i) => i.id).toList(), [c.id, b.id, a.id]);
+      final bRow = afterReorder.firstWhere((i) => i.id == b.id);
+      expect(bRow.position, 2);
+      expect(bRow.isPurchased, isTrue);
+
+      await lists.setPurchased(b.id, false);
+      final afterUncheck = await lists.watchItems(list.id).first;
+      expect(afterUncheck.map((i) => i.id).toList(), [c.id, b.id, a.id]);
+      expect(afterUncheck.map((i) => !i.isPurchased).toList(), [
+        true,
+        true,
+        true,
+      ]);
+    },
+  );
+
+  test('reorderActive rejects archived lists', () async {
+    final store = await stores.create(name: 'Lidl', colorKey: 'lime');
+    final list = await lists.create(storeId: store.id, name: 'Weekend');
+    final a = await lists.addItem(listId: list.id, title: 'A');
+    final b = await lists.addItem(listId: list.id, title: 'B');
+    await lists.archive(list.id);
+
+    await expectLater(
+      lists.reorderActive(list.id, [b.id, a.id]),
+      throwsA(isA<ListArchivedException>()),
+    );
   });
 }
