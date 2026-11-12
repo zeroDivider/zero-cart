@@ -52,12 +52,7 @@ class _ListScreenBody extends ConsumerStatefulWidget {
 
 class _ListScreenBodyState extends ConsumerState<_ListScreenBody> {
   final _scrollController = ScrollController();
-  final _addController = TextEditingController();
-  final _descriptionController = TextEditingController();
-  final _addFocus = FocusNode();
   final _itemKeys = <String, GlobalKey>{};
-  String? _addError;
-  bool _showDetails = false;
 
   ShoppingList get list => widget.list;
   bool get _readOnly => list.archivedAt != null;
@@ -65,9 +60,6 @@ class _ListScreenBodyState extends ConsumerState<_ListScreenBody> {
   @override
   void dispose() {
     _scrollController.dispose();
-    _addController.dispose();
-    _descriptionController.dispose();
-    _addFocus.dispose();
     super.dispose();
   }
 
@@ -106,32 +98,6 @@ class _ListScreenBodyState extends ConsumerState<_ListScreenBody> {
         return;
       }
       messenger.showSnackBar(SnackBar(content: Text(l10n.purchaseWriteFailed)));
-    }
-  }
-
-  Future<void> _doAddItem() async {
-    final l10n = AppLocalizations.of(context);
-    final title = _addController.text;
-    if (title.trim().isEmpty) {
-      setState(() => _addError = l10n.titleRequired);
-      return;
-    }
-    setState(() => _addError = null);
-    await ref
-        .read(addItemNotifierProvider(list.id).notifier)
-        .addItem(
-          title: title,
-          description: _showDetails ? _descriptionController.text : null,
-          errorMessage: l10n.writeFailed,
-        );
-    if (!mounted) {
-      return;
-    }
-    final ctrl = ref.read(addItemNotifierProvider(list.id));
-    if (ctrl.error == null && !ctrl.submitting) {
-      _addController.clear();
-      _descriptionController.clear();
-      _addFocus.requestFocus();
     }
   }
 
@@ -217,7 +183,7 @@ class _ListScreenBodyState extends ConsumerState<_ListScreenBody> {
                         : () => showItemEditSheet(context, item),
                   ),
                 ),
-              if (!_readOnly) _buildAddRow(l10n, tokens, addCtrl),
+              if (!_readOnly) _AddItemRow(listId: list.id),
               if (items.isEmpty && !_readOnly)
                 Padding(
                   padding: EdgeInsets.all(tokens.spacing24),
@@ -269,12 +235,64 @@ class _ListScreenBodyState extends ConsumerState<_ListScreenBody> {
       ),
     );
   }
+}
 
-  Widget _buildAddRow(
-    AppLocalizations l10n,
-    AppTokens tokens,
-    AddItemState addCtrl,
-  ) {
+class _AddItemRow extends ConsumerStatefulWidget {
+  const _AddItemRow({required this.listId});
+
+  final String listId;
+
+  @override
+  ConsumerState<_AddItemRow> createState() => _AddItemRowState();
+}
+
+class _AddItemRowState extends ConsumerState<_AddItemRow> {
+  final _addController = TextEditingController();
+  final _descriptionController = TextEditingController();
+  final _addFocus = FocusNode();
+  bool _showDetails = false;
+  String? _addError;
+
+  @override
+  void dispose() {
+    _addController.dispose();
+    _descriptionController.dispose();
+    _addFocus.dispose();
+    super.dispose();
+  }
+
+  Future<void> _doAddItem() async {
+    final l10n = AppLocalizations.of(context);
+    final title = _addController.text;
+    if (title.trim().isEmpty) {
+      setState(() => _addError = l10n.titleRequired);
+      return;
+    }
+    setState(() => _addError = null);
+    await ref
+        .read(addItemNotifierProvider(widget.listId).notifier)
+        .addItem(
+          title: title,
+          description: _showDetails ? _descriptionController.text : null,
+          errorMessage: l10n.writeFailed,
+        );
+    if (!mounted) {
+      return;
+    }
+    final ctrl = ref.read(addItemNotifierProvider(widget.listId));
+    if (ctrl.error == null && !ctrl.submitting) {
+      _addController.clear();
+      _descriptionController.clear();
+      _addFocus.requestFocus();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final tokens = Theme.of(context).extension<AppTokens>()!;
+    final addCtrl = ref.watch(addItemNotifierProvider(widget.listId));
+
     return Padding(
       padding: EdgeInsets.symmetric(
         horizontal: tokens.spacing16,
@@ -311,7 +329,7 @@ class _ListScreenBodyState extends ConsumerState<_ListScreenBody> {
                   ),
                   onChanged: (_) {
                     ref
-                        .read(addItemNotifierProvider(list.id).notifier)
+                        .read(addItemNotifierProvider(widget.listId).notifier)
                         .clearError();
                     if (_addError != null) {
                       setState(() => _addError = null);
