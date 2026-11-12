@@ -7,6 +7,7 @@ alwaysApply: false
 - Dependency direction: `ui -> providers/controllers -> repositories -> data`. A feature never imports another feature's `ui/`.
 - Widgets only render `AsyncValue`s and call controller or repository methods. No business rules, no Drift queries, no `DateTime.now()` (use `nowProvider`).
 - State is Riverpod (ADR-0001): `StreamProvider` for database reads, `Notifier` for UI-only state, plain classes for repositories. Never `ref.read` inside `build`. Repository providers are not auto-disposed.
+- Form-submission state (`_submitting`, `_titleError`, `_writeError`, `_addError` for async write failures) belongs in a `Notifier` via `NotifierProvider.autoDispose` (or `.family`), not in `ConsumerStatefulWidget` state with `setState`. Sync blank-title validation may stay in the widget. `TextEditingController`, `FocusNode`, and `ScrollController` are pure Flutter plumbing and stay in the widget's State class.
 - Undo callbacks run from SnackBars that outlive screens: capture the repository before navigating.
 - Do not add a domain layer, repository interfaces, freezed, json_serializable or any other state library (ADR-0003).
 - Prefer `const`, small widgets and narrow `ref.watch` scopes. Split files before they pass about 300 lines.
