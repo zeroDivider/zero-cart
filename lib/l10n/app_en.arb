@@ -236,13 +236,62 @@
   "@storeWishlistSection": {
     "description": "Section header for wishlist on store details"
   },
-  "storeListsPlaceholder": "Lists will show here.",
-  "@storeListsPlaceholder": {
-    "description": "Placeholder under Shopping lists until APP-011"
-  },
   "storeWishlistPlaceholder": "Wishlist will show here.",
   "@storeWishlistPlaceholder": {
     "description": "Placeholder under Wishlist until APP-016"
+  },
+  "newList": "New list",
+  "@newList": {
+    "description": "Title of the create-list form sheet"
+  },
+  "newListAction": "+ New list",
+  "@newListAction": {
+    "description": "Action on store details to open the create-list sheet"
+  },
+  "renameList": "Rename list",
+  "@renameList": {
+    "description": "Title of the rename-list form sheet"
+  },
+  "listNameLabel": "List name",
+  "@listNameLabel": {
+    "description": "Label for the list name field"
+  },
+  "listNameHint": "List name",
+  "@listNameHint": {
+    "description": "Hint for the list name field"
+  },
+  "listNameRequired": "Enter a list name",
+  "@listNameRequired": {
+    "description": "Inline error when the list name is empty"
+  },
+  "create": "Create",
+  "@create": {
+    "description": "Primary button that creates a new list from the form"
+  },
+  "listItemsLeft": "{count, plural, one{{count} left} other{{count} left}}",
+  "@listItemsLeft": {
+    "description": "Subtitle on a store-details list card showing unpurchased count",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "listCardSemantics": "{name}, {count, plural, one{{count} item left} other{{count} items left}}",
+  "@listCardSemantics": {
+    "description": "Accessibility label for an active list card on store details",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "storeListsEmpty": "No active lists yet.",
+  "@storeListsEmpty": {
+    "description": "Empty state under Shopping lists when the store has none"
   },
   "archiveSegmentStores": "Stores",
   "@archiveSegmentStores": {

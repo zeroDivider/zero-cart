@@ -82,8 +82,34 @@
   },
   "storeListsSection": "Liste za kupovinu",
   "storeWishlistSection": "Lista želja",
-  "storeListsPlaceholder": "Liste će se prikazati ovde.",
   "storeWishlistPlaceholder": "Lista želja će se prikazati ovde.",
+  "newList": "Nova lista",
+  "newListAction": "+ Nova lista",
+  "renameList": "Preimenuj listu",
+  "listNameLabel": "Naziv liste",
+  "listNameHint": "Naziv liste",
+  "listNameRequired": "Unesi naziv liste",
+  "create": "Napravi",
+  "listItemsLeft": "{count, plural, one{{count} preostalo} few{{count} preostalo} other{{count} preostalo}}",
+  "@listItemsLeft": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "listCardSemantics": "{name}, {count, plural, one{{count} stavka preostala} few{{count} stavke preostale} other{{count} stavki preostalo}}",
+  "@listCardSemantics": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "storeListsEmpty": "Još nema aktivnih listi.",
   "archiveSegmentStores": "Prodavnice",
   "archiveSegmentLists": "Liste",
   "archiveStoresEmpty": "Nema arhiviranih prodavnica.",
