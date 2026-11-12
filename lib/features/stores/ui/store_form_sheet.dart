@@ -75,8 +75,6 @@ class _StoreFormSheetState extends State<StoreFormSheet> {
   void _onNameChanged() {
     if (_nameError != null) {
       setState(() => _nameError = null);
-    } else {
-      setState(() {});
     }
   }
 
