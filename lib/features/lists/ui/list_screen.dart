@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zero_cart/app/theme/app_tokens.dart';
 import 'package:zero_cart/core/limits.dart';
 import 'package:zero_cart/data/database.dart';
+import 'package:zero_cart/features/lists/add_item_controller.dart';
 import 'package:zero_cart/features/lists/list_form_sheet.dart';
 import 'package:zero_cart/features/lists/lists_providers.dart';
 import 'package:zero_cart/features/lists/ui/item_edit_sheet.dart';
@@ -54,10 +55,8 @@ class _ListScreenBodyState extends ConsumerState<_ListScreenBody> {
   final _descriptionController = TextEditingController();
   final _addFocus = FocusNode();
   final _itemKeys = <String, GlobalKey>{};
-  String? _pendingScrollItemId;
   String? _addError;
   bool _showDetails = false;
-  bool _submitting = false;
 
   ShoppingList get list => widget.list;
   bool get _readOnly => list.archivedAt != null;
@@ -100,59 +99,38 @@ class _ListScreenBodyState extends ConsumerState<_ListScreenBody> {
     }
   }
 
-  Future<void> _addItem() async {
+  Future<void> _doAddItem() async {
     final l10n = AppLocalizations.of(context);
     final title = _addController.text;
     if (title.trim().isEmpty) {
       setState(() => _addError = l10n.titleRequired);
       return;
     }
-    if (_submitting) {
+    setState(() => _addError = null);
+    await ref
+        .read(addItemControllerProvider(list.id).notifier)
+        .addItem(
+          title: title,
+          description: _showDetails ? _descriptionController.text : null,
+          errorMessage: l10n.writeFailed,
+        );
+    if (!mounted) {
       return;
     }
-    setState(() {
-      _submitting = true;
-      _addError = null;
-    });
-    try {
-      final created = await ref
-          .read(listsRepositoryProvider)
-          .addItem(
-            listId: list.id,
-            title: title,
-            description: _showDetails ? _descriptionController.text : null,
-          );
-      if (!mounted) {
-        return;
-      }
+    final ctrl = ref.read(addItemControllerProvider(list.id));
+    if (ctrl.error == null && !ctrl.submitting) {
       _addController.clear();
       _descriptionController.clear();
-      setState(() {
-        _submitting = false;
-        _pendingScrollItemId = created.id;
-      });
       _addFocus.requestFocus();
-    } on Object {
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _submitting = false;
-        _addError = l10n.writeFailed;
-      });
     }
   }
 
-  void _scrollToPending() {
-    final id = _pendingScrollItemId;
-    if (id == null) {
-      return;
-    }
+  void _scrollToPending(String id) {
     final ctx = _keyFor(id).currentContext;
     if (ctx == null) {
       return;
     }
-    _pendingScrollItemId = null;
+    ref.read(addItemControllerProvider(list.id).notifier).clearPendingScroll();
     Scrollable.ensureVisible(
       ctx,
       duration: const Duration(milliseconds: 200),
@@ -166,6 +144,7 @@ class _ListScreenBodyState extends ConsumerState<_ListScreenBody> {
     final tokens = Theme.of(context).extension<AppTokens>()!;
     final asyncItems = ref.watch(listItemsProvider(list.id));
     final purchasedExpanded = ref.watch(purchasedExpandedProvider(list.id));
+    final addCtrl = ref.watch(addItemControllerProvider(list.id));
 
     return Scaffold(
       appBar: AppBar(
@@ -200,10 +179,11 @@ class _ListScreenBodyState extends ConsumerState<_ListScreenBody> {
         data: (items) {
           final active = items.where((i) => !i.isPurchased).toList();
           final purchased = items.where((i) => i.isPurchased).toList();
-          if (_pendingScrollItemId != null) {
+          final pendingScrollId = addCtrl.pendingScrollId;
+          if (pendingScrollId != null) {
             WidgetsBinding.instance.addPostFrameCallback((_) {
               if (mounted) {
-                _scrollToPending();
+                _scrollToPending(pendingScrollId);
               }
             });
           }
@@ -227,7 +207,7 @@ class _ListScreenBodyState extends ConsumerState<_ListScreenBody> {
                         : () => showItemEditSheet(context, item),
                   ),
                 ),
-              if (!_readOnly) _buildAddRow(l10n, tokens),
+              if (!_readOnly) _buildAddRow(l10n, tokens, addCtrl),
               if (items.isEmpty && !_readOnly)
                 Padding(
                   padding: EdgeInsets.all(tokens.spacing24),
@@ -280,7 +260,11 @@ class _ListScreenBodyState extends ConsumerState<_ListScreenBody> {
     );
   }
 
-  Widget _buildAddRow(AppLocalizations l10n, AppTokens tokens) {
+  Widget _buildAddRow(
+    AppLocalizations l10n,
+    AppTokens tokens,
+    AddItemState addCtrl,
+  ) {
     return Padding(
       padding: EdgeInsets.symmetric(
         horizontal: tokens.spacing16,
@@ -312,15 +296,22 @@ class _ListScreenBodyState extends ConsumerState<_ListScreenBody> {
                       },
                   decoration: InputDecoration(
                     hintText: l10n.addItemHint,
-                    errorText: _addError,
+                    errorText: _addError ?? addCtrl.error,
                     border: InputBorder.none,
                   ),
                   onChanged: (_) {
+                    ref
+                        .read(addItemControllerProvider(list.id).notifier)
+                        .clearError();
                     if (_addError != null) {
                       setState(() => _addError = null);
                     }
                   },
-                  onSubmitted: (_) => _addItem(),
+                  onSubmitted: (_) {
+                    if (!addCtrl.submitting) {
+                      _doAddItem();
+                    }
+                  },
                 ),
               ),
               TextButton(
