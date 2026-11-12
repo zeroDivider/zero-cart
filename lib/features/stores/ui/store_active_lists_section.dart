@@ -48,6 +48,7 @@ class StoreActiveListsSection extends ConsumerWidget {
               );
             }
             return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 for (final row in rows) ...[
                   _ListCard(progress: row),
