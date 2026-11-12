@@ -1,17 +1,41 @@
-import 'package:drift/drift.dart' show Value;
+import 'package:drift/drift.dart' show OrderingTerm, Value;
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:zero_cart/app/router.dart';
 import 'package:zero_cart/data/database.dart';
 import 'package:zero_cart/features/lists/lists_repository.dart';
 import 'package:zero_cart/features/lists/list_form_sheet.dart';
 import 'package:zero_cart/features/lists/ui/item_edit_sheet.dart';
+import 'package:zero_cart/features/lists/ui/item_row.dart';
 import 'package:zero_cart/features/lists/ui/list_screen.dart';
 import 'package:zero_cart/features/stores/stores_repository.dart';
 import 'package:zero_cart/features/stores/ui/store_active_lists_section.dart';
 import 'package:zero_cart/features/stores/ui/store_details_screen.dart';
 
 import '../../support/test_app.dart';
+
+Future<List<String>> _activeTitlesInOrder(
+  WidgetTester tester,
+  TestAppHarness harness,
+  String listId,
+) async {
+  final rows = await tester.runAsync(
+    () =>
+        (harness.db.select(harness.db.listItems)
+              ..where((t) => t.listId.equals(listId))
+              ..orderBy([
+                (t) => OrderingTerm.asc(t.position),
+                (t) => OrderingTerm.asc(t.createdAt),
+                (t) => OrderingTerm.asc(t.id),
+              ]))
+            .get(),
+  );
+  return [
+    for (final row in rows!)
+      if (!row.isPurchased) row.title,
+  ];
+}
 
 Future<void> _tapButton(
   WidgetTester tester,
@@ -460,5 +484,167 @@ void main() {
     expect(find.byKey(const Key('item_checkbox_milk')), findsNothing);
     expect(find.byKey(const Key('list_menu')), findsNothing);
     await harness.dispose(tester);
+  });
+
+  testWidgets('drag handle moves an active item and leaves purchased fixed', (
+    tester,
+  ) async {
+    final harness = await pumpTestApp(
+      tester,
+      router: AppRouter.create(initialLocation: AppRoutes.stores),
+    );
+    final (store, list) = await _seedList(tester, harness);
+    await tester.runAsync(() async {
+      await _insertItem(
+        harness.db,
+        id: 'a',
+        listId: list.id,
+        title: 'Alpha',
+        purchased: false,
+        position: 1,
+      );
+      await _insertItem(
+        harness.db,
+        id: 'b',
+        listId: list.id,
+        title: 'Bravo',
+        purchased: false,
+        position: 2,
+      );
+      await _insertItem(
+        harness.db,
+        id: 'c',
+        listId: list.id,
+        title: 'Charlie',
+        purchased: false,
+        position: 3,
+      );
+      await _insertItem(
+        harness.db,
+        id: 'p',
+        listId: list.id,
+        title: 'Purchased',
+        purchased: true,
+        position: 4,
+      );
+    });
+    await pumpApp(tester, harness);
+    await _openList(tester, harness, store, list);
+
+    await tester.drag(
+      find.byKey(const Key('item_handle_c')),
+      const Offset(0, -320),
+    );
+    await tester.pumpAndSettle();
+    await pumpApp(tester, harness);
+
+    final afterDrag = await _activeTitlesInOrder(tester, harness, list.id);
+    expect(afterDrag, ['Charlie', 'Alpha', 'Bravo']);
+    expect(find.byKey(const Key('item_handle_p')), findsNothing);
+
+    final purchasedPos = await tester.runAsync(
+      () => (harness.db.select(
+        harness.db.listItems,
+      )..where((t) => t.id.equals('p'))).getSingle(),
+    );
+    expect(purchasedPos!.position, 4);
+
+    await pumpApp(tester, harness);
+    expect(await _activeTitlesInOrder(tester, harness, list.id), afterDrag);
+    await harness.dispose(tester);
+  });
+
+  testWidgets('Move up and Move down cover top middle and bottom slots', (
+    tester,
+  ) async {
+    final handle = tester.ensureSemantics();
+    try {
+      final harness = await pumpTestApp(
+        tester,
+        router: AppRouter.create(initialLocation: AppRoutes.stores),
+      );
+      final (store, list) = await _seedList(tester, harness);
+      await tester.runAsync(() async {
+        await _insertItem(
+          harness.db,
+          id: 'a',
+          listId: list.id,
+          title: 'Alpha',
+          purchased: false,
+          position: 1,
+        );
+        await _insertItem(
+          harness.db,
+          id: 'b',
+          listId: list.id,
+          title: 'Bravo',
+          purchased: false,
+          position: 2,
+        );
+        await _insertItem(
+          harness.db,
+          id: 'c',
+          listId: list.id,
+          title: 'Charlie',
+          purchased: false,
+          position: 3,
+        );
+      });
+      await pumpApp(tester, harness);
+      await _openList(tester, harness, store, list);
+
+      List<String?> actionLabels(SemanticsNode node) => [
+        for (final id
+            in node.getSemanticsData().customSemanticsActionIds ??
+                const <int>[])
+          CustomSemanticsAction.getAction(id)?.label,
+      ];
+
+      Future<void> performMove(Finder rowFinder, String label) async {
+        final node = tester.getSemantics(rowFinder);
+        final actionId = CustomSemanticsAction.getIdentifier(
+          CustomSemanticsAction(label: label),
+        );
+        node.owner!.performAction(
+          node.id,
+          SemanticsAction.customAction,
+          actionId,
+        );
+        await pumpApp(tester, harness);
+      }
+
+      final firstRow = tester.getSemantics(find.byType(ItemRow).at(0));
+      expect(actionLabels(firstRow), isNot(contains('Move up')));
+      expect(actionLabels(firstRow), contains('Move down'));
+
+      final lastRow = tester.getSemantics(find.byType(ItemRow).at(2));
+      expect(actionLabels(lastRow), contains('Move up'));
+      expect(actionLabels(lastRow), isNot(contains('Move down')));
+
+      await performMove(find.byType(ItemRow).at(2), 'Move up');
+      await performMove(find.byType(ItemRow).at(1), 'Move up');
+      expect(await _activeTitlesInOrder(tester, harness, list.id), [
+        'Charlie',
+        'Alpha',
+        'Bravo',
+      ]);
+
+      await performMove(find.byType(ItemRow).at(0), 'Move down');
+      expect(await _activeTitlesInOrder(tester, harness, list.id), [
+        'Alpha',
+        'Charlie',
+        'Bravo',
+      ]);
+
+      await performMove(find.byType(ItemRow).at(1), 'Move down');
+      expect(await _activeTitlesInOrder(tester, harness, list.id), [
+        'Alpha',
+        'Bravo',
+        'Charlie',
+      ]);
+      await harness.dispose(tester);
+    } finally {
+      handle.dispose();
+    }
   });
 }
