@@ -333,7 +333,7 @@
   "@addItemDetailsToggle": {
     "description": "Toggle that reveals the description field on the add row"
   },
-  "purchasedSection": "Purchased ({count})",
+  "purchasedSection": "{count, plural, one{Purchased ({count})} other{Purchased ({count})}}",
   "@purchasedSection": {
     "description": "Collapsible header for purchased items",
     "placeholders": {

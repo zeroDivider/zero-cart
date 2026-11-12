@@ -94,22 +94,28 @@ class ItemRow extends StatelessWidget {
                   child: InkWell(
                     key: Key('item_content_${item.id}'),
                     onTap: readOnly ? null : onOpenEdit,
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(vertical: tokens.spacing4),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(item.title, style: titleStyle),
-                          if (hasDescription) ...[
-                            SizedBox(height: tokens.spacing4),
-                            Text(
-                              item.description!,
-                              style: descriptionStyle,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(minHeight: tokens.spacing48),
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(
+                          vertical: tokens.spacing4,
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(item.title, style: titleStyle),
+                            if (hasDescription) ...[
+                              SizedBox(height: tokens.spacing4),
+                              Text(
+                                item.description!,
+                                style: descriptionStyle,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
                           ],
-                        ],
+                        ),
                       ),
                     ),
                   ),

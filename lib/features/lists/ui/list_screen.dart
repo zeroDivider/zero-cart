@@ -368,26 +368,29 @@ class _PurchasedHeader extends ConsumerWidget {
       key: const Key('purchased_section_header'),
       onTap: () =>
           ref.read(purchasedExpandedProvider(listId).notifier).toggle(),
-      child: Padding(
-        padding: EdgeInsets.symmetric(
-          horizontal: tokens.spacing16,
-          vertical: tokens.spacing12,
-        ),
-        child: Row(
-          children: [
-            AnimatedRotation(
-              turns: expanded ? 0.5 : 0,
-              duration: reduceMotion
-                  ? Duration.zero
-                  : const Duration(milliseconds: 250),
-              child: const Icon(Icons.expand_more),
-            ),
-            SizedBox(width: tokens.spacing8),
-            Text(
-              l10n.purchasedSection(count),
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-          ],
+      child: ConstrainedBox(
+        constraints: BoxConstraints(minHeight: tokens.spacing48),
+        child: Padding(
+          padding: EdgeInsets.symmetric(
+            horizontal: tokens.spacing16,
+            vertical: tokens.spacing12,
+          ),
+          child: Row(
+            children: [
+              AnimatedRotation(
+                turns: expanded ? 0.5 : 0,
+                duration: reduceMotion
+                    ? Duration.zero
+                    : const Duration(milliseconds: 250),
+                child: const Icon(Icons.expand_more),
+              ),
+              SizedBox(width: tokens.spacing8),
+              Text(
+                l10n.purchasedSection(count),
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+            ],
+          ),
         ),
       ),
     );
