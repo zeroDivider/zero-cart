@@ -40,7 +40,7 @@ ListsRepository _lists(TestAppHarness harness) {
   return ListsRepository(
     database: harness.db,
     now: () => DateTime.utc(2026, 1, 1, 13, n++),
-    newId: () => 'list-${n}',
+    newId: () => 'list-$n',
   );
 }
 
