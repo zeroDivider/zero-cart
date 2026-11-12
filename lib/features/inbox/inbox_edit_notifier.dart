@@ -2,12 +2,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zero_cart/core/form_submit_state.dart';
 import 'package:zero_cart/features/inbox/inbox_providers.dart';
 
-class QuickAddController extends Notifier<FormSubmitState> {
+class InboxEditNotifier extends Notifier<FormSubmitState> {
+  InboxEditNotifier(this.itemId);
+
+  final String itemId;
+
   @override
   FormSubmitState build() => const FormSubmitState.idle();
 
-  /// Returns true on success so the widget can pop or reset.
-  Future<bool> submit({
+  Future<bool> save({
     required String title,
     required String description,
     required String errorMessage,
@@ -19,7 +22,7 @@ class QuickAddController extends Notifier<FormSubmitState> {
     try {
       await ref
           .read(inboxRepositoryProvider)
-          .add(title: title, description: description);
+          .update(id: itemId, title: title, description: description);
       state = const FormSubmitState.idle();
       return true;
     } on Object {
@@ -35,7 +38,7 @@ class QuickAddController extends Notifier<FormSubmitState> {
   }
 }
 
-final quickAddControllerProvider =
-    NotifierProvider.autoDispose<QuickAddController, FormSubmitState>(
-      QuickAddController.new,
+final inboxEditNotifierProvider = NotifierProvider.autoDispose
+    .family<InboxEditNotifier, FormSubmitState, String>(
+      (itemId) => InboxEditNotifier(itemId),
     );

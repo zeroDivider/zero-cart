@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zero_cart/app/theme/app_tokens.dart';
 import 'package:zero_cart/core/limits.dart';
-import 'package:zero_cart/features/inbox/quick_add_controller.dart';
+import 'package:zero_cart/features/inbox/quick_add_notifier.dart';
 import 'package:zero_cart/l10n/generated/app_localizations.dart';
 
 /// Opens the Quick add bottom sheet (D-02 / F1).
@@ -49,7 +49,7 @@ class _QuickAddSheetState extends ConsumerState<QuickAddSheet> {
   }
 
   void _onTitleChanged() {
-    ref.read(quickAddControllerProvider.notifier).clearError();
+    ref.read(quickAddNotifierProvider.notifier).clearError();
     if (_titleError != null) {
       setState(() => _titleError = null);
     } else {
@@ -77,7 +77,7 @@ class _QuickAddSheetState extends ConsumerState<QuickAddSheet> {
     }
     setState(() => _titleError = null);
     final ok = await ref
-        .read(quickAddControllerProvider.notifier)
+        .read(quickAddNotifierProvider.notifier)
         .submit(
           title: _titleController.text,
           description: _descriptionController.text,
@@ -99,7 +99,7 @@ class _QuickAddSheetState extends ConsumerState<QuickAddSheet> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final tokens = Theme.of(context).extension<AppTokens>()!;
-    final ctrl = ref.watch(quickAddControllerProvider);
+    final ctrl = ref.watch(quickAddNotifierProvider);
     final titleIsBlank = _titleIsBlank;
     final canSubmit = !titleIsBlank && !ctrl.submitting;
 

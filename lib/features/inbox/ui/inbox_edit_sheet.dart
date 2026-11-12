@@ -4,7 +4,7 @@ import 'package:zero_cart/app/theme/app_tokens.dart';
 import 'package:zero_cart/core/limits.dart';
 import 'package:zero_cart/core/widgets/remove_undo_snackbar.dart';
 import 'package:zero_cart/data/database.dart';
-import 'package:zero_cart/features/inbox/inbox_edit_controller.dart';
+import 'package:zero_cart/features/inbox/inbox_edit_notifier.dart';
 import 'package:zero_cart/features/inbox/inbox_providers.dart';
 import 'package:zero_cart/features/inbox/inbox_repository.dart';
 import 'package:zero_cart/l10n/generated/app_localizations.dart';
@@ -53,7 +53,7 @@ class _InboxEditSheetState extends ConsumerState<InboxEditSheet> {
   }
 
   void _onTitleChanged() {
-    ref.read(inboxEditControllerProvider(widget.item.id).notifier).clearError();
+    ref.read(inboxEditNotifierProvider(widget.item.id).notifier).clearError();
     if (_titleError != null) {
       setState(() => _titleError = null);
     } else {
@@ -80,7 +80,7 @@ class _InboxEditSheetState extends ConsumerState<InboxEditSheet> {
     }
     setState(() => _titleError = null);
     final ok = await ref
-        .read(inboxEditControllerProvider(widget.item.id).notifier)
+        .read(inboxEditNotifierProvider(widget.item.id).notifier)
         .save(
           title: _titleController.text,
           description: _descriptionController.text,
@@ -108,7 +108,7 @@ class _InboxEditSheetState extends ConsumerState<InboxEditSheet> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final tokens = Theme.of(context).extension<AppTokens>()!;
-    final ctrl = ref.watch(inboxEditControllerProvider(widget.item.id));
+    final ctrl = ref.watch(inboxEditNotifierProvider(widget.item.id));
     final titleIsBlank = _titleIsBlank;
     final canSave = !titleIsBlank && !ctrl.submitting;
 

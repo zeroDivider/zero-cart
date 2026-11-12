@@ -34,13 +34,13 @@ live in a `Notifier` exposed via `NotifierProvider.autoDispose` (or
 `NotifierProvider.autoDispose.family`), never in widget `State` with `setState`.
 
 Fields `_submitting`, `_titleError`, `_writeError` in a `ConsumerStatefulWidget` are
-the anti-pattern for the async lifecycle. Use `ref.watch(myControllerProvider)` and render
-the controller state the same way DB reads are rendered with `AsyncValue`. Sync field
+the anti-pattern for the async lifecycle. Use `ref.watch(myNotifierProvider)` and render
+the notifier state the same way DB reads are rendered with `AsyncValue`. Sync field
 validation (blank title) may stay in the widget; write/submit lifecycle must not.
 
 TextEditingController, FocusNode, ScrollController and layout flags (_showDetails,
 _pendingScrollItemId for scroll geometry) are pure Flutter plumbing and stay in the widget.
-(When a controller already owns submit success side-effects such as a new-row id, that
+(When a notifier already owns submit success side-effects such as a new-row id, that
 pending-scroll id may live on the same UI-state object.)
 
 **Consequences:** Android mapping: StreamProvider is like collecting a Flow, a Notifier is a lightweight ViewModel without lifecycle ownership, overrides replace Hilt test modules. Convention: never `ref.read` inside `build`, repository providers are app-lifetime, widgets never hold business rules.

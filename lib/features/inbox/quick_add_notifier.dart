@@ -1,16 +1,13 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zero_cart/core/form_submit_state.dart';
-import 'package:zero_cart/features/lists/lists_providers.dart';
+import 'package:zero_cart/features/inbox/inbox_providers.dart';
 
-class ItemEditController extends Notifier<FormSubmitState> {
-  ItemEditController(this.itemId);
-
-  final String itemId;
-
+class QuickAddNotifier extends Notifier<FormSubmitState> {
   @override
   FormSubmitState build() => const FormSubmitState.idle();
 
-  Future<bool> save({
+  /// Returns true on success so the widget can pop or reset.
+  Future<bool> submit({
     required String title,
     required String description,
     required String errorMessage,
@@ -21,8 +18,8 @@ class ItemEditController extends Notifier<FormSubmitState> {
     state = const FormSubmitState(submitting: true);
     try {
       await ref
-          .read(listsRepositoryProvider)
-          .updateItem(id: itemId, title: title, description: description);
+          .read(inboxRepositoryProvider)
+          .add(title: title, description: description);
       state = const FormSubmitState.idle();
       return true;
     } on Object {
@@ -38,7 +35,7 @@ class ItemEditController extends Notifier<FormSubmitState> {
   }
 }
 
-final itemEditControllerProvider = NotifierProvider.autoDispose
-    .family<ItemEditController, FormSubmitState, String>(
-      (itemId) => ItemEditController(itemId),
+final quickAddNotifierProvider =
+    NotifierProvider.autoDispose<QuickAddNotifier, FormSubmitState>(
+      QuickAddNotifier.new,
     );

@@ -9,8 +9,8 @@ class AddItemState extends FormSubmitState {
   final String? pendingScrollId;
 }
 
-class AddItemController extends Notifier<AddItemState> {
-  AddItemController(this.listId);
+class AddItemNotifier extends Notifier<AddItemState> {
+  AddItemNotifier(this.listId);
 
   final String listId;
 
@@ -49,7 +49,7 @@ class AddItemController extends Notifier<AddItemState> {
   }
 }
 
-final addItemControllerProvider = NotifierProvider.autoDispose
-    .family<AddItemController, AddItemState, String>(
-      (listId) => AddItemController(listId),
+final addItemNotifierProvider = NotifierProvider.autoDispose
+    .family<AddItemNotifier, AddItemState, String>(
+      (listId) => AddItemNotifier(listId),
     );
