@@ -45,6 +45,25 @@ Binding unless you override. Items marked \[REVIEW\] are the ones I most want yo
 - **D-22** Every gesture has a non-gesture equivalent: Move up / Move down semantic actions for reorder; a Remove semantic action plus a Remove button in the edit sheet; checkbox rows at least 48dp.
 - **D-23** Store colour never carries meaning alone; the name is always shown.
 
+**Architecture assumptions**
+
+- **D-24** Write operations from widgets fall into two categories. (a) *One-shot
+  actions* (archive, restore, setPurchased, rename): the database is local and
+  fast (< 10 ms via Drift/SQLite). No loading spinner is shown; the stream
+  reacts before the next frame and the UI updates automatically. Failure shows
+  a snackbar. The widget calls the repository directly via `ref.read(repo)`.
+  (b) *Form submissions* (addItem, save, updateItem, quickAdd): the widget
+  shows a disabled button and inline error text during and after the async gap.
+  These use an `AutoDispose Notifier`; the widget calls the notifier, not the
+  repository. The distinction rests on whether the widget itself must show a
+  busy or error state.
+
+- **D-25** The one-shot pattern (D-24a) is valid only while the database is
+  local. When a backend is introduced all write operations must be reviewed:
+  each will likely need a Notifier with an optimistic-update or loading-state
+  pattern. ADR-0003 already flags "a second data source" as a reconsider
+  trigger.
+
 ## 1.2 Conflicts and risks
 
 - **Gestures:** vertical scroll, drag-to-reorder and swipe-to-dismiss compete. Resolution: Dismissible only end-to-start, drag only from a 48dp handle.
