@@ -159,9 +159,8 @@ class _InboxEditSheetState extends ConsumerState<InboxEditSheet> {
               SizedBox(height: tokens.spacing8),
               Text(
                 ctrl.error!,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.error,
-                ),
+                style: Theme.of(context).textTheme.bodySmall
+                    ?.copyWith(color: Theme.of(context).colorScheme.error),
               ),
             ],
             SizedBox(height: tokens.spacing16),
@@ -175,9 +174,7 @@ class _InboxEditSheetState extends ConsumerState<InboxEditSheet> {
                 const Spacer(),
                 FilledButton(
                   key: const Key('inbox_edit_save'),
-                  onPressed: canSave
-                      ? _save
-                      : (titleIsBlank ? _save : null),
+                  onPressed: canSave ? _save : (titleIsBlank ? _save : null),
                   child: Text(l10n.save),
                 ),
               ],

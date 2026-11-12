@@ -153,9 +153,8 @@ class _QuickAddSheetState extends ConsumerState<QuickAddSheet> {
               SizedBox(height: tokens.spacing8),
               Text(
                 ctrl.error!,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.error,
-                ),
+                style: Theme.of(context).textTheme.bodySmall
+                    ?.copyWith(color: Theme.of(context).colorScheme.error),
               ),
             ],
             SizedBox(height: tokens.spacing16),
@@ -165,9 +164,7 @@ class _QuickAddSheetState extends ConsumerState<QuickAddSheet> {
                   key: const Key('quick_add_another'),
                   onPressed: canSubmit
                       ? () => _submit(addAnother: true)
-                      : (titleIsBlank
-                            ? () => _submit(addAnother: true)
-                            : null),
+                      : (titleIsBlank ? () => _submit(addAnother: true) : null),
                   child: Text(l10n.addAnother),
                 ),
                 const Spacer(),
