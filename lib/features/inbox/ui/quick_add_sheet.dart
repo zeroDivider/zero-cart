@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zero_cart/app/theme/app_tokens.dart';
 import 'package:zero_cart/core/limits.dart';
-import 'package:zero_cart/features/inbox/inbox_providers.dart';
+import 'package:zero_cart/features/inbox/quick_add_controller.dart';
 import 'package:zero_cart/l10n/generated/app_localizations.dart';
 
 /// Opens the Quick add bottom sheet (D-02 / F1).
@@ -36,8 +36,6 @@ class _QuickAddSheetState extends ConsumerState<QuickAddSheet> {
   final _descriptionController = TextEditingController();
   final _titleFocus = FocusNode();
   String? _titleError;
-  String? _writeError;
-  bool _submitting = false;
 
   @override
   void initState() {
@@ -51,11 +49,9 @@ class _QuickAddSheetState extends ConsumerState<QuickAddSheet> {
   }
 
   void _onTitleChanged() {
-    if (_titleError != null || _writeError != null) {
-      setState(() {
-        _titleError = null;
-        _writeError = null;
-      });
+    ref.read(quickAddControllerProvider.notifier).clearError();
+    if (_titleError != null) {
+      setState(() => _titleError = null);
     } else {
       setState(() {});
     }
@@ -76,46 +72,26 @@ class _QuickAddSheetState extends ConsumerState<QuickAddSheet> {
   Future<void> _submit({required bool addAnother}) async {
     final l10n = AppLocalizations.of(context);
     if (_titleIsBlank) {
-      setState(() {
-        _titleError = l10n.titleRequired;
-        _writeError = null;
-      });
+      setState(() => _titleError = l10n.titleRequired);
       return;
     }
-    if (_submitting) {
+    setState(() => _titleError = null);
+    final ok = await ref
+        .read(quickAddControllerProvider.notifier)
+        .submit(
+          title: _titleController.text,
+          description: _descriptionController.text,
+          errorMessage: l10n.writeFailed,
+        );
+    if (!ok || !mounted) {
       return;
     }
-    setState(() {
-      _submitting = true;
-      _titleError = null;
-      _writeError = null;
-    });
-    try {
-      await ref
-          .read(inboxRepositoryProvider)
-          .add(
-            title: _titleController.text,
-            description: _descriptionController.text,
-          );
-      if (!mounted) {
-        return;
-      }
-      if (addAnother) {
-        _titleController.clear();
-        _descriptionController.clear();
-        setState(() => _submitting = false);
-        _titleFocus.requestFocus();
-      } else {
-        Navigator.of(context).pop();
-      }
-    } on Object {
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _submitting = false;
-        _writeError = l10n.writeFailed;
-      });
+    if (addAnother) {
+      _titleController.clear();
+      _descriptionController.clear();
+      _titleFocus.requestFocus();
+    } else {
+      Navigator.of(context).pop();
     }
   }
 
@@ -123,7 +99,9 @@ class _QuickAddSheetState extends ConsumerState<QuickAddSheet> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final tokens = Theme.of(context).extension<AppTokens>()!;
-    final canSubmit = !_titleIsBlank && !_submitting;
+    final ctrl = ref.watch(quickAddControllerProvider);
+    final titleIsBlank = _titleIsBlank;
+    final canSubmit = !titleIsBlank && !ctrl.submitting;
 
     return SafeArea(
       top: false,
@@ -154,7 +132,7 @@ class _QuickAddSheetState extends ConsumerState<QuickAddSheet> {
                 errorText: _titleError,
               ),
               onSubmitted: (_) {
-                if (canSubmit || _titleIsBlank) {
+                if (canSubmit || titleIsBlank) {
                   _submit(addAnother: false);
                 }
               },
@@ -171,12 +149,13 @@ class _QuickAddSheetState extends ConsumerState<QuickAddSheet> {
                 counterText: '',
               ),
             ),
-            if (_writeError != null) ...[
+            if (ctrl.error != null) ...[
               SizedBox(height: tokens.spacing8),
               Text(
-                _writeError!,
-                style: Theme.of(context).textTheme.bodySmall
-                    ?.copyWith(color: Theme.of(context).colorScheme.error),
+                ctrl.error!,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.error,
+                ),
               ),
             ],
             SizedBox(height: tokens.spacing16),
@@ -186,7 +165,7 @@ class _QuickAddSheetState extends ConsumerState<QuickAddSheet> {
                   key: const Key('quick_add_another'),
                   onPressed: canSubmit
                       ? () => _submit(addAnother: true)
-                      : (_titleIsBlank
+                      : (titleIsBlank
                             ? () => _submit(addAnother: true)
                             : null),
                   child: Text(l10n.addAnother),
@@ -196,7 +175,7 @@ class _QuickAddSheetState extends ConsumerState<QuickAddSheet> {
                   key: const Key('quick_add_submit'),
                   onPressed: canSubmit
                       ? () => _submit(addAnother: false)
-                      : (_titleIsBlank
+                      : (titleIsBlank
                             ? () => _submit(addAnother: false)
                             : null),
                   child: Text(l10n.add),
