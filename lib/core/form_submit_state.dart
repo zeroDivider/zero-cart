@@ -1,4 +1,4 @@
-/// Shared state for form-submission controllers.
+/// Shared state for form-submission notifiers.
 ///
 /// Widgets render this with: submitting → disable button,
 /// error != null → show error text (pass already-translated message).

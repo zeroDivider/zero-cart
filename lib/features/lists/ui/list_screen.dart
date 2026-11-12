@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zero_cart/app/theme/app_tokens.dart';
 import 'package:zero_cart/core/limits.dart';
 import 'package:zero_cart/data/database.dart';
-import 'package:zero_cart/features/lists/add_item_controller.dart';
+import 'package:zero_cart/features/lists/add_item_notifier.dart';
 import 'package:zero_cart/features/lists/list_form_sheet.dart';
 import 'package:zero_cart/features/lists/lists_providers.dart';
 import 'package:zero_cart/features/lists/ui/item_edit_sheet.dart';
@@ -108,7 +108,7 @@ class _ListScreenBodyState extends ConsumerState<_ListScreenBody> {
     }
     setState(() => _addError = null);
     await ref
-        .read(addItemControllerProvider(list.id).notifier)
+        .read(addItemNotifierProvider(list.id).notifier)
         .addItem(
           title: title,
           description: _showDetails ? _descriptionController.text : null,
@@ -117,7 +117,7 @@ class _ListScreenBodyState extends ConsumerState<_ListScreenBody> {
     if (!mounted) {
       return;
     }
-    final ctrl = ref.read(addItemControllerProvider(list.id));
+    final ctrl = ref.read(addItemNotifierProvider(list.id));
     if (ctrl.error == null && !ctrl.submitting) {
       _addController.clear();
       _descriptionController.clear();
@@ -130,7 +130,7 @@ class _ListScreenBodyState extends ConsumerState<_ListScreenBody> {
     if (ctx == null) {
       return;
     }
-    ref.read(addItemControllerProvider(list.id).notifier).clearPendingScroll();
+    ref.read(addItemNotifierProvider(list.id).notifier).clearPendingScroll();
     Scrollable.ensureVisible(
       ctx,
       duration: const Duration(milliseconds: 200),
@@ -144,7 +144,7 @@ class _ListScreenBodyState extends ConsumerState<_ListScreenBody> {
     final tokens = Theme.of(context).extension<AppTokens>()!;
     final asyncItems = ref.watch(listItemsProvider(list.id));
     final purchasedExpanded = ref.watch(purchasedExpandedProvider(list.id));
-    final addCtrl = ref.watch(addItemControllerProvider(list.id));
+    final addCtrl = ref.watch(addItemNotifierProvider(list.id));
 
     return Scaffold(
       appBar: AppBar(
@@ -301,7 +301,7 @@ class _ListScreenBodyState extends ConsumerState<_ListScreenBody> {
                   ),
                   onChanged: (_) {
                     ref
-                        .read(addItemControllerProvider(list.id).notifier)
+                        .read(addItemNotifierProvider(list.id).notifier)
                         .clearError();
                     if (_addError != null) {
                       setState(() => _addError = null);

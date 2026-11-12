@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zero_cart/app/theme/app_tokens.dart';
 import 'package:zero_cart/core/limits.dart';
 import 'package:zero_cart/data/database.dart';
-import 'package:zero_cart/features/lists/item_edit_controller.dart';
+import 'package:zero_cart/features/lists/item_edit_notifier.dart';
 import 'package:zero_cart/l10n/generated/app_localizations.dart';
 
 /// Opens the edit sheet for a list item. Dismiss without Save discards edits.
@@ -50,7 +50,7 @@ class _ItemEditSheetState extends ConsumerState<ItemEditSheet> {
   }
 
   void _onTitleChanged() {
-    ref.read(itemEditControllerProvider(widget.item.id).notifier).clearError();
+    ref.read(itemEditNotifierProvider(widget.item.id).notifier).clearError();
     if (_titleError != null) {
       setState(() => _titleError = null);
     } else {
@@ -77,7 +77,7 @@ class _ItemEditSheetState extends ConsumerState<ItemEditSheet> {
     }
     setState(() => _titleError = null);
     final ok = await ref
-        .read(itemEditControllerProvider(widget.item.id).notifier)
+        .read(itemEditNotifierProvider(widget.item.id).notifier)
         .save(
           title: _titleController.text,
           description: _descriptionController.text,
@@ -92,7 +92,7 @@ class _ItemEditSheetState extends ConsumerState<ItemEditSheet> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final tokens = Theme.of(context).extension<AppTokens>()!;
-    final ctrl = ref.watch(itemEditControllerProvider(widget.item.id));
+    final ctrl = ref.watch(itemEditNotifierProvider(widget.item.id));
     final titleIsBlank = _titleIsBlank;
     final canSave = !titleIsBlank && !ctrl.submitting;
 

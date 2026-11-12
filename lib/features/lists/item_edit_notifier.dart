@@ -1,9 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zero_cart/core/form_submit_state.dart';
-import 'package:zero_cart/features/inbox/inbox_providers.dart';
+import 'package:zero_cart/features/lists/lists_providers.dart';
 
-class InboxEditController extends Notifier<FormSubmitState> {
-  InboxEditController(this.itemId);
+class ItemEditNotifier extends Notifier<FormSubmitState> {
+  ItemEditNotifier(this.itemId);
 
   final String itemId;
 
@@ -21,8 +21,8 @@ class InboxEditController extends Notifier<FormSubmitState> {
     state = const FormSubmitState(submitting: true);
     try {
       await ref
-          .read(inboxRepositoryProvider)
-          .update(id: itemId, title: title, description: description);
+          .read(listsRepositoryProvider)
+          .updateItem(id: itemId, title: title, description: description);
       state = const FormSubmitState.idle();
       return true;
     } on Object {
@@ -38,7 +38,7 @@ class InboxEditController extends Notifier<FormSubmitState> {
   }
 }
 
-final inboxEditControllerProvider = NotifierProvider.autoDispose
-    .family<InboxEditController, FormSubmitState, String>(
-      (itemId) => InboxEditController(itemId),
+final itemEditNotifierProvider = NotifierProvider.autoDispose
+    .family<ItemEditNotifier, FormSubmitState, String>(
+      (itemId) => ItemEditNotifier(itemId),
     );
