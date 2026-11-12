@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:zero_cart/app/theme/app_tokens.dart';
 import 'package:zero_cart/data/database.dart';
-import 'package:zero_cart/features/lists/ui/store_active_lists_section.dart';
 import 'package:zero_cart/features/stores/stores_providers.dart';
+import 'package:zero_cart/features/stores/ui/store_active_lists_section.dart';
 import 'package:zero_cart/features/stores/ui/stores_screen.dart';
 import 'package:zero_cart/l10n/generated/app_localizations.dart';
 

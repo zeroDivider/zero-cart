@@ -4,11 +4,14 @@ import 'package:go_router/go_router.dart';
 import 'package:zero_cart/app/router.dart';
 import 'package:zero_cart/app/theme/app_tokens.dart';
 import 'package:zero_cart/features/lists/active_list_progress.dart';
+import 'package:zero_cart/features/lists/list_form_sheet.dart';
 import 'package:zero_cart/features/lists/lists_providers.dart';
-import 'package:zero_cart/features/lists/ui/list_form_sheet.dart';
 import 'package:zero_cart/l10n/generated/app_localizations.dart';
 
 /// Active list cards and New list action for store details (LI-1, F9).
+///
+/// Lives in stores `ui/` and depends on lists providers + feature-root form,
+/// not on `features/lists/ui/` (architecture §2.3).
 class StoreActiveListsSection extends ConsumerWidget {
   const StoreActiveListsSection({
     required this.storeId,

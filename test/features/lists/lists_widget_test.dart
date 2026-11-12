@@ -4,10 +4,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:zero_cart/app/router.dart';
 import 'package:zero_cart/data/database.dart';
 import 'package:zero_cart/features/lists/lists_repository.dart';
-import 'package:zero_cart/features/lists/ui/list_form_sheet.dart';
+import 'package:zero_cart/features/lists/list_form_sheet.dart';
 import 'package:zero_cart/features/lists/ui/list_placeholder_screen.dart';
-import 'package:zero_cart/features/lists/ui/store_active_lists_section.dart';
 import 'package:zero_cart/features/stores/stores_repository.dart';
+import 'package:zero_cart/features/stores/ui/store_active_lists_section.dart';
 import 'package:zero_cart/features/stores/ui/store_details_screen.dart';
 
 import '../../support/test_app.dart';
