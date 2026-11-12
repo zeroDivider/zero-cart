@@ -114,5 +114,6 @@
   "archiveSegmentLists": "Liste",
   "archiveStoresEmpty": "Nema arhiviranih prodavnica.",
   "archiveListsPlaceholder": "Arhivirane liste će se prikazati ovde.",
-  "storeNotFound": "Prodavnica nije pronađena"
+  "storeNotFound": "Prodavnica nije pronađena",
+  "archiveListFailed": "Couldn't archive. Try again."
 }
