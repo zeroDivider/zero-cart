@@ -401,5 +401,9 @@
   "purchaseWriteFailed": "Couldn't update. Try again.",
   "@purchaseWriteFailed": {
     "description": "SnackBar when setPurchased fails and the checkbox reverts"
+  },
+  "archiveListFailed": "Couldn't archive. Try again.",
+  "@archiveListFailed": {
+    "description": "SnackBar when archiving a list fails"
   }
 }

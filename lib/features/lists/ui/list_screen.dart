@@ -83,7 +83,16 @@ class _ListScreenBodyState extends ConsumerState<_ListScreenBody> {
   }
 
   Future<void> _archive() async {
-    await ref.read(listsRepositoryProvider).archive(list.id);
+    final l10n = AppLocalizations.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await ref.read(listsRepositoryProvider).archive(list.id);
+    } on Object {
+      if (!mounted) {
+        return;
+      }
+      messenger.showSnackBar(SnackBar(content: Text(l10n.archiveListFailed)));
+    }
   }
 
   Future<void> _setPurchased(ListItem item, bool value) async {
