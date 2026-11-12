@@ -4,6 +4,7 @@ import 'package:zero_cart/app/theme/app_tokens.dart';
 import 'package:zero_cart/core/limits.dart';
 import 'package:zero_cart/core/widgets/remove_undo_snackbar.dart';
 import 'package:zero_cart/data/database.dart';
+import 'package:zero_cart/features/inbox/inbox_edit_controller.dart';
 import 'package:zero_cart/features/inbox/inbox_providers.dart';
 import 'package:zero_cart/features/inbox/inbox_repository.dart';
 import 'package:zero_cart/l10n/generated/app_localizations.dart';
@@ -40,8 +41,6 @@ class _InboxEditSheetState extends ConsumerState<InboxEditSheet> {
   late final TextEditingController _titleController;
   late final TextEditingController _descriptionController;
   String? _titleError;
-  String? _writeError;
-  bool _submitting = false;
 
   @override
   void initState() {
@@ -50,21 +49,23 @@ class _InboxEditSheetState extends ConsumerState<InboxEditSheet> {
     _descriptionController = TextEditingController(
       text: widget.item.description ?? '',
     );
-    _titleController.addListener(() {
-      if (_titleError != null || _writeError != null) {
-        setState(() {
-          _titleError = null;
-          _writeError = null;
-        });
-      } else {
-        setState(() {});
-      }
-    });
+    _titleController.addListener(_onTitleChanged);
+  }
+
+  void _onTitleChanged() {
+    ref.read(inboxEditControllerProvider(widget.item.id).notifier).clearError();
+    if (_titleError != null) {
+      setState(() => _titleError = null);
+    } else {
+      setState(() {});
+    }
   }
 
   @override
   void dispose() {
-    _titleController.dispose();
+    _titleController
+      ..removeListener(_onTitleChanged)
+      ..dispose();
     _descriptionController.dispose();
     super.dispose();
   }
@@ -74,39 +75,19 @@ class _InboxEditSheetState extends ConsumerState<InboxEditSheet> {
   Future<void> _save() async {
     final l10n = AppLocalizations.of(context);
     if (_titleIsBlank) {
-      setState(() {
-        _titleError = l10n.titleRequired;
-        _writeError = null;
-      });
+      setState(() => _titleError = l10n.titleRequired);
       return;
     }
-    if (_submitting) {
-      return;
-    }
-    setState(() {
-      _submitting = true;
-      _titleError = null;
-      _writeError = null;
-    });
-    try {
-      await ref
-          .read(inboxRepositoryProvider)
-          .update(
-            id: widget.item.id,
-            title: _titleController.text,
-            description: _descriptionController.text,
-          );
-      if (mounted) {
-        Navigator.of(context).pop();
-      }
-    } on Object {
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _submitting = false;
-        _writeError = l10n.writeFailed;
-      });
+    setState(() => _titleError = null);
+    final ok = await ref
+        .read(inboxEditControllerProvider(widget.item.id).notifier)
+        .save(
+          title: _titleController.text,
+          description: _descriptionController.text,
+          errorMessage: l10n.writeFailed,
+        );
+    if (ok && mounted) {
+      Navigator.of(context).pop();
     }
   }
 
@@ -127,7 +108,9 @@ class _InboxEditSheetState extends ConsumerState<InboxEditSheet> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final tokens = Theme.of(context).extension<AppTokens>()!;
-    final canSave = !_titleIsBlank && !_submitting;
+    final ctrl = ref.watch(inboxEditControllerProvider(widget.item.id));
+    final titleIsBlank = _titleIsBlank;
+    final canSave = !titleIsBlank && !ctrl.submitting;
 
     return SafeArea(
       top: false,
@@ -156,7 +139,7 @@ class _InboxEditSheetState extends ConsumerState<InboxEditSheet> {
                 errorText: _titleError,
               ),
               onSubmitted: (_) {
-                if (canSave || _titleIsBlank) {
+                if (canSave || titleIsBlank) {
                   _save();
                 }
               },
@@ -172,12 +155,13 @@ class _InboxEditSheetState extends ConsumerState<InboxEditSheet> {
                 counterText: '',
               ),
             ),
-            if (_writeError != null) ...[
+            if (ctrl.error != null) ...[
               SizedBox(height: tokens.spacing8),
               Text(
-                _writeError!,
-                style: Theme.of(context).textTheme.bodySmall
-                    ?.copyWith(color: Theme.of(context).colorScheme.error),
+                ctrl.error!,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.error,
+                ),
               ),
             ],
             SizedBox(height: tokens.spacing16),
@@ -185,13 +169,15 @@ class _InboxEditSheetState extends ConsumerState<InboxEditSheet> {
               children: [
                 TextButton(
                   key: const Key('inbox_edit_remove'),
-                  onPressed: _submitting ? null : _remove,
+                  onPressed: ctrl.submitting ? null : _remove,
                   child: Text(l10n.remove),
                 ),
                 const Spacer(),
                 FilledButton(
                   key: const Key('inbox_edit_save'),
-                  onPressed: canSave ? _save : (_titleIsBlank ? _save : null),
+                  onPressed: canSave
+                      ? _save
+                      : (titleIsBlank ? _save : null),
                   child: Text(l10n.save),
                 ),
               ],
