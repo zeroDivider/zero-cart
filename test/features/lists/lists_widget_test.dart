@@ -397,6 +397,28 @@ void main() {
     await harness.dispose(tester);
   });
 
+  testWidgets('archive error shows snackbar', (tester) async {
+    final harness = await pumpTestApp(
+      tester,
+      router: AppRouter.create(initialLocation: AppRoutes.stores),
+    );
+    final (store, list) = await _seedList(tester, harness);
+    await pumpApp(tester, harness);
+    await _openList(tester, harness, store, list);
+
+    // Bridged streams keep the screen; closing the DB makes archive fail.
+    await tester.runAsync(harness.db.close);
+
+    final menu = tester.widget<PopupMenuButton<String>>(
+      find.byKey(const Key('list_menu')),
+    );
+    menu.onSelected!('archive');
+    await pumpApp(tester);
+
+    expect(find.text("Couldn't archive. Try again."), findsOneWidget);
+    await harness.dispose(tester);
+  });
+
   testWidgets('archived list hides the add row', (tester) async {
     const listId = 'archived-list';
     final harness = await pumpTestApp(
