@@ -1,16 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
 import 'package:zero_cart/app/theme/app_tokens.dart';
 import 'package:zero_cart/data/database.dart';
 import 'package:zero_cart/l10n/generated/app_localizations.dart';
 
-/// One list item: checkbox, content, optional handle placeholder (IT-2, IT-3).
+/// One list item: checkbox, content, optional drag handle (IT-2, IT-3, IT-5).
 class ItemRow extends StatelessWidget {
   const ItemRow({
     required this.item,
     required this.readOnly,
     required this.onPurchasedChanged,
     required this.onOpenEdit,
+    this.reorderIndex,
+    this.onMoveUp,
+    this.onMoveDown,
     super.key,
   });
 
@@ -18,6 +22,11 @@ class ItemRow extends StatelessWidget {
   final bool readOnly;
   final ValueChanged<bool>? onPurchasedChanged;
   final VoidCallback? onOpenEdit;
+
+  /// When non-null, wraps the handle in [ReorderableDragStartListener].
+  final int? reorderIndex;
+  final VoidCallback? onMoveUp;
+  final VoidCallback? onMoveDown;
 
   @override
   Widget build(BuildContext context) {
@@ -51,9 +60,19 @@ class ItemRow extends StatelessWidget {
       decoration: purchased ? TextDecoration.lineThrough : null,
     );
 
+    final customActions = <CustomSemanticsAction, VoidCallback>{};
+    if (onMoveUp != null) {
+      customActions[CustomSemanticsAction(label: l10n.moveItemUp)] = onMoveUp!;
+    }
+    if (onMoveDown != null) {
+      customActions[CustomSemanticsAction(label: l10n.moveItemDown)] =
+          onMoveDown!;
+    }
+
     return Semantics(
       container: true,
       label: rowLabel,
+      customSemanticsActions: customActions.isEmpty ? null : customActions,
       child: ConstrainedBox(
         constraints: BoxConstraints(minHeight: tokens.spacing48 + 8),
         child: Padding(
@@ -121,16 +140,20 @@ class ItemRow extends StatelessWidget {
                   ),
                 ),
               ),
-              if (!purchased && !readOnly)
-                SizedBox(
-                  width: tokens.spacing48,
-                  height: tokens.spacing48,
-                  child: Semantics(
-                    label: l10n.reorderHandlePlaceholder,
-                    child: Icon(
-                      Icons.drag_handle,
-                      key: Key('item_handle_${item.id}'),
-                      color: colorScheme.outline,
+              if (!purchased && !readOnly && reorderIndex != null)
+                ReorderableDragStartListener(
+                  index: reorderIndex!,
+                  child: SizedBox(
+                    width: tokens.spacing48,
+                    height: tokens.spacing48,
+                    child: Semantics(
+                      label: l10n.reorderHandle,
+                      button: true,
+                      child: Icon(
+                        Icons.drag_handle,
+                        key: Key('item_handle_${item.id}'),
+                        color: colorScheme.outline,
+                      ),
                     ),
                   ),
                 ),

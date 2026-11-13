@@ -1,11 +1,14 @@
+import 'dart:ui' show lerpDouble;
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zero_cart/app/theme/app_tokens.dart';
-import 'package:zero_cart/core/limits.dart';
 import 'package:zero_cart/data/database.dart';
 import 'package:zero_cart/features/lists/add_item_notifier.dart';
 import 'package:zero_cart/features/lists/list_form_sheet.dart';
 import 'package:zero_cart/features/lists/lists_providers.dart';
+import 'package:zero_cart/features/lists/ui/add_item_row.dart';
 import 'package:zero_cart/features/lists/ui/item_edit_sheet.dart';
 import 'package:zero_cart/features/lists/ui/item_row.dart';
 import 'package:zero_cart/features/lists/ui/purchased_header.dart';
@@ -54,6 +57,9 @@ class _ListScreenBodyState extends ConsumerState<_ListScreenBody> {
   final _scrollController = ScrollController();
   final _itemKeys = <String, GlobalKey>{};
 
+  /// Local active order while a reorder write is in flight (architecture 2.4).
+  List<String>? _optimisticActiveIds;
+
   ShoppingList get list => widget.list;
   bool get _readOnly => list.archivedAt != null;
 
@@ -101,6 +107,73 @@ class _ListScreenBodyState extends ConsumerState<_ListScreenBody> {
     }
   }
 
+  List<ListItem> _activeForDisplay(List<ListItem> fromDb) {
+    final optimistic = _optimisticActiveIds;
+    if (optimistic == null) {
+      return fromDb;
+    }
+    final byId = {for (final item in fromDb) item.id: item};
+    if (optimistic.length != fromDb.length ||
+        !optimistic.every(byId.containsKey)) {
+      return fromDb;
+    }
+    return [for (final id in optimistic) byId[id]!];
+  }
+
+  Future<void> _applyActiveOrder(List<String> orderedActiveIds) async {
+    setState(() => _optimisticActiveIds = List<String>.from(orderedActiveIds));
+    try {
+      await ref
+          .read(listsRepositoryProvider)
+          .reorderActive(list.id, orderedActiveIds);
+    } on Object {
+      // Stale or other failure: drop optimistic order; stream reloads (F6).
+    } finally {
+      if (mounted) {
+        setState(() => _optimisticActiveIds = null);
+      }
+    }
+  }
+
+  void _onReorderItem(List<ListItem> active, int oldIndex, int newIndex) {
+    // Flutter 3.47+ [onReorderItem] already adjusts newIndex for removal.
+    if (oldIndex == newIndex) {
+      return;
+    }
+    final ids = active.map((item) => item.id).toList();
+    final moved = ids.removeAt(oldIndex);
+    ids.insert(newIndex, moved);
+    _applyActiveOrder(ids);
+  }
+
+  void _moveActive(List<ListItem> active, int index, int delta) {
+    final newIndex = index + delta;
+    if (newIndex < 0 || newIndex >= active.length) {
+      return;
+    }
+    final ids = active.map((item) => item.id).toList();
+    final moved = ids.removeAt(index);
+    ids.insert(newIndex, moved);
+    _applyActiveOrder(ids);
+  }
+
+  Widget _proxyDecorator(Widget child, int index, Animation<double> animation) {
+    return AnimatedBuilder(
+      animation: animation,
+      builder: (context, child) {
+        final t = Curves.easeInOut.transform(animation.value);
+        final elevation = lerpDouble(0, 6, t)!;
+        final scale = lerpDouble(1, 1.02, t)!;
+        return Material(
+          elevation: elevation,
+          color: Theme.of(context).colorScheme.surface,
+          child: Transform.scale(scale: scale, child: child),
+        );
+      },
+      child: child,
+    );
+  }
+
   void _scrollToPending(String id) {
     final ctx = _keyFor(id).currentContext;
     if (ctx == null) {
@@ -111,6 +184,27 @@ class _ListScreenBodyState extends ConsumerState<_ListScreenBody> {
       ctx,
       duration: const Duration(milliseconds: 200),
       alignment: 0.8,
+    );
+  }
+
+  Widget _activeRow(ListItem item, List<ListItem> active, int index) {
+    return KeyedSubtree(
+      key: _keyFor(item.id),
+      child: ItemRow(
+        item: item,
+        readOnly: _readOnly,
+        reorderIndex: _readOnly ? null : index,
+        onPurchasedChanged: _readOnly
+            ? null
+            : (value) => _setPurchased(item, value),
+        onOpenEdit: _readOnly ? null : () => showItemEditSheet(context, item),
+        onMoveUp: !_readOnly && index > 0
+            ? () => _moveActive(active, index, -1)
+            : null,
+        onMoveDown: !_readOnly && index < active.length - 1
+            ? () => _moveActive(active, index, 1)
+            : null,
+      ),
     );
   }
 
@@ -153,7 +247,8 @@ class _ListScreenBodyState extends ConsumerState<_ListScreenBody> {
       ),
       body: asyncItems.when(
         data: (items) {
-          final active = items.where((i) => !i.isPurchased).toList();
+          final activeFromDb = items.where((i) => !i.isPurchased).toList();
+          final active = _activeForDisplay(activeFromDb);
           final purchased = items.where((i) => i.isPurchased).toList();
           final pendingScrollId = addCtrl.pendingScrollId;
           if (pendingScrollId != null) {
@@ -164,203 +259,100 @@ class _ListScreenBodyState extends ConsumerState<_ListScreenBody> {
             });
           }
 
-          return ListView(
+          return CustomScrollView(
             key: const Key('list_items_scroll'),
             controller: _scrollController,
-            padding: EdgeInsets.only(bottom: tokens.spacing24),
-            children: [
-              for (final item in active)
-                KeyedSubtree(
-                  key: _keyFor(item.id),
-                  child: ItemRow(
-                    item: item,
-                    readOnly: _readOnly,
-                    onPurchasedChanged: _readOnly
-                        ? null
-                        : (value) => _setPurchased(item, value),
-                    onOpenEdit: _readOnly
-                        ? null
-                        : () => showItemEditSheet(context, item),
-                  ),
+            slivers: [
+              if (_readOnly)
+                SliverList(
+                  delegate: SliverChildBuilderDelegate((context, index) {
+                    final item = active[index];
+                    return KeyedSubtree(
+                      key: ValueKey(item.id),
+                      child: _activeRow(item, active, index),
+                    );
+                  }, childCount: active.length),
+                )
+              else
+                SliverReorderableList(
+                  itemCount: active.length,
+                  onReorderItem: (oldIndex, newIndex) {
+                    _onReorderItem(active, oldIndex, newIndex);
+                  },
+                  onReorderStart: (_) {
+                    HapticFeedback.lightImpact();
+                  },
+                  proxyDecorator: _proxyDecorator,
+                  itemBuilder: (context, index) {
+                    final item = active[index];
+                    return KeyedSubtree(
+                      key: ValueKey(item.id),
+                      child: _activeRow(item, active, index),
+                    );
+                  },
                 ),
-              if (!_readOnly) _AddItemRow(listId: list.id),
+              if (!_readOnly)
+                SliverToBoxAdapter(child: AddItemRow(listId: list.id)),
               if (items.isEmpty && !_readOnly)
-                Padding(
-                  padding: EdgeInsets.all(tokens.spacing24),
-                  child: Column(
-                    children: [
-                      Text(
-                        l10n.listEmptyTitle,
-                        style: Theme.of(context).textTheme.headlineSmall,
-                        textAlign: TextAlign.center,
-                      ),
-                      SizedBox(height: tokens.spacing8),
-                      Text(
-                        l10n.listEmptyBody,
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: EdgeInsets.all(tokens.spacing24),
+                    child: Column(
+                      children: [
+                        Text(
+                          l10n.listEmptyTitle,
+                          style: Theme.of(context).textTheme.headlineSmall,
+                          textAlign: TextAlign.center,
                         ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
+                        SizedBox(height: tokens.spacing8),
+                        Text(
+                          l10n.listEmptyBody,
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurfaceVariant,
+                              ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               if (purchased.isNotEmpty) ...[
-                PurchasedHeader(
-                  listId: list.id,
-                  count: purchased.length,
-                  expanded: purchasedExpanded,
+                SliverToBoxAdapter(
+                  child: PurchasedHeader(
+                    listId: list.id,
+                    count: purchased.length,
+                    expanded: purchasedExpanded,
+                  ),
                 ),
                 if (purchasedExpanded)
-                  for (final item in purchased)
-                    KeyedSubtree(
-                      key: _keyFor(item.id),
-                      child: ItemRow(
-                        item: item,
-                        readOnly: _readOnly,
-                        onPurchasedChanged: _readOnly
-                            ? null
-                            : (value) => _setPurchased(item, value),
-                        onOpenEdit: _readOnly
-                            ? null
-                            : () => showItemEditSheet(context, item),
-                      ),
-                    ),
+                  SliverList(
+                    delegate: SliverChildBuilderDelegate((context, index) {
+                      final item = purchased[index];
+                      return KeyedSubtree(
+                        key: _keyFor(item.id),
+                        child: ItemRow(
+                          item: item,
+                          readOnly: _readOnly,
+                          onPurchasedChanged: _readOnly
+                              ? null
+                              : (value) => _setPurchased(item, value),
+                          onOpenEdit: _readOnly
+                              ? null
+                              : () => showItemEditSheet(context, item),
+                        ),
+                      );
+                    }, childCount: purchased.length),
+                  ),
               ],
+              SliverToBoxAdapter(child: SizedBox(height: tokens.spacing24)),
             ],
           );
         },
         loading: () => const SizedBox.shrink(),
         error: (error, _) => Center(child: Text('$error')),
-      ),
-    );
-  }
-}
-
-class _AddItemRow extends ConsumerStatefulWidget {
-  const _AddItemRow({required this.listId});
-
-  final String listId;
-
-  @override
-  ConsumerState<_AddItemRow> createState() => _AddItemRowState();
-}
-
-class _AddItemRowState extends ConsumerState<_AddItemRow> {
-  final _addController = TextEditingController();
-  final _descriptionController = TextEditingController();
-  final _addFocus = FocusNode();
-  bool _showDetails = false;
-  String? _addError;
-
-  @override
-  void dispose() {
-    _addController.dispose();
-    _descriptionController.dispose();
-    _addFocus.dispose();
-    super.dispose();
-  }
-
-  Future<void> _doAddItem() async {
-    final l10n = AppLocalizations.of(context);
-    final title = _addController.text;
-    if (title.trim().isEmpty) {
-      setState(() => _addError = l10n.titleRequired);
-      return;
-    }
-    setState(() => _addError = null);
-    await ref
-        .read(addItemNotifierProvider(widget.listId).notifier)
-        .addItem(
-          title: title,
-          description: _showDetails ? _descriptionController.text : null,
-          errorMessage: l10n.writeFailed,
-        );
-    if (!mounted) {
-      return;
-    }
-    final ctrl = ref.read(addItemNotifierProvider(widget.listId));
-    if (ctrl.error == null && !ctrl.submitting) {
-      _addController.clear();
-      _descriptionController.clear();
-      _addFocus.requestFocus();
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    final tokens = Theme.of(context).extension<AppTokens>()!;
-    final addCtrl = ref.watch(addItemNotifierProvider(widget.listId));
-
-    return Padding(
-      padding: EdgeInsets.symmetric(
-        horizontal: tokens.spacing16,
-        vertical: tokens.spacing8,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  key: const Key('list_add_title'),
-                  controller: _addController,
-                  focusNode: _addFocus,
-                  textInputAction: TextInputAction.done,
-                  maxLength: maxItemTitleLength,
-                  buildCounter:
-                      (
-                        context, {
-                        required currentLength,
-                        required isFocused,
-                        required maxLength,
-                      }) {
-                        if (currentLength < 40 || maxLength == null) {
-                          return const SizedBox.shrink();
-                        }
-                        return Text('$currentLength / $maxLength');
-                      },
-                  decoration: InputDecoration(
-                    hintText: l10n.addItemHint,
-                    errorText: _addError ?? addCtrl.error,
-                    border: InputBorder.none,
-                  ),
-                  onChanged: (_) {
-                    ref
-                        .read(addItemNotifierProvider(widget.listId).notifier)
-                        .clearError();
-                    if (_addError != null) {
-                      setState(() => _addError = null);
-                    }
-                  },
-                  onSubmitted: (_) {
-                    if (!addCtrl.submitting) {
-                      _doAddItem();
-                    }
-                  },
-                ),
-              ),
-              TextButton(
-                key: const Key('list_add_details_toggle'),
-                onPressed: () => setState(() => _showDetails = !_showDetails),
-                child: Text(l10n.addItemDetailsToggle),
-              ),
-            ],
-          ),
-          if (_showDetails)
-            TextField(
-              key: const Key('list_add_description'),
-              controller: _descriptionController,
-              maxLength: maxItemDescriptionLength,
-              decoration: InputDecoration(
-                hintText: l10n.itemDescriptionHint,
-                counterText: '',
-                border: InputBorder.none,
-              ),
-            ),
-        ],
       ),
     );
   }
