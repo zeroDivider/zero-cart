@@ -54,6 +54,26 @@ Future<void> _tapButton(
   await pumpApp(tester, harness);
 }
 
+/// Invokes the Undo snackbar action without hit-testing (floating snackbars
+/// are often off the default test surface).
+Future<void> _invokeUndo(
+  WidgetTester tester,
+  TestAppHarness harness, {
+  Duration realDelay = const Duration(milliseconds: 120),
+}) async {
+  final action = tester.widget<SnackBarAction>(find.byType(SnackBarAction));
+  await tester.runAsync(() async {
+    action.onPressed!.call();
+    // Calling onPressed directly skips SnackBar's dismiss; close so a failed-Undo
+    // snackbar waiting on [ScaffoldFeatureController.closed] can appear.
+    rootScaffoldMessengerKey.currentState?.hideCurrentSnackBar();
+    await Future<void>.delayed(realDelay);
+  });
+  await tester.pump();
+  await tester.pump(const Duration(milliseconds: 50));
+  await pumpApp(tester, harness);
+}
+
 StoresRepository _stores(TestAppHarness harness) {
   return StoresRepository(
     database: harness.db,
@@ -719,11 +739,7 @@ void main() {
     );
     expect(afterRemove, isEmpty);
 
-    await tester.tap(find.text('Undo'));
-    await tester.runAsync(() async {
-      await Future<void>.delayed(const Duration(milliseconds: 50));
-    });
-    await pumpApp(tester, harness);
+    await _invokeUndo(tester, harness);
     expect(find.text('Butter'), findsOneWidget);
     final afterUndo = await tester.runAsync(
       () => (harness.db.select(
@@ -736,47 +752,79 @@ void main() {
     await harness.dispose(tester);
   });
 
-  testWidgets('swipe left removes an active item with Undo', (tester) async {
-    final harness = await pumpTestApp(
-      tester,
-      router: AppRouter.create(initialLocation: AppRoutes.stores),
-    );
-    final (store, list) = await _seedList(tester, harness);
-    await tester.runAsync(() async {
-      await _insertItem(
-        harness.db,
-        id: 'milk',
-        listId: list.id,
-        title: 'Milk',
-        purchased: false,
-        position: 1,
+  testWidgets('semantic Remove on active and purchased rows with Undo', (
+    tester,
+  ) async {
+    final handle = tester.ensureSemantics();
+    try {
+      final harness = await pumpTestApp(
+        tester,
+        router: AppRouter.create(initialLocation: AppRoutes.stores),
       );
-    });
-    await pumpApp(tester, harness);
-    await _openList(tester, harness, store, list);
+      final (store, list) = await _seedList(tester, harness);
+      await tester.runAsync(() async {
+        await _insertItem(
+          harness.db,
+          id: 'milk',
+          listId: list.id,
+          title: 'Milk',
+          purchased: false,
+          position: 1,
+        );
+        await _insertItem(
+          harness.db,
+          id: 'bread',
+          listId: list.id,
+          title: 'Bread',
+          purchased: true,
+          position: 2,
+        );
+      });
+      await pumpApp(tester, harness);
+      await _openList(tester, harness, store, list);
 
-    expect(find.byType(SwipeToRemoveRow), findsOneWidget);
-    await tester.fling(
-      find.byKey(const Key('item_content_milk')),
-      const Offset(-500, 0),
-      1000,
-    );
-    await tester.pump();
-    await tester.runAsync(() async {
-      await Future<void>.delayed(const Duration(milliseconds: 50));
-    });
-    await pumpApp(tester, harness);
+      expect(find.byType(SwipeToRemoveRow), findsNWidgets(2));
+      expect(find.byType(Dismissible), findsNWidgets(2));
 
-    expect(find.text('Milk'), findsNothing);
-    expect(find.text('Removed Milk'), findsOneWidget);
+      Future<void> semanticRemove(Finder swipeRow) async {
+        final semantics = tester.getSemantics(swipeRow);
+        final labels = [
+          for (final id
+              in semantics.getSemanticsData().customSemanticsActionIds ??
+                  const <int>[])
+            CustomSemanticsAction.getAction(id)?.label,
+        ];
+        expect(labels, contains('Remove'));
+        final actionId = CustomSemanticsAction.getIdentifier(
+          const CustomSemanticsAction(label: 'Remove'),
+        );
+        semantics.owner!.performAction(
+          semantics.id,
+          SemanticsAction.customAction,
+          actionId,
+        );
+        await tester.runAsync(() async {
+          await Future<void>.delayed(const Duration(milliseconds: 50));
+        });
+        await pumpApp(tester, harness);
+      }
 
-    await tester.tap(find.text('Undo'));
-    await tester.runAsync(() async {
-      await Future<void>.delayed(const Duration(milliseconds: 50));
-    });
-    await pumpApp(tester, harness);
-    expect(find.text('Milk'), findsOneWidget);
-    await harness.dispose(tester);
+      await semanticRemove(find.byType(SwipeToRemoveRow).first);
+      expect(find.text('Milk'), findsNothing);
+      expect(find.text('Removed Milk'), findsOneWidget);
+      await _invokeUndo(tester, harness);
+      expect(find.text('Milk'), findsOneWidget);
+
+      await semanticRemove(find.byType(SwipeToRemoveRow).last);
+      expect(find.text('Bread'), findsNothing);
+      final remaining = await tester.runAsync(
+        () => harness.db.select(harness.db.listItems).get(),
+      );
+      expect(remaining!.map((r) => r.id), ['milk']);
+      await harness.dispose(tester);
+    } finally {
+      handle.dispose();
+    }
   });
 
   testWidgets('second removal finalizes the first Undo snackbar', (
@@ -850,16 +898,9 @@ void main() {
     await pumpApp(tester, harness);
     await _openList(tester, harness, store, list);
 
-    await tester.fling(
-      find.byKey(const Key('item_content_eggs')),
-      const Offset(-500, 0),
-      1000,
-    );
-    await tester.pump();
-    await tester.runAsync(() async {
-      await Future<void>.delayed(const Duration(milliseconds: 50));
-    });
+    await tester.tap(find.byKey(const Key('item_content_eggs')));
     await pumpApp(tester, harness);
+    await _tapButton(tester, const Key('item_edit_remove'), harness);
     expect(find.text('Removed Eggs'), findsOneWidget);
 
     await tester.pageBack();
@@ -867,11 +908,7 @@ void main() {
     expect(find.byType(ListScreen), findsNothing);
     expect(find.text('Removed Eggs'), findsOneWidget);
 
-    await tester.tap(find.text('Undo'));
-    await tester.runAsync(() async {
-      await Future<void>.delayed(const Duration(milliseconds: 50));
-    });
-    await pumpApp(tester, harness);
+    await _invokeUndo(tester, harness);
 
     final restored = await tester.runAsync(
       () => (harness.db.select(
@@ -910,19 +947,42 @@ void main() {
     expect(find.text('Removed Jam'), findsOneWidget);
 
     await tester.runAsync(() => _lists(harness).archive(list.id));
+    final archived = await tester.runAsync(
+      () => (harness.db.select(
+        harness.db.shoppingLists,
+      )..where((t) => t.id.equals(list.id))).getSingle(),
+    );
+    expect(archived!.archivedAt, isNotNull);
     await pumpApp(tester, harness);
+    expect(find.text('Removed Jam'), findsOneWidget);
+    expect(find.byType(SnackBarAction), findsOneWidget);
 
-    await tester.tap(find.text('Undo'));
-    await tester.runAsync(() async {
-      await Future<void>.delayed(const Duration(milliseconds: 50));
-    });
-    await pumpApp(tester, harness);
+    final action = tester.widget<SnackBarAction>(find.byType(SnackBarAction));
+    action.onPressed!.call();
+    rootScaffoldMessengerKey.currentState?.hideCurrentSnackBar();
+    // Restore fails on the real async timeline; [closed] needs frame pumps.
+    var sawFailure = false;
+    for (var i = 0; i < 20; i++) {
+      await tester.runAsync(() async {
+        await Future<void>.delayed(const Duration(milliseconds: 50));
+      });
+      await tester.pump();
+      await pumpApp(tester, harness);
+      if (find.text('Could not restore').evaluate().isNotEmpty) {
+        sawFailure = true;
+        break;
+      }
+    }
+    expect(sawFailure, isTrue, reason: 'failed-Undo snackbar never appeared');
 
-    expect(find.text('Could not restore'), findsOneWidget);
     final rows = await tester.runAsync(
       () => harness.db.select(harness.db.listItems).get(),
     );
-    expect(rows, isEmpty);
+    expect(
+      rows,
+      isEmpty,
+      reason: 'Undo must not re-insert into an archived list',
+    );
     await harness.dispose(tester);
   });
 }

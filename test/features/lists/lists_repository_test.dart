@@ -574,39 +574,37 @@ void main() {
     expect(remaining.single.id, milk.id);
   });
 
-  test(
-    'restoreItem re-inserts unchanged including after reorder',
-    () async {
-      final store = await stores.create(name: 'Lidl', colorKey: 'lime');
-      final list = await lists.create(storeId: store.id, name: 'Weekend');
-      final a = await lists.addItem(listId: list.id, title: 'A');
-      final b = await lists.addItem(
-        listId: list.id,
-        title: 'B',
-        description: 'keep me',
-      );
-      final c = await lists.addItem(listId: list.id, title: 'C');
-      await lists.setPurchased(b.id, true);
-      final beforeRemove = (await lists.watchItems(list.id).first)
-          .firstWhere((i) => i.id == b.id);
+  test('restoreItem re-inserts unchanged including after reorder', () async {
+    final store = await stores.create(name: 'Lidl', colorKey: 'lime');
+    final list = await lists.create(storeId: store.id, name: 'Weekend');
+    final a = await lists.addItem(listId: list.id, title: 'A');
+    final b = await lists.addItem(
+      listId: list.id,
+      title: 'B',
+      description: 'keep me',
+    );
+    final c = await lists.addItem(listId: list.id, title: 'C');
+    await lists.setPurchased(b.id, true);
+    final beforeRemove = (await lists.watchItems(list.id).first).firstWhere(
+      (i) => i.id == b.id,
+    );
 
-      final snapshot = await lists.removeItem(b.id);
-      expect(snapshot.isPurchased, isTrue);
-      expect(snapshot.position, beforeRemove.position);
-      await lists.reorderActive(list.id, [c.id, a.id]);
+    final snapshot = await lists.removeItem(b.id);
+    expect(snapshot.isPurchased, isTrue);
+    expect(snapshot.position, beforeRemove.position);
+    await lists.reorderActive(list.id, [c.id, a.id]);
 
-      await lists.restoreItem(snapshot);
-      final after = await lists.watchItems(list.id).first;
-      final restored = after.firstWhere((i) => i.id == b.id);
-      expect(restored.title, 'B');
-      expect(restored.description, 'keep me');
-      expect(restored.isPurchased, isTrue);
-      expect(restored.position, snapshot.position);
-      expect(restored.createdAt, snapshot.createdAt);
-      expect(restored.updatedAt, snapshot.updatedAt);
-      expect(after.map((i) => i.id), containsAll([a.id, b.id, c.id]));
-    },
-  );
+    await lists.restoreItem(snapshot);
+    final after = await lists.watchItems(list.id).first;
+    final restored = after.firstWhere((i) => i.id == b.id);
+    expect(restored.title, 'B');
+    expect(restored.description, 'keep me');
+    expect(restored.isPurchased, isTrue);
+    expect(restored.position, snapshot.position);
+    expect(restored.createdAt, snapshot.createdAt);
+    expect(restored.updatedAt, snapshot.updatedAt);
+    expect(after.map((i) => i.id), containsAll([a.id, b.id, c.id]));
+  });
 
   test('restoreItem tolerates a position tie with created_at order', () async {
     final store = await stores.create(name: 'Lidl', colorKey: 'lime');

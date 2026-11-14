@@ -1,7 +1,4 @@
-import 'package:flutter/material.dart';
-import 'package:zero_cart/app/root_scaffold_messenger.dart';
 import 'package:zero_cart/core/widgets/remove_undo_snackbar.dart';
-import 'package:zero_cart/features/lists/list_exceptions.dart';
 import 'package:zero_cart/features/lists/lists_repository.dart';
 import 'package:zero_cart/l10n/generated/app_localizations.dart';
 
@@ -18,18 +15,7 @@ Future<void> removeListItemWithUndo({
   showRemoveUndoSnackBar(
     message: l10n.removedItem(snapshot.title),
     undoLabel: l10n.undo,
-    onUndo: () async {
-      try {
-        await repository.restoreItem(snapshot);
-      } on ListUnavailableException {
-        final messenger = rootScaffoldMessengerKey.currentState;
-        if (messenger == null) {
-          return;
-        }
-        messenger
-          ..hideCurrentSnackBar()
-          ..showSnackBar(SnackBar(content: Text(l10n.couldNotRestore)));
-      }
-    },
+    undoFailureMessage: l10n.couldNotRestore,
+    onUndo: () => repository.restoreItem(snapshot),
   );
 }
