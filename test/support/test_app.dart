@@ -14,6 +14,7 @@ import 'package:zero_cart/data/providers.dart';
 import 'package:zero_cart/features/inbox/inbox_providers.dart';
 import 'package:zero_cart/features/lists/active_list_progress.dart';
 import 'package:zero_cart/features/lists/lists_providers.dart';
+import 'package:zero_cart/features/stores/active_store_summary.dart';
 import 'package:zero_cart/features/stores/stores_providers.dart';
 
 bool _driftMultiDbWarningSilenced = false;
@@ -47,12 +48,14 @@ class TestAppHarness {
     required this.refreshLists,
     required StreamController<List<InboxItem>> inboxUpdates,
     required StreamController<List<Store>> storeUpdates,
+    required StreamController<List<ActiveStoreSummary>> storeSummaryUpdates,
     required StreamController<List<Store>> archivedStoreUpdates,
     required StreamController<List<Store>> allStoreUpdates,
     required StreamController<void> listsTickUpdates,
     required StreamController<void> listDetailsTickUpdates,
   }) : _inboxController = inboxUpdates,
        _storeController = storeUpdates,
+       _storeSummaryController = storeSummaryUpdates,
        _archivedStoreController = archivedStoreUpdates,
        _allStoreController = allStoreUpdates,
        _listsTickController = listsTickUpdates,
@@ -64,6 +67,7 @@ class TestAppHarness {
   final Future<void> Function() refreshLists;
   final StreamController<List<InboxItem>> _inboxController;
   final StreamController<List<Store>> _storeController;
+  final StreamController<List<ActiveStoreSummary>> _storeSummaryController;
   final StreamController<List<Store>> _archivedStoreController;
   final StreamController<List<Store>> _allStoreController;
   final StreamController<void> _listsTickController;
@@ -74,6 +78,7 @@ class TestAppHarness {
     await tester.pump();
     await _inboxController.close();
     await _storeController.close();
+    await _storeSummaryController.close();
     await _archivedStoreController.close();
     await _allStoreController.close();
     await _listsTickController.close();
@@ -87,7 +92,8 @@ class TestAppHarness {
 /// Widget tests using this harness cover UI → repository → DB behaviour.
 /// They do **not** prove live Drift `.watch()` → Riverpod wiring: under
 /// FakeAsync on Windows, `.watch()` does not emit, so [inboxItemsProvider],
-/// [activeStoresProvider], [archivedStoresProvider], [storeByIdProvider],
+/// [activeStoresProvider], [activeStoreSummariesProvider],
+/// [archivedStoresProvider], [storeByIdProvider],
 /// [activeListsForStoreProvider], [listByIdProvider] and [listItemsProvider]
 /// are bridged by broadcast streams that [pumpApp] refreshes after real
 /// writes against [TestAppHarness.db].
@@ -118,6 +124,8 @@ Future<TestAppHarness> pumpTestApp(
 
   final inboxController = StreamController<List<InboxItem>>.broadcast();
   final storeController = StreamController<List<Store>>.broadcast();
+  final storeSummaryController =
+      StreamController<List<ActiveStoreSummary>>.broadcast();
   final archivedStoreController = StreamController<List<Store>>.broadcast();
   final allStoreController = StreamController<List<Store>>.broadcast();
   final listsTickController = StreamController<void>.broadcast();
@@ -125,6 +133,7 @@ Future<TestAppHarness> pumpTestApp(
 
   var latestInbox = <InboxItem>[];
   var latestActive = <Store>[];
+  var latestSummaries = <ActiveStoreSummary>[];
   var latestArchived = <Store>[];
   var latestAll = <Store>[];
   final latestListsByStore = <String, List<ActiveListProgress>>{};
@@ -169,6 +178,27 @@ Future<TestAppHarness> pumpTestApp(
     }
   }
 
+  Future<void> publishSummaries() async {
+    final lists = await db.select(db.shoppingLists).get();
+    final counts = <String, int>{};
+    for (final list in lists) {
+      if (list.archivedAt != null) {
+        continue;
+      }
+      counts[list.storeId] = (counts[list.storeId] ?? 0) + 1;
+    }
+    latestSummaries = [
+      for (final store in latestActive)
+        ActiveStoreSummary(
+          store: store,
+          activeListCount: counts[store.id] ?? 0,
+        ),
+    ];
+    if (!storeSummaryController.isClosed) {
+      storeSummaryController.add(latestSummaries);
+    }
+  }
+
   Future<void> refreshStores() async {
     final rows = await db.select(db.stores).get();
     latestAll = rows;
@@ -183,6 +213,7 @@ Future<TestAppHarness> pumpTestApp(
     if (!archivedStoreController.isClosed) {
       archivedStoreController.add(latestArchived);
     }
+    await publishSummaries();
   }
 
   Future<void> refreshLists() async {
@@ -230,6 +261,7 @@ Future<TestAppHarness> pumpTestApp(
     if (!listDetailsTickController.isClosed) {
       listDetailsTickController.add(null);
     }
+    await publishSummaries();
   }
 
   Stream<List<InboxItem>> inboxBridge() async* {
@@ -240,6 +272,11 @@ Future<TestAppHarness> pumpTestApp(
   Stream<List<Store>> activeStoresBridge() async* {
     yield latestActive;
     yield* storeController.stream;
+  }
+
+  Stream<List<ActiveStoreSummary>> storeSummariesBridge() async* {
+    yield latestSummaries;
+    yield* storeSummaryController.stream;
   }
 
   Stream<List<Store>> archivedStoresBridge() async* {
@@ -292,6 +329,9 @@ Future<TestAppHarness> pumpTestApp(
         idGeneratorProvider.overrideWithValue(ids),
         inboxItemsProvider.overrideWith((ref) => inboxBridge()),
         activeStoresProvider.overrideWith((ref) => activeStoresBridge()),
+        activeStoreSummariesProvider.overrideWith(
+          (ref) => storeSummariesBridge(),
+        ),
         archivedStoresProvider.overrideWith((ref) => archivedStoresBridge()),
         storeByIdProvider.overrideWith((ref, id) => storeByIdBridge(id)),
         activeListsForStoreProvider.overrideWith(
@@ -322,6 +362,7 @@ Future<TestAppHarness> pumpTestApp(
     refreshLists: refreshLists,
     inboxUpdates: inboxController,
     storeUpdates: storeController,
+    storeSummaryUpdates: storeSummaryController,
     archivedStoreUpdates: archivedStoreController,
     allStoreUpdates: allStoreController,
     listsTickUpdates: listsTickController,

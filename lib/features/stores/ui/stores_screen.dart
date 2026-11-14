@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:zero_cart/app/router.dart';
 import 'package:zero_cart/app/theme/app_tokens.dart';
 import 'package:zero_cart/data/database.dart';
+import 'package:zero_cart/features/stores/active_store_summary.dart';
 import 'package:zero_cart/features/stores/stores_providers.dart';
 import 'package:zero_cart/features/stores/ui/store_form_sheet.dart';
 import 'package:zero_cart/l10n/generated/app_localizations.dart';
@@ -15,7 +16,7 @@ class StoresScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
-    final asyncStores = ref.watch(activeStoresProvider);
+    final asyncStores = ref.watch(activeStoreSummariesProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -30,11 +31,11 @@ class StoresScreen extends ConsumerWidget {
         ],
       ),
       body: asyncStores.when(
-        data: (stores) {
-          if (stores.isEmpty) {
+        data: (summaries) {
+          if (summaries.isEmpty) {
             return const _StoresEmptyState();
           }
-          return _StoresList(stores: stores);
+          return _StoresList(summaries: summaries);
         },
         loading: () => const SizedBox.shrink(),
         error: (error, _) => Center(child: Text('$error')),
@@ -83,9 +84,9 @@ class _StoresEmptyState extends ConsumerWidget {
 }
 
 class _StoresList extends ConsumerWidget {
-  const _StoresList({required this.stores});
+  const _StoresList({required this.summaries});
 
-  final List<Store> stores;
+  final List<ActiveStoreSummary> summaries;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -94,11 +95,11 @@ class _StoresList extends ConsumerWidget {
     final tokens = Theme.of(context).extension<AppTokens>()!;
 
     return ListView.separated(
-      itemCount: stores.length + 1,
+      itemCount: summaries.length + 1,
       separatorBuilder: (_, _) =>
           Divider(height: 1, color: colorScheme.outlineVariant),
       itemBuilder: (context, index) {
-        if (index == stores.length) {
+        if (index == summaries.length) {
           return Padding(
             padding: EdgeInsets.symmetric(
               horizontal: tokens.spacing16,
@@ -114,29 +115,25 @@ class _StoresList extends ConsumerWidget {
             ),
           );
         }
-        final store = stores[index];
-        return _StoreRow(store: store);
+        final summary = summaries[index];
+        return _StoreRow(summary: summary);
       },
     );
   }
 }
 
-class _StoreRow extends ConsumerWidget {
-  const _StoreRow({required this.store});
+class _StoreRow extends StatelessWidget {
+  const _StoreRow({required this.summary});
 
-  final Store store;
+  final ActiveStoreSummary summary;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
+    final store = summary.store;
     final l10n = AppLocalizations.of(context);
     final tokens = Theme.of(context).extension<AppTokens>()!;
     final colorScheme = Theme.of(context).colorScheme;
-    final countAsync = ref.watch(activeListCountProvider(store.id));
-    final countLabel = countAsync.when(
-      data: (count) => l10n.storeActiveLists(count),
-      loading: () => l10n.storeActiveLists(0),
-      error: (_, _) => l10n.storeActiveLists(0),
-    );
+    final countLabel = l10n.storeActiveLists(summary.activeListCount);
 
     return InkWell(
       key: Key('store_row_${store.id}'),

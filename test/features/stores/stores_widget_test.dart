@@ -76,6 +76,36 @@ void main() {
     await harness.dispose(tester);
   });
 
+  testWidgets('list count on the Stores tab updates after creating a list', (
+    tester,
+  ) async {
+    final harness = await pumpTestApp(
+      tester,
+      router: AppRouter.create(initialLocation: AppRoutes.stores),
+    );
+    final store = await tester.runAsync(
+      () => _repo(harness).create(name: 'Lidl', colorKey: 'lime'),
+    );
+    await pumpApp(tester, harness);
+    expect(find.text('0 active lists'), findsOneWidget);
+
+    await tester.tap(find.byKey(Key('store_row_${store!.id}')));
+    await pumpApp(tester, harness);
+    await _tapButton(tester, const Key('store_details_new_list'), harness);
+    await tester.enterText(find.byKey(const Key('list_form_name')), 'Weekend');
+    await pumpApp(tester, harness);
+    await _tapButton(tester, const Key('list_form_save'), harness);
+
+    await tester.pageBack();
+    await pumpApp(tester, harness);
+    await tester.pageBack();
+    await pumpApp(tester, harness);
+
+    expect(find.byType(StoresScreen), findsOneWidget);
+    expect(find.text('1 active list'), findsOneWidget);
+    await harness.dispose(tester);
+  });
+
   testWidgets('new store button creates another store on the list', (
     tester,
   ) async {

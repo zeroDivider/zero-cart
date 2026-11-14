@@ -4,6 +4,7 @@ import 'package:zero_cart/core/clock.dart';
 import 'package:zero_cart/core/ids.dart';
 import 'package:zero_cart/core/text_normalize.dart';
 import 'package:zero_cart/data/database.dart';
+import 'package:zero_cart/features/stores/active_store_summary.dart';
 import 'package:zero_cart/features/stores/store_draft.dart';
 
 /// Business rules and Drift access for stores (data model §3.2 / op 10).
@@ -29,6 +30,54 @@ class StoresRepository {
             (t) => OrderingTerm.asc(t.id),
           ]))
         .watch();
+  }
+
+  /// Active stores with a live active-list count (Stores tab).
+  ///
+  /// One query so a list insert, archive or restore re-emits the row the
+  /// screen paints, including the count. Ordering matches [watchActive].
+  Stream<List<ActiveStoreSummary>> watchActiveWithListCounts() {
+    return _db
+        .customSelect(
+          '''
+SELECT
+  s.id,
+  s.name,
+  s.color_key,
+  s.address,
+  s.note,
+  s.archived_at,
+  s.created_at,
+  s.updated_at,
+  (
+    SELECT COUNT(*) FROM shopping_lists AS sl
+    WHERE sl.store_id = s.id AND sl.archived_at IS NULL
+  ) AS active_list_count
+FROM stores AS s
+WHERE s.archived_at IS NULL
+ORDER BY s.name COLLATE NOCASE ASC, s.id ASC
+''',
+          readsFrom: {_db.stores, _db.shoppingLists},
+        )
+        .watch()
+        .map((rows) {
+          return [
+            for (final row in rows)
+              ActiveStoreSummary(
+                store: Store(
+                  id: row.read<String>('id'),
+                  name: row.read<String>('name'),
+                  colorKey: row.read<String>('color_key'),
+                  address: row.readNullable<String>('address'),
+                  note: row.readNullable<String>('note'),
+                  archivedAt: row.readNullable<DateTime>('archived_at'),
+                  createdAt: row.read<DateTime>('created_at'),
+                  updatedAt: row.read<DateTime>('updated_at'),
+                ),
+                activeListCount: row.read<int>('active_list_count'),
+              ),
+          ];
+        });
   }
 
   /// Archived stores, alphabetical case-insensitive (Archive Stores segment).
