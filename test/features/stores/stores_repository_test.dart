@@ -2,6 +2,7 @@ import 'package:drift/drift.dart' show Value;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:zero_cart/app/theme/app_tokens.dart';
 import 'package:zero_cart/data/database.dart';
+import 'package:zero_cart/features/stores/active_store_summary.dart';
 import 'package:zero_cart/features/stores/stores_repository.dart';
 
 void main() {
@@ -73,6 +74,48 @@ void main() {
     await repo.archive(lidl.id);
     await pumpEventQueue();
     expect(events.last.map((s) => s.name), ['aldi', 'dm']);
+
+    await sub.cancel();
+  });
+
+  test('watchActiveWithListCounts follows list inserts and archives', () async {
+    final events = <List<ActiveStoreSummary>>[];
+    final sub = repo.watchActiveWithListCounts().listen(events.add);
+
+    final lidl = await repo.create(name: 'Lidl', colorKey: 'lime');
+    final aldi = await repo.create(name: 'aldi', colorKey: 'tomato');
+    await pumpEventQueue();
+
+    expect(events.last.map((s) => s.store.name), ['aldi', 'Lidl']);
+    expect(events.last.map((s) => s.activeListCount), [0, 0]);
+
+    await insertList(id: 'list-1', storeId: lidl.id, name: 'Weekend');
+    await pumpEventQueue();
+    final afterInsert = events.last.singleWhere((s) => s.store.id == lidl.id);
+    expect(afterInsert.activeListCount, 1);
+    expect(
+      events.last.singleWhere((s) => s.store.id == aldi.id).activeListCount,
+      0,
+    );
+
+    await insertList(
+      id: 'list-2',
+      storeId: lidl.id,
+      name: 'Old',
+      archivedAt: DateTime.utc(2026, 1, 2),
+      archiveReason: 'manual',
+    );
+    await pumpEventQueue();
+    expect(
+      events.last.singleWhere((s) => s.store.id == lidl.id).activeListCount,
+      1,
+    );
+
+    await repo.update(id: lidl.id, name: 'Lidl', colorKey: 'sky');
+    await pumpEventQueue();
+    final afterColour = events.last.singleWhere((s) => s.store.id == lidl.id);
+    expect(afterColour.store.colorKey, 'sky');
+    expect(afterColour.activeListCount, 1);
 
     await sub.cancel();
   });
