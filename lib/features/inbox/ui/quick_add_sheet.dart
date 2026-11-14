@@ -148,6 +148,11 @@ class _QuickAddSheetState extends ConsumerState<QuickAddSheet> {
                 hintText: l10n.itemDescriptionHint,
                 counterText: '',
               ),
+              onSubmitted: (_) {
+                if (canSubmit || titleIsBlank) {
+                  _submit(addAnother: false);
+                }
+              },
             ),
             if (ctrl.error != null) ...[
               SizedBox(height: tokens.spacing8),

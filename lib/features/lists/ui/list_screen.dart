@@ -353,12 +353,18 @@ class _AddItemRowState extends ConsumerState<_AddItemRow> {
             TextField(
               key: const Key('list_add_description'),
               controller: _descriptionController,
+              textInputAction: TextInputAction.done,
               maxLength: maxItemDescriptionLength,
               decoration: InputDecoration(
                 hintText: l10n.itemDescriptionHint,
                 counterText: '',
                 border: InputBorder.none,
               ),
+              onSubmitted: (_) {
+                if (!addCtrl.submitting) {
+                  _doAddItem();
+                }
+              },
             ),
         ],
       ),
