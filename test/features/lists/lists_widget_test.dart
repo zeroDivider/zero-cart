@@ -243,6 +243,42 @@ void main() {
     await harness.dispose(tester);
   });
 
+  testWidgets('list screen adds item on Enter from description field', (
+    tester,
+  ) async {
+    final harness = await pumpTestApp(
+      tester,
+      router: AppRouter.create(initialLocation: AppRoutes.stores),
+    );
+    final (store, list) = await _seedList(tester, harness);
+    await pumpApp(tester, harness);
+    await _openList(tester, harness, store, list);
+
+    await tester.tap(find.byKey(const Key('list_add_details_toggle')));
+    await pumpApp(tester, harness);
+    await tester.enterText(find.byKey(const Key('list_add_title')), 'Milk');
+    await tester.enterText(find.byKey(const Key('list_add_description')), '2L');
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await pumpApp(tester, harness);
+
+    final items = await tester.runAsync(
+      () => (harness.db.select(
+        harness.db.listItems,
+      )..where((t) => t.listId.equals(list.id))).get(),
+    );
+    expect(items, hasLength(1));
+    expect(items!.first.title, 'Milk');
+    expect(items.first.description, '2L');
+    expect(
+      tester
+          .widget<TextField>(find.byKey(const Key('list_add_title')))
+          .controller!
+          .text,
+      isEmpty,
+    );
+    await harness.dispose(tester);
+  });
+
   testWidgets('checking moves item to Purchased; unchecking restores place', (
     tester,
   ) async {

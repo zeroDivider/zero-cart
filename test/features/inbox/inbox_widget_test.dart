@@ -53,6 +53,35 @@ void main() {
     await harness.dispose(tester);
   });
 
+  testWidgets('quick add Enter on description submits and closes sheet', (
+    tester,
+  ) async {
+    final harness = await pumpTestApp(tester);
+
+    await tester.tap(find.byType(FloatingActionButton));
+    await pumpApp(tester, harness);
+    await tester.enterText(find.byKey(const Key('quick_add_title')), 'Milk');
+    await tester.enterText(
+      find.byKey(const Key('quick_add_description')),
+      '2L',
+    );
+    await pumpApp(tester, harness);
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await tester.runAsync(() async {
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+    });
+    await pumpApp(tester, harness);
+    await tester.pump(const Duration(milliseconds: 300));
+    await pumpApp(tester, harness);
+
+    expect(find.byType(QuickAddSheet), findsNothing);
+    await tester.tap(find.text('Inbox'));
+    await pumpApp(tester, harness);
+    expect(find.text('Milk'), findsOneWidget);
+    expect(find.text('2L'), findsOneWidget);
+    await harness.dispose(tester);
+  });
+
   testWidgets('add another clears fields and keeps sheet open', (tester) async {
     final harness = await pumpTestApp(tester);
 
