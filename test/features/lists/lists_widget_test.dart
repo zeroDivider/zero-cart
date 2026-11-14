@@ -2,7 +2,9 @@ import 'package:drift/drift.dart' show OrderingTerm, Value;
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:zero_cart/app/root_scaffold_messenger.dart';
 import 'package:zero_cart/app/router.dart';
+import 'package:zero_cart/core/widgets/swipe_to_remove_row.dart';
 import 'package:zero_cart/data/database.dart';
 import 'package:zero_cart/features/lists/lists_repository.dart';
 import 'package:zero_cart/features/lists/list_form_sheet.dart';
@@ -682,5 +684,245 @@ void main() {
     } finally {
       handle.dispose();
     }
+  });
+
+  testWidgets('edit Remove shows snackbar; Undo restores the row', (
+    tester,
+  ) async {
+    final harness = await pumpTestApp(
+      tester,
+      router: AppRouter.create(initialLocation: AppRoutes.stores),
+    );
+    final (store, list) = await _seedList(tester, harness);
+    await tester.runAsync(() async {
+      await _insertItem(
+        harness.db,
+        id: 'butter',
+        listId: list.id,
+        title: 'Butter',
+        description: 'salted',
+        purchased: false,
+        position: 1,
+      );
+    });
+    await pumpApp(tester, harness);
+    await _openList(tester, harness, store, list);
+
+    await tester.tap(find.byKey(const Key('item_content_butter')));
+    await pumpApp(tester, harness);
+    await _tapButton(tester, const Key('item_edit_remove'), harness);
+
+    expect(find.text('Butter'), findsNothing);
+    expect(find.text('Removed Butter'), findsOneWidget);
+    final afterRemove = await tester.runAsync(
+      () => harness.db.select(harness.db.listItems).get(),
+    );
+    expect(afterRemove, isEmpty);
+
+    await tester.tap(find.text('Undo'));
+    await tester.runAsync(() async {
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+    });
+    await pumpApp(tester, harness);
+    expect(find.text('Butter'), findsOneWidget);
+    final afterUndo = await tester.runAsync(
+      () => (harness.db.select(
+        harness.db.listItems,
+      )..where((t) => t.id.equals('butter'))).getSingle(),
+    );
+    expect(afterUndo!.title, 'Butter');
+    expect(afterUndo.description, 'salted');
+    expect(afterUndo.position, 1);
+    await harness.dispose(tester);
+  });
+
+  testWidgets('swipe left removes an active item with Undo', (tester) async {
+    final harness = await pumpTestApp(
+      tester,
+      router: AppRouter.create(initialLocation: AppRoutes.stores),
+    );
+    final (store, list) = await _seedList(tester, harness);
+    await tester.runAsync(() async {
+      await _insertItem(
+        harness.db,
+        id: 'milk',
+        listId: list.id,
+        title: 'Milk',
+        purchased: false,
+        position: 1,
+      );
+    });
+    await pumpApp(tester, harness);
+    await _openList(tester, harness, store, list);
+
+    expect(find.byType(SwipeToRemoveRow), findsOneWidget);
+    await tester.fling(
+      find.byKey(const Key('item_content_milk')),
+      const Offset(-500, 0),
+      1000,
+    );
+    await tester.pump();
+    await tester.runAsync(() async {
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+    });
+    await pumpApp(tester, harness);
+
+    expect(find.text('Milk'), findsNothing);
+    expect(find.text('Removed Milk'), findsOneWidget);
+
+    await tester.tap(find.text('Undo'));
+    await tester.runAsync(() async {
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+    });
+    await pumpApp(tester, harness);
+    expect(find.text('Milk'), findsOneWidget);
+    await harness.dispose(tester);
+  });
+
+  testWidgets('second removal finalizes the first Undo snackbar', (
+    tester,
+  ) async {
+    final harness = await pumpTestApp(
+      tester,
+      router: AppRouter.create(initialLocation: AppRoutes.stores),
+    );
+    final (store, list) = await _seedList(tester, harness);
+    await tester.runAsync(() async {
+      await _insertItem(
+        harness.db,
+        id: 'a',
+        listId: list.id,
+        title: 'Alpha',
+        purchased: false,
+        position: 1,
+      );
+      await _insertItem(
+        harness.db,
+        id: 'b',
+        listId: list.id,
+        title: 'Bravo',
+        purchased: false,
+        position: 2,
+      );
+    });
+    await pumpApp(tester, harness);
+    await _openList(tester, harness, store, list);
+
+    await tester.tap(find.byKey(const Key('item_content_a')));
+    await pumpApp(tester, harness);
+    await _tapButton(tester, const Key('item_edit_remove'), harness);
+    expect(find.text('Removed Alpha'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('item_content_b')));
+    await pumpApp(tester, harness);
+    await _tapButton(tester, const Key('item_edit_remove'), harness);
+    expect(find.text('Removed Bravo'), findsOneWidget);
+    expect(find.text('Removed Alpha'), findsNothing);
+
+    rootScaffoldMessengerKey.currentState?.hideCurrentSnackBar();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    await pumpApp(tester, harness);
+
+    final remaining = await tester.runAsync(
+      () => harness.db.select(harness.db.listItems).get(),
+    );
+    expect(remaining, isEmpty);
+    await harness.dispose(tester);
+  });
+
+  testWidgets('Undo works after navigating away from the list', (tester) async {
+    final harness = await pumpTestApp(
+      tester,
+      router: AppRouter.create(initialLocation: AppRoutes.stores),
+    );
+    final (store, list) = await _seedList(tester, harness);
+    await tester.runAsync(() async {
+      await _insertItem(
+        harness.db,
+        id: 'eggs',
+        listId: list.id,
+        title: 'Eggs',
+        purchased: true,
+        position: 1,
+      );
+    });
+    await pumpApp(tester, harness);
+    await _openList(tester, harness, store, list);
+
+    await tester.fling(
+      find.byKey(const Key('item_content_eggs')),
+      const Offset(-500, 0),
+      1000,
+    );
+    await tester.pump();
+    await tester.runAsync(() async {
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+    });
+    await pumpApp(tester, harness);
+    expect(find.text('Removed Eggs'), findsOneWidget);
+
+    await tester.pageBack();
+    await pumpApp(tester, harness);
+    expect(find.byType(ListScreen), findsNothing);
+    expect(find.text('Removed Eggs'), findsOneWidget);
+
+    await tester.tap(find.text('Undo'));
+    await tester.runAsync(() async {
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+    });
+    await pumpApp(tester, harness);
+
+    final restored = await tester.runAsync(
+      () => (harness.db.select(
+        harness.db.listItems,
+      )..where((t) => t.id.equals('eggs'))).getSingleOrNull(),
+    );
+    expect(restored, isNotNull);
+    expect(restored!.isPurchased, isTrue);
+    await harness.dispose(tester);
+  });
+
+  testWidgets('failed Undo after archive shows Could not restore', (
+    tester,
+  ) async {
+    final harness = await pumpTestApp(
+      tester,
+      router: AppRouter.create(initialLocation: AppRoutes.stores),
+    );
+    final (store, list) = await _seedList(tester, harness);
+    await tester.runAsync(() async {
+      await _insertItem(
+        harness.db,
+        id: 'jam',
+        listId: list.id,
+        title: 'Jam',
+        purchased: false,
+        position: 1,
+      );
+    });
+    await pumpApp(tester, harness);
+    await _openList(tester, harness, store, list);
+
+    await tester.tap(find.byKey(const Key('item_content_jam')));
+    await pumpApp(tester, harness);
+    await _tapButton(tester, const Key('item_edit_remove'), harness);
+    expect(find.text('Removed Jam'), findsOneWidget);
+
+    await tester.runAsync(() => _lists(harness).archive(list.id));
+    await pumpApp(tester, harness);
+
+    await tester.tap(find.text('Undo'));
+    await tester.runAsync(() async {
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+    });
+    await pumpApp(tester, harness);
+
+    expect(find.text('Could not restore'), findsOneWidget);
+    final rows = await tester.runAsync(
+      () => harness.db.select(harness.db.listItems).get(),
+    );
+    expect(rows, isEmpty);
+    await harness.dispose(tester);
   });
 }

@@ -4,10 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zero_cart/app/theme/app_tokens.dart';
+import 'package:zero_cart/core/widgets/swipe_to_remove_row.dart';
 import 'package:zero_cart/data/database.dart';
 import 'package:zero_cart/features/lists/add_item_notifier.dart';
 import 'package:zero_cart/features/lists/list_form_sheet.dart';
 import 'package:zero_cart/features/lists/lists_providers.dart';
+import 'package:zero_cart/features/lists/lists_repository.dart';
+import 'package:zero_cart/features/lists/remove_item_undo.dart';
 import 'package:zero_cart/features/lists/ui/add_item_row.dart';
 import 'package:zero_cart/features/lists/ui/item_edit_sheet.dart';
 import 'package:zero_cart/features/lists/ui/item_row.dart';
@@ -187,23 +190,49 @@ class _ListScreenBodyState extends ConsumerState<_ListScreenBody> {
     );
   }
 
+  Future<void> _removeItem(ListItem item) async {
+    final l10n = AppLocalizations.of(context);
+    final ListsRepository repository = ref.read(listsRepositoryProvider);
+    await removeListItemWithUndo(
+      repository: repository,
+      itemId: item.id,
+      l10n: l10n,
+    );
+  }
+
+  Widget _wrapRemovable(ListItem item, Widget child) {
+    if (_readOnly) {
+      return child;
+    }
+    final l10n = AppLocalizations.of(context);
+    return SwipeToRemoveRow(
+      itemKey: ValueKey<String>('list-dismiss-${item.id}'),
+      semanticRemoveLabel: l10n.remove,
+      onRemove: () => _removeItem(item),
+      child: child,
+    );
+  }
+
   Widget _activeRow(ListItem item, List<ListItem> active, int index) {
     return KeyedSubtree(
       key: _keyFor(item.id),
-      child: ItemRow(
-        item: item,
-        readOnly: _readOnly,
-        reorderIndex: _readOnly ? null : index,
-        onPurchasedChanged: _readOnly
-            ? null
-            : (value) => _setPurchased(item, value),
-        onOpenEdit: _readOnly ? null : () => showItemEditSheet(context, item),
-        onMoveUp: !_readOnly && index > 0
-            ? () => _moveActive(active, index, -1)
-            : null,
-        onMoveDown: !_readOnly && index < active.length - 1
-            ? () => _moveActive(active, index, 1)
-            : null,
+      child: _wrapRemovable(
+        item,
+        ItemRow(
+          item: item,
+          readOnly: _readOnly,
+          reorderIndex: _readOnly ? null : index,
+          onPurchasedChanged: _readOnly
+              ? null
+              : (value) => _setPurchased(item, value),
+          onOpenEdit: _readOnly ? null : () => showItemEditSheet(context, item),
+          onMoveUp: !_readOnly && index > 0
+              ? () => _moveActive(active, index, -1)
+              : null,
+          onMoveDown: !_readOnly && index < active.length - 1
+              ? () => _moveActive(active, index, 1)
+              : null,
+        ),
       ),
     );
   }
@@ -333,15 +362,18 @@ class _ListScreenBodyState extends ConsumerState<_ListScreenBody> {
                       final item = purchased[index];
                       return KeyedSubtree(
                         key: _keyFor(item.id),
-                        child: ItemRow(
-                          item: item,
-                          readOnly: _readOnly,
-                          onPurchasedChanged: _readOnly
-                              ? null
-                              : (value) => _setPurchased(item, value),
-                          onOpenEdit: _readOnly
-                              ? null
-                              : () => showItemEditSheet(context, item),
+                        child: _wrapRemovable(
+                          item,
+                          ItemRow(
+                            item: item,
+                            readOnly: _readOnly,
+                            onPurchasedChanged: _readOnly
+                                ? null
+                                : (value) => _setPurchased(item, value),
+                            onOpenEdit: _readOnly
+                                ? null
+                                : () => showItemEditSheet(context, item),
+                          ),
                         ),
                       );
                     }, childCount: purchased.length),

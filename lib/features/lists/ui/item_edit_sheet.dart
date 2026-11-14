@@ -4,6 +4,9 @@ import 'package:zero_cart/app/theme/app_tokens.dart';
 import 'package:zero_cart/core/limits.dart';
 import 'package:zero_cart/data/database.dart';
 import 'package:zero_cart/features/lists/item_edit_notifier.dart';
+import 'package:zero_cart/features/lists/lists_providers.dart';
+import 'package:zero_cart/features/lists/lists_repository.dart';
+import 'package:zero_cart/features/lists/remove_item_undo.dart';
 import 'package:zero_cart/l10n/generated/app_localizations.dart';
 
 /// Opens the edit sheet for a list item. Dismiss without Save discards edits.
@@ -24,7 +27,7 @@ Future<void> showItemEditSheet(BuildContext context, ListItem item) {
   );
 }
 
-/// Edit title/description; Save writes (Remove arrives in APP-014).
+/// Edit title/description; Remove deletes with Undo (D-07, IT-6).
 class ItemEditSheet extends ConsumerStatefulWidget {
   const ItemEditSheet({required this.item, super.key});
 
@@ -88,6 +91,18 @@ class _ItemEditSheetState extends ConsumerState<ItemEditSheet> {
     }
   }
 
+  Future<void> _remove() async {
+    final l10n = AppLocalizations.of(context);
+    final ListsRepository repository = ref.read(listsRepositoryProvider);
+    final id = widget.item.id;
+    Navigator.of(context).pop();
+    await removeListItemWithUndo(
+      repository: repository,
+      itemId: id,
+      l10n: l10n,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
@@ -148,13 +163,20 @@ class _ItemEditSheetState extends ConsumerState<ItemEditSheet> {
               ),
             ],
             SizedBox(height: tokens.spacing16),
-            Align(
-              alignment: Alignment.centerRight,
-              child: FilledButton(
-                key: const Key('item_edit_save'),
-                onPressed: canSave ? _save : (titleIsBlank ? _save : null),
-                child: Text(l10n.save),
-              ),
+            Row(
+              children: [
+                TextButton(
+                  key: const Key('item_edit_remove'),
+                  onPressed: ctrl.submitting ? null : _remove,
+                  child: Text(l10n.remove),
+                ),
+                const Spacer(),
+                FilledButton(
+                  key: const Key('item_edit_save'),
+                  onPressed: canSave ? _save : (titleIsBlank ? _save : null),
+                  child: Text(l10n.save),
+                ),
+              ],
             ),
           ],
         ),

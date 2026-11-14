@@ -113,6 +113,10 @@
       }
     }
   },
+  "couldNotRestore": "Could not restore",
+  "@couldNotRestore": {
+    "description": "SnackBar when Undo fails because the list is missing or archived"
+  },
   "inboxEmptyTitle": "Inbox is empty",
   "@inboxEmptyTitle": {
     "description": "Empty-state headline on the Inbox tab"
