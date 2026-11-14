@@ -28,7 +28,7 @@ void showRemoveUndoSnackBar({
         onPressed: () {
           onUndo().then(
             (_) {},
-            onError: (Object _, StackTrace __) async {
+            onError: (Object error, StackTrace stackTrace) async {
               if (undoFailureMessage == null) {
                 return;
               }

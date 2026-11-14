@@ -62,8 +62,10 @@ Future<void> _invokeUndo(
   Duration realDelay = const Duration(milliseconds: 120),
 }) async {
   final action = tester.widget<SnackBarAction>(find.byType(SnackBarAction));
+  final onPressed = action.onPressed;
+  expect(onPressed, isNotNull);
   await tester.runAsync(() async {
-    action.onPressed!.call();
+    onPressed();
     // Calling onPressed directly skips SnackBar's dismiss; close so a failed-Undo
     // snackbar waiting on [ScaffoldFeatureController.closed] can appear.
     rootScaffoldMessengerKey.currentState?.hideCurrentSnackBar();
@@ -958,7 +960,9 @@ void main() {
     expect(find.byType(SnackBarAction), findsOneWidget);
 
     final action = tester.widget<SnackBarAction>(find.byType(SnackBarAction));
-    action.onPressed!.call();
+    final onPressed = action.onPressed;
+    expect(onPressed, isNotNull);
+    onPressed();
     rootScaffoldMessengerKey.currentState?.hideCurrentSnackBar();
     // Restore fails on the real async timeline; [closed] needs frame pumps.
     var sawFailure = false;
