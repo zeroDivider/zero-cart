@@ -34,6 +34,7 @@
       }
     }
   },
+  "couldNotRestore": "Nije moguće vratiti",
   "inboxEmptyTitle": "Sanduče je prazno",
   "inboxEmptyBody": "Dodaj stvari čim ti padnu na pamet.",
   "newStore": "Nova prodavnica",
