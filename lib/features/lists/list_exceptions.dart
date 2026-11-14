@@ -21,3 +21,16 @@ class ListArchivedException implements Exception {
       ? 'ListArchivedException'
       : 'ListArchivedException($listId)';
 }
+
+/// Thrown when [ListsRepository.restoreItem] cannot re-insert because the
+/// target list is missing or archived (data-model op 2, APP-014).
+class ListUnavailableException implements Exception {
+  const ListUnavailableException([this.listId]);
+
+  final String? listId;
+
+  @override
+  String toString() => listId == null
+      ? 'ListUnavailableException'
+      : 'ListUnavailableException($listId)';
+}

@@ -536,4 +536,131 @@ void main() {
       throwsA(isA<ListArchivedException>()),
     );
   });
+
+  test('removeItem returns snapshot and deletes the row', () async {
+    final store = await stores.create(name: 'Lidl', colorKey: 'lime');
+    final list = await lists.create(storeId: store.id, name: 'Weekend');
+    final milk = await lists.addItem(
+      listId: list.id,
+      title: 'Milk',
+      description: '2L',
+    );
+    await lists.setPurchased(milk.id, true);
+
+    final snapshot = await lists.removeItem(milk.id);
+    expect(snapshot.id, milk.id);
+    expect(snapshot.title, 'Milk');
+    expect(snapshot.description, '2L');
+    expect(snapshot.isPurchased, isTrue);
+    expect(snapshot.position, milk.position);
+    expect(snapshot.createdAt, milk.createdAt);
+    expect(snapshot.updatedAt, isNot(milk.updatedAt));
+
+    final remaining = await lists.watchItems(list.id).first;
+    expect(remaining, isEmpty);
+  });
+
+  test('removeItem rejects archived lists without deleting', () async {
+    final store = await stores.create(name: 'Lidl', colorKey: 'lime');
+    final list = await lists.create(storeId: store.id, name: 'Weekend');
+    final milk = await lists.addItem(listId: list.id, title: 'Milk');
+    await lists.archive(list.id);
+
+    await expectLater(
+      lists.removeItem(milk.id),
+      throwsA(isA<ListArchivedException>()),
+    );
+    final remaining = await lists.watchItems(list.id).first;
+    expect(remaining.single.id, milk.id);
+  });
+
+  test(
+    'restoreItem re-inserts unchanged including after reorder',
+    () async {
+      final store = await stores.create(name: 'Lidl', colorKey: 'lime');
+      final list = await lists.create(storeId: store.id, name: 'Weekend');
+      final a = await lists.addItem(listId: list.id, title: 'A');
+      final b = await lists.addItem(
+        listId: list.id,
+        title: 'B',
+        description: 'keep me',
+      );
+      final c = await lists.addItem(listId: list.id, title: 'C');
+      await lists.setPurchased(b.id, true);
+      final beforeRemove = (await lists.watchItems(list.id).first)
+          .firstWhere((i) => i.id == b.id);
+
+      final snapshot = await lists.removeItem(b.id);
+      expect(snapshot.isPurchased, isTrue);
+      expect(snapshot.position, beforeRemove.position);
+      await lists.reorderActive(list.id, [c.id, a.id]);
+
+      await lists.restoreItem(snapshot);
+      final after = await lists.watchItems(list.id).first;
+      final restored = after.firstWhere((i) => i.id == b.id);
+      expect(restored.title, 'B');
+      expect(restored.description, 'keep me');
+      expect(restored.isPurchased, isTrue);
+      expect(restored.position, snapshot.position);
+      expect(restored.createdAt, snapshot.createdAt);
+      expect(restored.updatedAt, snapshot.updatedAt);
+      expect(after.map((i) => i.id), containsAll([a.id, b.id, c.id]));
+    },
+  );
+
+  test('restoreItem tolerates a position tie with created_at order', () async {
+    final store = await stores.create(name: 'Lidl', colorKey: 'lime');
+    final list = await lists.create(storeId: store.id, name: 'Weekend');
+    await insertItem(
+      id: 'tie-a',
+      listId: list.id,
+      title: 'A',
+      purchased: false,
+      position: 1,
+    );
+    final snapshot = ListItem(
+      id: 'tie-b',
+      listId: list.id,
+      title: 'B',
+      description: null,
+      isPurchased: false,
+      position: 1,
+      createdAt: DateTime.utc(2026, 1, 1, 10),
+      updatedAt: DateTime.utc(2026, 1, 1, 10),
+    );
+
+    await lists.restoreItem(snapshot);
+    final after = await lists.watchItems(list.id).first;
+    expect(after.map((i) => i.id).toList(), ['tie-a', 'tie-b']);
+    expect(after.every((i) => i.position == 1), isTrue);
+  });
+
+  test('restoreItem rejects archived and missing lists', () async {
+    final store = await stores.create(name: 'Lidl', colorKey: 'lime');
+    final list = await lists.create(storeId: store.id, name: 'Weekend');
+    final milk = await lists.addItem(listId: list.id, title: 'Milk');
+    final snapshot = await lists.removeItem(milk.id);
+    await lists.archive(list.id);
+
+    await expectLater(
+      lists.restoreItem(snapshot),
+      throwsA(isA<ListUnavailableException>()),
+    );
+    expect(await lists.watchItems(list.id).first, isEmpty);
+
+    final orphan = ListItem(
+      id: 'orphan',
+      listId: 'missing-list',
+      title: 'Ghost',
+      description: null,
+      isPurchased: false,
+      position: 1,
+      createdAt: DateTime.utc(2026, 1, 1, 9),
+      updatedAt: DateTime.utc(2026, 1, 1, 9),
+    );
+    await expectLater(
+      lists.restoreItem(orphan),
+      throwsA(isA<ListUnavailableException>()),
+    );
+  });
 }
