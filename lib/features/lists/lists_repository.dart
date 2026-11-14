@@ -7,7 +7,7 @@ import 'package:zero_cart/data/database.dart';
 import 'package:zero_cart/features/lists/active_list_progress.dart';
 import 'package:zero_cart/features/lists/list_exceptions.dart';
 
-/// List lifecycle and item operations (LI-1, LI-2, LI-5; IT-1 to IT-4, IT-7).
+/// List lifecycle and item operations (LI-1, LI-2, LI-5; IT-1 to IT-7).
 class ListsRepository {
   ListsRepository({
     required AppDatabase database,
@@ -280,6 +280,38 @@ ORDER BY sl.created_at ASC, sl.id ASC
         createdAt: now,
         updatedAt: now,
       );
+    });
+  }
+
+  /// Hard-deletes the item and returns a snapshot for Undo (D-07, op 1).
+  ///
+  /// Rejects archived lists (owner: archived lists are immutable except restore).
+  Future<ListItem> removeItem(String id) {
+    return _db.transaction(() async {
+      final existing = await (_db.select(
+        _db.listItems,
+      )..where((t) => t.id.equals(id))).getSingleOrNull();
+      if (existing == null) {
+        throw StateError('List item $id not found');
+      }
+      await _assertListActive(existing.listId);
+      await (_db.delete(_db.listItems)..where((t) => t.id.equals(id))).go();
+      return existing;
+    });
+  }
+
+  /// Re-inserts [snapshot] unchanged (same id, position, purchased, timestamps).
+  ///
+  /// Fails with [ListUnavailableException] if the list is missing or archived.
+  Future<void> restoreItem(ListItem snapshot) {
+    return _db.transaction(() async {
+      final list = await (_db.select(
+        _db.shoppingLists,
+      )..where((t) => t.id.equals(snapshot.listId))).getSingleOrNull();
+      if (list == null || list.archivedAt != null) {
+        throw ListUnavailableException(snapshot.listId);
+      }
+      await _db.into(_db.listItems).insert(snapshot);
     });
   }
 
