@@ -60,8 +60,8 @@ void main() {
           builder: (context) {
             l10n = AppLocalizations.of(context);
             return AsyncBody<int>(
-              value: AsyncError(
-                const StoreArchivedException(),
+              value: const AsyncError(
+                StoreArchivedException(),
                 StackTrace.empty,
               ),
               onRetry: () => retries++,
