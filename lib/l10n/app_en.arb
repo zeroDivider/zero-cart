@@ -417,5 +417,33 @@
   "archiveListFailed": "Couldn't archive. Try again.",
   "@archiveListFailed": {
     "description": "SnackBar when archiving a list fails"
+  },
+  "errorStoreArchived": "This store is archived. Restore it to continue.",
+  "@errorStoreArchived": {
+    "description": "Typed error when an operation needs a non-archived store"
+  },
+  "errorListArchived": "This list is archived. Restore it to edit.",
+  "@errorListArchived": {
+    "description": "Typed error when mutating an archived list"
+  },
+  "errorListUnavailable": "This list is no longer available.",
+  "@errorListUnavailable": {
+    "description": "Typed error when the target list is missing or archived"
+  },
+  "errorStaleOrder": "The list changed. Try reordering again.",
+  "@errorStaleOrder": {
+    "description": "Typed error when reorder ids no longer match active items"
+  },
+  "errorGeneric": "Something went wrong. Try again.",
+  "@errorGeneric": {
+    "description": "Fallback when a write fails with an unknown error"
+  },
+  "asyncLoadFailed": "Couldn't load. Try again.",
+  "@asyncLoadFailed": {
+    "description": "AsyncBody error message when a stream or future fails"
+  },
+  "retry": "Retry",
+  "@retry": {
+    "description": "AsyncBody button that reloads after a load failure"
   }
 }
