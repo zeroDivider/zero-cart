@@ -4,8 +4,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:zero_cart/app/router.dart';
 import 'package:zero_cart/app/theme/app_tokens.dart';
 import 'package:zero_cart/features/archive/ui/archive_screen.dart';
+import 'package:zero_cart/features/stores/stores_providers.dart';
 import 'package:zero_cart/features/stores/stores_repository.dart';
-import 'package:zero_cart/features/stores/ui/store_form_sheet.dart';
+import 'package:zero_cart/features/stores/ui/sheets/store_form_sheet.dart';
 import 'package:zero_cart/features/stores/ui/stores_screen.dart';
 
 import '../../support/test_app.dart';
@@ -141,7 +142,7 @@ void main() {
     await harness.dispose(tester);
   });
 
-  testWidgets('editStore persists draft and refreshes the Stores list', (
+  testWidgets('edit store persists and refreshes the Stores list', (
     tester,
   ) async {
     final harness = await pumpTestApp(
@@ -157,8 +158,13 @@ void main() {
     expect(find.text('Lidl'), findsOneWidget);
 
     final context = tester.element(find.byType(StoresScreen));
-    final ref = context as WidgetRef;
-    final editFuture = editStore(context, ref, created!);
+    final repo = ProviderScope.containerOf(context)
+        .read(storesRepositoryProvider);
+    final editFuture = showStoreFormSheet(
+      context,
+      existing: created,
+      repository: repo,
+    );
     await pumpApp(tester, harness);
     expect(find.byType(StoreFormSheet), findsOneWidget);
     expect(find.text('Edit store'), findsOneWidget);
@@ -175,7 +181,7 @@ void main() {
     await _tapButton(tester, const Key('store_form_save'), harness);
 
     final saved = await tester.runAsync(() => editFuture);
-    expect(saved, isTrue);
+    expect(saved, isNotNull);
     await pumpApp(tester, harness);
 
     expect(find.text('Lidl City'), findsOneWidget);
@@ -201,16 +207,18 @@ void main() {
     await harness.dispose(tester);
   });
 
-  testWidgets('store form does not write until caller persists draft', (
-    tester,
-  ) async {
+  testWidgets('draft mode returns StoreDraft without writing', (tester) async {
     final harness = await pumpTestApp(
       tester,
       router: AppRouter.create(initialLocation: AppRoutes.stores),
     );
 
     final context = tester.element(find.byType(StoresScreen));
-    final draftFuture = showStoreFormSheet(context, initialColorKey: 'sky');
+    final draftFuture = showStoreFormSheet(
+      context,
+      initialColorKey: 'sky',
+      draftMode: true,
+    );
     await pumpApp(tester, harness);
     await tester.enterText(find.byKey(const Key('store_form_name')), 'Ghost');
     await pumpApp(tester, harness);

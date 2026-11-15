@@ -7,10 +7,10 @@ import 'package:zero_cart/app/router.dart';
 import 'package:zero_cart/core/widgets/swipe_to_remove_row.dart';
 import 'package:zero_cart/data/database.dart';
 import 'package:zero_cart/features/lists/lists_repository.dart';
-import 'package:zero_cart/features/lists/list_form_sheet.dart';
 import 'package:zero_cart/features/lists/ui/item_edit_sheet.dart';
 import 'package:zero_cart/features/lists/ui/item_row.dart';
 import 'package:zero_cart/features/lists/ui/list_screen.dart';
+import 'package:zero_cart/features/lists/ui/sheets/list_form_sheet.dart';
 import 'package:zero_cart/features/stores/stores_repository.dart';
 import 'package:zero_cart/features/stores/ui/store_active_lists_section.dart';
 import 'package:zero_cart/features/stores/ui/store_details_screen.dart';
@@ -208,7 +208,7 @@ void main() {
     await pumpApp(tester, harness);
 
     await _tapButton(tester, const Key('store_details_new_list'), harness);
-    expect(find.byType(ListFormSheet), findsOneWidget);
+    expect(find.byType(ListFormSheet<ShoppingList>), findsOneWidget);
     expect(find.text('New list'), findsOneWidget);
 
     await tester.enterText(find.byKey(const Key('list_form_name')), 'Party');
@@ -499,7 +499,7 @@ void main() {
     menu.onSelected!('archive');
     await pumpApp(tester);
 
-    expect(find.text("Couldn't archive. Try again."), findsOneWidget);
+    expect(find.text('Something went wrong. Try again.'), findsOneWidget);
     await harness.dispose(tester);
   });
 
