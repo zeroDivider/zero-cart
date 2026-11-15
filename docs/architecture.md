@@ -45,7 +45,9 @@ lib/
     ordering.dart           # computeDenseReorder (pure)
     share_text.dart         # formatShareText (pure)
     clock.dart, ids.dart    # injectable now() and uuid wrapper
-    widgets/                # shared UI: sheets, empty states, swipe-to-remove row
+    repository_exceptions.dart  # sealed typed repository errors (ADR-0007)
+    ui/                     # AppMessenger, runWrite, messageFor (ADR-0007)
+    widgets/                # FormSheetScaffold, AsyncBody, swipe-to-remove, …
   data/
     database.dart           # AppDatabase, migrations, foreign_keys pragma
     tables.dart             # Drift table definitions
@@ -77,4 +79,4 @@ Rule: a feature may import `core/`, `data/` and other features' providers and `u
 
 ## 2.6 UI conventions
 
-Writes, failures, forms, snackbars and async loading follow ADR-0007.
+Writes, failures, forms, snackbars and async loading follow ADR-0007 via `lib/core/ui/` (`AppMessenger`, `runWrite`, `messageFor`) and `lib/core/widgets/` (`FormSheetScaffold`, `AsyncBody`).

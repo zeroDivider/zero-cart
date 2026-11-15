@@ -41,7 +41,7 @@ These are authoritative but not immutable. If a change is needed, stop, explain 
 - State: Riverpod only (ADR-0001), hand-written providers, no codegen. No other state or DI library. Repository providers are app-lifetime.
 - Persistence: Drift. Every multi-row operation runs in one transaction. A schema change needs a version bump, a migration, an updated snapshot and a migration test.
 - UI: colours, sizes and fonts only from `lib/app/theme/`. Strings only through gen-l10n (`app_en.arb` now, Serbian in APP-024). 48dp touch targets, 200% text scale, semantics for every gesture.
-- Writes, failures, forms, snackbars and async loading: follow ADR-0007.
+- Writes, failures, forms, snackbars and async loading: follow ADR-0007 (`AppMessenger`, `runWrite` / `messageFor`, `FormSheetScaffold`, `AsyncBody`). No `ScaffoldMessenger.of(context)` outside `lib/core/ui/`; no raw `Text('$error')` in features.
 - Dependencies: add one only when the task needs it. Check its current version, changelog and API on pub.dev first. Report the version. Never invent an API or a version.
 - Simplicity: no abstraction without a current need, no interface for a single implementation, no speculative features (v2 items are out of scope).
 - Tests: real in-memory Drift for data behaviour, fakes over mocks, every business rule has a test.
