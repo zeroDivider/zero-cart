@@ -65,6 +65,50 @@ void main() {
     expect(find.text(l10n.errorListArchived), findsOneWidget);
   });
 
+  testWidgets('FormValidationAbort stays open without scaffold error', (
+    tester,
+  ) async {
+    late AppLocalizations l10n;
+    await tester.pumpWidget(
+      _app(
+        home: Builder(
+          builder: (context) {
+            l10n = AppLocalizations.of(context);
+            return Scaffold(
+              body: ElevatedButton(
+                onPressed: () {
+                  showModalBottomSheet<void>(
+                    context: context,
+                    isScrollControlled: true,
+                    builder: (sheetContext) {
+                      return FormSheetScaffold<void>(
+                        title: const Text('Edit'),
+                        submitLabel: l10n.save,
+                        onSubmit: () async {
+                          throw const FormValidationAbort();
+                        },
+                        body: (context, controller) => const SizedBox.shrink(),
+                      );
+                    },
+                  );
+                },
+                child: const Text('Open'),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Open'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(l10n.save));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Edit'), findsOneWidget);
+    expect(find.text(l10n.errorGeneric), findsNothing);
+  });
+
   testWidgets('closes with the result on success', (tester) async {
     late AppLocalizations l10n;
     late BuildContext hostContext;

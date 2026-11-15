@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:zero_cart/app/router.dart';
 import 'package:zero_cart/app/theme/app_tokens.dart';
+import 'package:zero_cart/core/ui/write_runner.dart';
+import 'package:zero_cart/core/widgets/async_body.dart';
 import 'package:zero_cart/data/database.dart';
 import 'package:zero_cart/features/stores/stores_providers.dart';
 import 'package:zero_cart/l10n/generated/app_localizations.dart';
@@ -74,8 +76,10 @@ class _ArchivedStoresPane extends ConsumerWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final tokens = Theme.of(context).extension<AppTokens>()!;
 
-    return asyncStores.when(
-      data: (stores) {
+    return AsyncBody(
+      value: asyncStores,
+      onRetry: () => ref.invalidate(archivedStoresProvider),
+      builder: (context, stores) {
         if (stores.isEmpty) {
           return Center(
             child: Padding(
@@ -99,8 +103,6 @@ class _ArchivedStoresPane extends ConsumerWidget {
           },
         );
       },
-      loading: () => const SizedBox.shrink(),
-      error: (error, _) => Center(child: Text('$error')),
     );
   }
 }
@@ -159,8 +161,13 @@ class _ArchivedStoreRow extends ConsumerWidget {
             ),
             TextButton(
               key: Key('archived_store_restore_${store.id}'),
-              onPressed: () =>
-                  ref.read(storesRepositoryProvider).restore(store.id),
+              onPressed: () {
+                final captured = AppLocalizations.of(context);
+                runWrite(
+                  () => ref.read(storesRepositoryProvider).restore(store.id),
+                  l10n: captured,
+                );
+              },
               child: Text(l10n.restore),
             ),
           ],

@@ -3,6 +3,14 @@ import 'package:zero_cart/app/theme/app_tokens.dart';
 import 'package:zero_cart/core/ui/error_messages.dart';
 import 'package:zero_cart/l10n/generated/app_localizations.dart';
 
+/// Thrown from [FormSheetScaffold.onSubmit] when sync field validation fails.
+///
+/// The sheet stays open and [FormSheetScaffold] shows no scaffold-level error;
+/// the form body owns the field message (architecture: blank-title validation).
+class FormValidationAbort implements Exception {
+  const FormValidationAbort();
+}
+
 /// Shared bottom-sheet form shell: submitting state, inline error, close on
 /// success (ADR-0007).
 ///
@@ -16,6 +24,7 @@ class FormSheetScaffold<T> extends StatefulWidget {
     required this.submitLabel,
     required this.onSubmit,
     required this.body,
+    this.submitKey,
   });
 
   final Widget title;
@@ -27,6 +36,9 @@ class FormSheetScaffold<T> extends StatefulWidget {
   /// Form fields. Use [FormSheetController.clearError] when the user edits.
   final Widget Function(BuildContext context, FormSheetController controller)
   body;
+
+  /// Optional key for the submit button (widget tests).
+  final Key? submitKey;
 
   @override
   State<FormSheetScaffold<T>> createState() => _FormSheetScaffoldState<T>();
@@ -70,6 +82,11 @@ class _FormSheetScaffoldState<T> extends State<FormSheetScaffold<T>> {
         return;
       }
       Navigator.of(context).pop(result);
+    } on FormValidationAbort {
+      if (!mounted) {
+        return;
+      }
+      setState(() => _submitting = false);
     } catch (error) {
       if (!mounted) {
         return;
@@ -123,6 +140,7 @@ class _FormSheetScaffoldState<T> extends State<FormSheetScaffold<T>> {
               ],
               SizedBox(height: tokens.spacing16),
               FilledButton(
+                key: widget.submitKey,
                 onPressed: _submitting ? null : _submit,
                 child: _submitting
                     ? SizedBox(

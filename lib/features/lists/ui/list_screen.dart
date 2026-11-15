@@ -4,10 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zero_cart/app/theme/app_tokens.dart';
+import 'package:zero_cart/core/ui/write_runner.dart';
+import 'package:zero_cart/core/widgets/async_body.dart';
 import 'package:zero_cart/core/widgets/swipe_to_remove_row.dart';
 import 'package:zero_cart/data/database.dart';
 import 'package:zero_cart/features/lists/add_item_notifier.dart';
-import 'package:zero_cart/features/lists/list_form_sheet.dart';
 import 'package:zero_cart/features/lists/lists_providers.dart';
 import 'package:zero_cart/features/lists/lists_repository.dart';
 import 'package:zero_cart/features/lists/remove_item_undo.dart';
@@ -15,6 +16,7 @@ import 'package:zero_cart/features/lists/ui/add_item_row.dart';
 import 'package:zero_cart/features/lists/ui/item_edit_sheet.dart';
 import 'package:zero_cart/features/lists/ui/item_row.dart';
 import 'package:zero_cart/features/lists/ui/purchased_header.dart';
+import 'package:zero_cart/features/lists/ui/sheets/list_form_sheet.dart';
 import 'package:zero_cart/l10n/generated/app_localizations.dart';
 
 /// Shopping list details: active items, inline add, purchased section (APP-012).
@@ -28,8 +30,10 @@ class ListScreen extends ConsumerWidget {
     final l10n = AppLocalizations.of(context);
     final asyncList = ref.watch(listByIdProvider(listId));
 
-    return asyncList.when(
-      data: (list) {
+    return AsyncBody(
+      value: asyncList,
+      onRetry: () => ref.invalidate(listByIdProvider(listId)),
+      builder: (context, list) {
         if (list == null) {
           return Scaffold(
             appBar: AppBar(),
@@ -38,11 +42,6 @@ class ListScreen extends ConsumerWidget {
         }
         return _ListScreenBody(list: list);
       },
-      loading: () => Scaffold(appBar: AppBar(), body: const SizedBox.shrink()),
-      error: (error, _) => Scaffold(
-        appBar: AppBar(),
-        body: Center(child: Text('$error')),
-      ),
     );
   }
 }
@@ -75,39 +74,31 @@ class _ListScreenBodyState extends ConsumerState<_ListScreenBody> {
   GlobalKey _keyFor(String id) => _itemKeys.putIfAbsent(id, GlobalKey.new);
 
   Future<void> _rename() async {
-    final draft = await showListFormSheet(context, existing: list);
-    if (draft == null || !mounted) {
-      return;
-    }
-    await ref
-        .read(listsRepositoryProvider)
-        .rename(id: list.id, name: draft.name);
+    await showListFormSheet(
+      context,
+      existing: list,
+      onSubmit: (draft) {
+        return ref
+            .read(listsRepositoryProvider)
+            .rename(id: list.id, name: draft.name);
+      },
+    );
   }
 
   Future<void> _archive() async {
     final l10n = AppLocalizations.of(context);
-    final messenger = ScaffoldMessenger.of(context);
-    try {
-      await ref.read(listsRepositoryProvider).archive(list.id);
-    } on Object {
-      if (!mounted) {
-        return;
-      }
-      messenger.showSnackBar(SnackBar(content: Text(l10n.archiveListFailed)));
-    }
+    await runWrite(
+      () => ref.read(listsRepositoryProvider).archive(list.id),
+      l10n: l10n,
+    );
   }
 
   Future<void> _setPurchased(ListItem item, bool value) async {
     final l10n = AppLocalizations.of(context);
-    final messenger = ScaffoldMessenger.of(context);
-    try {
-      await ref.read(listsRepositoryProvider).setPurchased(item.id, value);
-    } on Object {
-      if (!mounted) {
-        return;
-      }
-      messenger.showSnackBar(SnackBar(content: Text(l10n.purchaseWriteFailed)));
-    }
+    await runWrite(
+      () => ref.read(listsRepositoryProvider).setPurchased(item.id, value),
+      l10n: l10n,
+    );
   }
 
   List<ListItem> _activeForDisplay(List<ListItem> fromDb) {
@@ -274,8 +265,10 @@ class _ListScreenBodyState extends ConsumerState<_ListScreenBody> {
             ),
         ],
       ),
-      body: asyncItems.when(
-        data: (items) {
+      body: AsyncBody(
+        value: asyncItems,
+        onRetry: () => ref.invalidate(listItemsProvider(list.id)),
+        builder: (context, items) {
           final activeFromDb = items.where((i) => !i.isPurchased).toList();
           final active = _activeForDisplay(activeFromDb);
           final purchased = items.where((i) => i.isPurchased).toList();
@@ -383,8 +376,6 @@ class _ListScreenBodyState extends ConsumerState<_ListScreenBody> {
             ],
           );
         },
-        loading: () => const SizedBox.shrink(),
-        error: (error, _) => Center(child: Text('$error')),
       ),
     );
   }
