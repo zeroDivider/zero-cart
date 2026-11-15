@@ -3,10 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:zero_cart/app/router.dart';
 import 'package:zero_cart/app/theme/app_tokens.dart';
-import 'package:zero_cart/data/database.dart';
+import 'package:zero_cart/core/widgets/async_body.dart';
 import 'package:zero_cart/features/stores/active_store_summary.dart';
 import 'package:zero_cart/features/stores/stores_providers.dart';
-import 'package:zero_cart/features/stores/ui/store_form_sheet.dart';
+import 'package:zero_cart/features/stores/ui/sheets/store_form_sheet.dart';
 import 'package:zero_cart/l10n/generated/app_localizations.dart';
 
 /// Stores tab: active stores alphabetically with New store and Archive (ST-1/2).
@@ -30,15 +30,15 @@ class StoresScreen extends ConsumerWidget {
           ),
         ],
       ),
-      body: asyncStores.when(
-        data: (summaries) {
+      body: AsyncBody(
+        value: asyncStores,
+        onRetry: () => ref.invalidate(activeStoreSummariesProvider),
+        builder: (context, summaries) {
           if (summaries.isEmpty) {
             return const _StoresEmptyState();
           }
           return _StoresList(summaries: summaries);
         },
-        loading: () => const SizedBox.shrink(),
-        error: (error, _) => Center(child: Text('$error')),
       ),
     );
   }
@@ -187,19 +187,9 @@ Future<void> _createStore(BuildContext context, WidgetRef ref) async {
   if (!context.mounted) {
     return;
   }
-  final draft = await showStoreFormSheet(context, initialColorKey: colorKey);
-  if (draft == null) {
-    return;
-  }
-  await repository.createFromDraft(draft);
-}
-
-/// Opens the edit form and writes on Save (used by store details / tests).
-Future<bool> editStore(BuildContext context, WidgetRef ref, Store store) async {
-  final draft = await showStoreFormSheet(context, existing: store);
-  if (draft == null) {
-    return false;
-  }
-  await ref.read(storesRepositoryProvider).updateFromDraft(store.id, draft);
-  return true;
+  await showStoreFormSheet(
+    context,
+    initialColorKey: colorKey,
+    repository: repository,
+  );
 }

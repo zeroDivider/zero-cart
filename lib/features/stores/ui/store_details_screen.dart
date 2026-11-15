@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:zero_cart/app/theme/app_tokens.dart';
+import 'package:zero_cart/core/ui/write_runner.dart';
+import 'package:zero_cart/core/widgets/async_body.dart';
 import 'package:zero_cart/data/database.dart';
 import 'package:zero_cart/features/stores/stores_providers.dart';
+import 'package:zero_cart/features/stores/ui/sheets/store_form_sheet.dart';
 import 'package:zero_cart/features/stores/ui/store_active_lists_section.dart';
-import 'package:zero_cart/features/stores/ui/stores_screen.dart';
 import 'package:zero_cart/l10n/generated/app_localizations.dart';
 
 /// Store details at `/stores/:id` (ST-3, ST-4, F12).
@@ -19,8 +21,10 @@ class StoreDetailsScreen extends ConsumerWidget {
     final l10n = AppLocalizations.of(context);
     final asyncStore = ref.watch(storeByIdProvider(storeId));
 
-    return asyncStore.when(
-      data: (store) {
+    return AsyncBody(
+      value: asyncStore,
+      onRetry: () => ref.invalidate(storeByIdProvider(storeId)),
+      builder: (context, store) {
         if (store == null) {
           return Scaffold(
             appBar: AppBar(title: Text(l10n.storeDetailsPlaceholder)),
@@ -29,14 +33,6 @@ class StoreDetailsScreen extends ConsumerWidget {
         }
         return _StoreDetailsBody(store: store);
       },
-      loading: () => Scaffold(
-        appBar: AppBar(title: Text(l10n.storeDetailsPlaceholder)),
-        body: const SizedBox.shrink(),
-      ),
-      error: (error, _) => Scaffold(
-        appBar: AppBar(title: Text(l10n.storeDetailsPlaceholder)),
-        body: Center(child: Text('$error')),
-      ),
     );
   }
 }
@@ -67,7 +63,7 @@ class _StoreDetailsBody extends ConsumerWidget {
           else ...[
             TextButton(
               key: const Key('store_details_edit'),
-              onPressed: () => editStore(context, ref, store),
+              onPressed: () => _edit(context, ref),
               child: Text(l10n.edit),
             ),
             TextButton(
@@ -97,6 +93,14 @@ class _StoreDetailsBody extends ConsumerWidget {
           ),
         ],
       ),
+    );
+  }
+
+  Future<void> _edit(BuildContext context, WidgetRef ref) async {
+    await showStoreFormSheet(
+      context,
+      existing: store,
+      repository: ref.read(storesRepositoryProvider),
     );
   }
 
@@ -133,14 +137,18 @@ class _StoreDetailsBody extends ConsumerWidget {
         return;
       }
     }
-    await repository.archive(store.id);
-    if (context.mounted) {
+    final ok = await runWrite(() => repository.archive(store.id), l10n: l10n);
+    if (ok && context.mounted) {
       context.pop();
     }
   }
 
   Future<void> _restore(BuildContext context, WidgetRef ref) async {
-    await ref.read(storesRepositoryProvider).restore(store.id);
+    final l10n = AppLocalizations.of(context);
+    await runWrite(
+      () => ref.read(storesRepositoryProvider).restore(store.id),
+      l10n: l10n,
+    );
   }
 }
 

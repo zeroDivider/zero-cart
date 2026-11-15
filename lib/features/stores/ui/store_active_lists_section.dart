@@ -3,15 +3,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:zero_cart/app/router.dart';
 import 'package:zero_cart/app/theme/app_tokens.dart';
+import 'package:zero_cart/core/widgets/async_body.dart';
 import 'package:zero_cart/features/lists/active_list_progress.dart';
-import 'package:zero_cart/features/lists/list_form_sheet.dart';
 import 'package:zero_cart/features/lists/lists_providers.dart';
+import 'package:zero_cart/features/lists/ui/sheets/list_form_sheet.dart';
 import 'package:zero_cart/l10n/generated/app_localizations.dart';
 
 /// Active list cards and New list action for store details (LI-1, F9).
 ///
-/// Lives in stores `ui/` and depends on lists providers + feature-root form,
-/// not on `features/lists/ui/` (architecture §2.3).
+/// Imports lists `ui/sheets/` only — never list screens (ADR-0007).
 class StoreActiveListsSection extends ConsumerWidget {
   const StoreActiveListsSection({
     required this.storeId,
@@ -37,9 +37,10 @@ class StoreActiveListsSection extends ConsumerWidget {
           style: Theme.of(context).textTheme.titleMedium,
         ),
         SizedBox(height: tokens.spacing8),
-        asyncLists.when(
-          skipLoadingOnReload: true,
-          data: (rows) {
+        AsyncBody(
+          value: asyncLists,
+          onRetry: () => ref.invalidate(activeListsForStoreProvider(storeId)),
+          builder: (context, rows) {
             if (rows.isEmpty) {
               return Text(
                 l10n.storeListsEmpty,
@@ -57,12 +58,6 @@ class StoreActiveListsSection extends ConsumerWidget {
               ],
             );
           },
-          loading: () => Text(
-            l10n.storeListsEmpty,
-            style: Theme.of(context).textTheme.bodyMedium
-                ?.copyWith(color: colorScheme.onSurfaceVariant),
-          ),
-          error: (error, _) => Text('$error'),
         ),
         if (!readOnly)
           Align(
@@ -78,14 +73,15 @@ class StoreActiveListsSection extends ConsumerWidget {
   }
 
   Future<void> _createList(BuildContext context, WidgetRef ref) async {
-    final draft = await showListFormSheet(context);
-    if (draft == null || !context.mounted) {
-      return;
-    }
-    final list = await ref
-        .read(listsRepositoryProvider)
-        .create(storeId: storeId, name: draft.name);
-    if (!context.mounted) {
+    final list = await showListFormSheet(
+      context,
+      onSubmit: (draft) {
+        return ref
+            .read(listsRepositoryProvider)
+            .create(storeId: storeId, name: draft.name);
+      },
+    );
+    if (list == null || !context.mounted) {
       return;
     }
     context.push(AppRoutes.listDetailsLocation(list.id));

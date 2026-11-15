@@ -1,6 +1,7 @@
-/// Form values for creating or editing a store without writing to the database.
+/// Form values for creating or editing a store.
 ///
-/// The sheet returns this; callers (Stores tab, assignment flow) perform the write.
+/// Returned by the store form after Save. In draft mode the sheet writes
+/// nothing (APP-015 assignment); otherwise the sheet persists via repository.
 class StoreDraft {
   const StoreDraft({
     required this.name,

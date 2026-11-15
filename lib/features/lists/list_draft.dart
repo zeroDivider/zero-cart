@@ -1,6 +1,7 @@
-/// Form values for creating or renaming a list without writing to the database.
+/// Form values for creating or renaming a list.
 ///
-/// The sheet returns this; callers (store details, APP-015) perform the write.
+/// Passed to the sheet's [onSubmit] callback, which performs the write
+/// (or returns a draft for flows that defer persistence).
 class ListDraft {
   const ListDraft({required this.name});
 
