@@ -10,3 +10,4 @@ alwaysApply: false
 - Every tappable target is at least 48 x 48 dp. Every gesture has a non-gesture path and a semantic action (D-22). Colour never carries meaning alone (D-23).
 - Forms are bottom sheets; dialogs only for store archive with active lists and replace-all restore. Destructive actions use Undo (D-07).
 - Follow `design/shopping-app-prototype.html` for layout; the design-system tokens win when they differ.
+- Writes, failures, forms, snackbars and async loading: follow ADR-0007.
