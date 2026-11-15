@@ -14,6 +14,7 @@ Instruction to give Cursor for each task: 'Implement task APP-0NN according to t
 6. **Generated files are not committed** (Drift, gen-l10n); Drift schema snapshots are.
 7. **Quality gate:** `tool/check.sh` (created in APP-005; before that run the steps by hand): format check, `flutter analyze`, `flutter test`.
 8. **Report** at the end: what was implemented; what was actually verified (commands run and results); what was not verified (for example no device available); deviations from the plan with reasons. Never claim a test passed that was not run.
+9. All writes, failure messages, forms, snackbars and async loading use the primitives from APP-014a and ADR-0007. No `ScaffoldMessenger.of(context)` in feature code, no raw error text, no bespoke submit state. Every new write path has a test where the repository fake throws and the visible failure behaviour is asserted.
 
 **Global definition of done:** format and analysis clean, all tests pass, new behaviour covered by the tests the task names, listed docs updated, report delivered, no TODO without a task ID, nothing beyond the task's scope.
 
@@ -195,6 +196,33 @@ Instruction to give Cursor for each task: 'Implement task APP-0NN according to t
 - **Verify:** database tests (restore with a position tie, restore into an archived list); widget tests for swipe, button, Undo, double removal, Undo after navigation.
 - **Docs:** none. **Stop and report for owner review.**
 
+### APP-014a Shared UI primitives and ADR-0007
+- **Context:** screens handle writes, failures and forms in different ways; ADR-0007 sets one convention.
+- **Requirements:** implement `core/ui/app_messenger.dart` (info, error, undo; root messenger key; one snackbar at a time), `core/ui/write_runner.dart` (`runWrite` plus `messageFor(l10n, error)` mapping the repositories' typed errors and a generic fallback, localised strings in `app_en.arb`), `core/widgets/form_sheet.dart` (`FormSheetScaffold`: submitting state, inline error, close on success, draft mode) and `core/widgets/async_body.dart` (loading, localised error with Retry, data). Add guard tests: no `ScaffoldMessenger.of(` outside `core/ui/`, no raw error interpolation in `lib/features/`. Update `AGENTS.md`, `.cursor/rules/`, `docs/architecture.md` per the docs change already merged. Do not migrate feature screens in this task.
+- **Components:** `lib/core/ui/`, `lib/core/widgets/`, `test/core/`, `lib/l10n/app_en.arb`.
+- **Depends on:** APP-014, docs branch `docs/ui-conventions` merged.
+- **Acceptance:** a form sheet using the scaffold stays open and shows an inline error when its callback throws, and closes on success; `AppMessenger` shows error and Undo snackbars and an Undo still works after the originating route is popped; `AsyncBody` renders all three states and Retry reloads; `messageFor` maps every typed repository error; guard tests pass (and fail when a violation is introduced).
+- **Verify:** widget and unit tests listed above; run the guard tests against a deliberately violating file, then remove it.
+- **Docs:** none beyond the merged ADR.
+
+### APP-014b Migrate stores, store details, lists and archive
+- **Context:** apply the convention to the first group of screens.
+- **Requirements:** store and list forms use `FormSheetScaffold` and write inside their callbacks (draft mode kept for the store form so APP-015 can reuse it); move them to `stores/ui/sheets/` and `lists/ui/sheets/` with their `show...Sheet` functions; remove the `stores_screen.dart` import from store details; store create, edit, archive and restore use `runWrite`; list archive and purchase use `runWrite` and `AppMessenger`; Stores, store details, Archive and list screens use `AsyncBody` for stream errors. The Archive segmented selection stays `setState`.
+- **Components:** `features/stores/`, `features/lists/` (list screen non-reorder parts), `features/archive/`.
+- **Depends on:** APP-014a.
+- **Acceptance:** every write in these screens has a visible failure behaviour per ADR-0007; no raw `$error` text; no `ScaffoldMessenger.of`; store details no longer imports another feature's screen.
+- **Verify:** widget tests with a throwing repository fake for each write (inline error in sheets, snackbar for direct actions); existing tests still pass.
+- **Docs:** none.
+
+### APP-014c Migrate Inbox, items, reorder and Undo
+- **Context:** apply the convention to the remaining screens and fix the Undo and reorder gaps.
+- **Requirements:** Inbox quick-add and edit and the item edit and add row use `FormSheetScaffold` (remove the per-sheet `writeFailed` Notifiers); reorder failure shows an error snackbar and drops the optimistic order; `SwipeToRemoveRow` and all Undo flows use `AppMessenger`, and a failed Undo shows its error immediately, replacing the Removed snackbar; Inbox and wishlist-ready code paths use `AsyncBody`. Purchased-section expansion stays a `Notifier` (documented in ADR-0007).
+- **Components:** `features/inbox/`, `features/lists/` (items, reorder), `core/widgets/swipe_to_remove_row.dart`.
+- **Depends on:** APP-014b.
+- **Acceptance:** all write failures in Inbox, items, reorder and Undo are visible per ADR-0007; no bespoke submit-state Notifiers remain; guard tests pass.
+- **Verify:** widget tests with throwing fakes for add, edit, remove, Undo, reorder; run the full gate.
+- **Docs:** `docs/decisions-and-assumptions.md` unchanged; note completion in the report.
+
 ---
 
 ## Phase 4: Assignment and wishlist
@@ -363,7 +391,7 @@ Instruction to give Cursor for each task: 'Implement task APP-0NN according to t
 001 -> 002 -> 003 -> 004 -> 005
 005 -> 006 ; 004 -> 007 ; (006, 007) -> 008 [gate]
 008 -> 009 -> 010 -> 011 -> 012 -> 013 -> 014 [gate]
-(009, 012) -> 015 ; (012, 014) -> 016
+014 -> 014a -> 014b -> 014c -> (015, 016)
 (014, 010) -> 017 -> 018
 (017, 003) -> 019 ; (006, 004) -> 020
 (020, 018) -> 021 -> 022 [gate] -> 023
