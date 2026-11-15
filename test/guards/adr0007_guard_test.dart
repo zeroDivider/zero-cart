@@ -33,6 +33,21 @@ void main() {
     );
 
     final allowlist = parseAllowlist(allowlistFile.readAsStringSync());
+    // Ceiling locked at APP-014a; later tasks may only remove entries.
+    const allowlistCeiling = {
+      'lib/features/archive/ui/archive_screen.dart',
+      'lib/features/inbox/ui/inbox_screen.dart',
+      'lib/features/lists/ui/list_screen.dart',
+      'lib/features/stores/ui/store_active_lists_section.dart',
+      'lib/features/stores/ui/store_details_screen.dart',
+      'lib/features/stores/ui/stores_screen.dart',
+    };
+    expect(
+      allowlist.difference(allowlistCeiling),
+      isEmpty,
+      reason: 'allowlist may only shrink from the APP-014a baseline',
+    );
+
     final libDir = Directory('$repoRoot${Platform.pathSeparator}lib');
     final dartFiles = libDir
         .listSync(recursive: true)

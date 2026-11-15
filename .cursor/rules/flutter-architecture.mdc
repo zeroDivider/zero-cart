@@ -4,7 +4,7 @@ globs: lib/**/*.dart
 alwaysApply: false
 ---
 
-- Dependency direction: `ui -> providers/controllers -> repositories -> data`. A feature never imports another feature's `ui/`.
+- Dependency direction: `ui -> providers/controllers -> repositories -> data`. A feature may import another feature's `ui/sheets/`; never its screens (ADR-0007).
 - Widgets only render `AsyncValue`s and call controller or repository methods. No business rules, no Drift queries, no `DateTime.now()` (use `nowProvider`).
 - State is Riverpod (ADR-0001): `StreamProvider` for database reads, `Notifier` for UI-only state shared across widgets or surviving navigation, plain classes for repositories. Never `ref.read` inside `build`. Repository providers are not auto-disposed.
 - Local ephemeral UI state (field values, submitting flag, inline form errors, segmented selection) is `StatefulWidget` state — typically via `FormSheetScaffold` (ADR-0007). Sync blank-title validation may stay in the widget. `TextEditingController`, `FocusNode`, and `ScrollController` are pure Flutter plumbing and stay in the widget's State class.
