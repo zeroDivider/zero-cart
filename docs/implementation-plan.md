@@ -207,7 +207,7 @@ Instruction to give Cursor for each task: 'Implement task APP-0NN according to t
 
 ### APP-014b Migrate stores, store details, lists and archive
 - **Context:** apply the convention to the first group of screens.
-- **Requirements:** store and list forms use `FormSheetScaffold` and write inside their callbacks (draft mode kept for the store form so APP-015 can reuse it); move them to `stores/ui/sheets/` and `lists/ui/sheets/` with their `show...Sheet` functions; remove the `stores_screen.dart` import from store details; store create, edit, archive and restore use `runWrite`; list archive and purchase use `runWrite` and `AppMessenger`; Stores, store details, Archive and list screens use `AsyncBody` for stream errors. The Archive segmented selection stays `setState`.
+- **Requirements:** store and list forms use `FormSheetScaffold` and write inside their callbacks (draft mode kept for the store form so APP-015 can reuse it); move them to `stores/ui/sheets/` and `lists/ui/sheets/` with their `show...Sheet` functions; remove the `stores_screen.dart` import from store details; store archive and restore use `runWrite`; list archive and purchase use `runWrite` and `AppMessenger`; Stores, store details, Archive and list screens use `AsyncBody` for stream errors. The Archive segmented selection stays `setState`.
 - **Components:** `features/stores/`, `features/lists/` (list screen non-reorder parts), `features/archive/`.
 - **Depends on:** APP-014a.
 - **Acceptance:** every write in these screens has a visible failure behaviour per ADR-0007; no raw `$error` text; no `ScaffoldMessenger.of`; store details no longer imports another feature's screen; the allowlist entries for every file migrated here are removed.
