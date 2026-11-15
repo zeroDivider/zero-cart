@@ -1,36 +1,8 @@
-/// Thrown when a list operation requires a non-archived store (LI-5, create).
-class StoreArchivedException implements Exception {
-  const StoreArchivedException([this.storeId]);
+/// Re-export of typed list/store exceptions (moved to core for ADR-0007).
+library;
 
-  final String? storeId;
-
-  @override
-  String toString() => storeId == null
-      ? 'StoreArchivedException'
-      : 'StoreArchivedException($storeId)';
-}
-
-/// Thrown when mutating or restoring against an archived list (D-13).
-class ListArchivedException implements Exception {
-  const ListArchivedException([this.listId]);
-
-  final String? listId;
-
-  @override
-  String toString() => listId == null
-      ? 'ListArchivedException'
-      : 'ListArchivedException($listId)';
-}
-
-/// Thrown when [ListsRepository.restoreItem] cannot re-insert because the
-/// target list is missing or archived (data-model op 2, APP-014).
-class ListUnavailableException implements Exception {
-  const ListUnavailableException([this.listId]);
-
-  final String? listId;
-
-  @override
-  String toString() => listId == null
-      ? 'ListUnavailableException'
-      : 'ListUnavailableException($listId)';
-}
+export 'package:zero_cart/core/repository_exceptions.dart'
+    show
+        ListArchivedException,
+        ListUnavailableException,
+        StoreArchivedException;
