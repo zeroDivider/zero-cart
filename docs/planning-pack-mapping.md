@@ -13,6 +13,7 @@ The planning documents were written in Claude as three documents. This file says
 | Part 1 | ADR-0004 | `docs/adr/0004-item-ordering-and-undo.md` |
 | Part 1 | ADR-0005 | `docs/adr/0005-backup-and-restore.md` |
 | Part 1 | ADR-0006 | `docs/adr/0006-navigation-go-router.md` |
+| (repo-only) | ADR-0007 | `docs/adr/0007-ui-write-failure-and-form-conventions.md` |
 | Part 2a: Requirements, User Flows, Design System | '1. docs/product-requirements.md' | `docs/product-requirements.md` |
 | Part 2a | '2. docs/user-flows.md' | `docs/user-flows.md` |
 | Part 2a | '3. docs/design-system.md' | `docs/design-system.md` |
