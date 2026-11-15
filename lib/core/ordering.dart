@@ -1,3 +1,8 @@
+import 'package:zero_cart/core/repository_exceptions.dart';
+
+export 'package:zero_cart/core/repository_exceptions.dart'
+    show StaleOrderException;
+
 /// Minimal item shape needed by [computeDenseReorder].
 class OrderableItem {
   const OrderableItem({
@@ -9,14 +14,6 @@ class OrderableItem {
   final String id;
   final int position;
   final bool isPurchased;
-}
-
-/// Thrown when [orderedActiveIds] does not match the current active set.
-class StaleOrderException implements Exception {
-  const StaleOrderException();
-
-  @override
-  String toString() => 'StaleOrderException';
 }
 
 /// Dense-renumber reorder for one list (D-06, data model §3.5 op 4).
