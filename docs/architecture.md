@@ -25,7 +25,7 @@ ui (widgets) -> providers/controllers -> repositories -> Drift database
 ```
 
 - **Presentation:** widgets only render `AsyncValue`s and call controller or repository methods. No business rules, no SQL.
-- **Controllers:** Riverpod `Notifier`s for UI-only state (multi-select, add-row draft, expanded sections). Thin.
+- **Controllers:** Local, ephemeral widget state (field values, submitting flag, segmented selection) is `StatefulWidget` state. State shared across widgets or surviving rebuilds and navigation (multi-select, purchased-section expansion) is a Riverpod `Notifier`. Thin.
 - **Repositories:** plain classes holding every business rule and transaction (section 3.5). One per area: stores, lists (lists and items, finish, carry-forward), inbox, wishlist, backup, settings. Operations spanning areas (assign, copy, finish, restore) live in the repository that owns the target and use `db.transaction`.
 - **Data:** Drift tables and generated row classes.
 - **Domain layer: not justified.** There is one data source, no rule shared across several stores, and the generated rows are adequate models. Rows are used directly in the UI (annotate with `@DataClassName` for clean names: `Store`, `ShoppingList`, `ListItem`, `InboxItem`, `WishlistItem`). No repository interfaces; tests use an in-memory Drift database instead. Pure logic (dense reorder computation, share-text formatting, backup validation) lives in plain functions under `core/` so it is unit-testable without a database.
@@ -59,7 +59,7 @@ integration_test/
 drift_schemas/              # committed schema snapshots for migration tests
 ```
 
-Rule: a feature may import `core/`, `data/` and other features' providers, never another feature's `ui/`.
+Rule: a feature may import `core/`, `data/` and other features' providers and `ui/sheets/`; never another feature's screens.
 
 ## 2.4 Data flow
 
@@ -74,3 +74,7 @@ Rule: a feature may import `core/`, `data/` and other features' providers, never
 - Enable `PRAGMA foreign_keys = ON` in Drift's `beforeOpen`. SQLite does not enforce foreign keys by default.
 - Generated `*.g.dart` files are not committed; CI and the agent run build\_runner. Drift schema snapshots in `drift_schemas/` are committed.
 - No fixed heights on rows; layouts must survive 200% text scale. Use `const` widgets and narrow `ref.watch` scopes.
+
+## 2.6 UI conventions
+
+Writes, failures, forms, snackbars and async loading follow ADR-0007.
