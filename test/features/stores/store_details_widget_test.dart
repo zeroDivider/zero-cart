@@ -5,7 +5,7 @@ import 'package:zero_cart/data/database.dart';
 import 'package:zero_cart/features/archive/ui/archive_screen.dart';
 import 'package:zero_cart/features/stores/stores_repository.dart';
 import 'package:zero_cart/features/stores/ui/store_details_screen.dart';
-import 'package:zero_cart/features/stores/ui/store_form_sheet.dart';
+import 'package:zero_cart/features/stores/ui/sheets/store_form_sheet.dart';
 import 'package:zero_cart/features/stores/ui/stores_screen.dart';
 
 import '../../support/test_app.dart';
