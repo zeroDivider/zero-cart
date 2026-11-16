@@ -22,7 +22,7 @@ abstract final class AppMessenger {
     _show(SnackBar(content: Text(message)));
   }
 
-  /// Info snackbar with a single action (e.g. Open after assign).
+  /// Info snackbar with a single action (e.g. Open after assign or copy).
   static void action({
     required String message,
     required String actionLabel,

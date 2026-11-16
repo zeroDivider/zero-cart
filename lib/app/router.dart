@@ -9,7 +9,7 @@ import 'package:zero_cart/features/settings/ui/about_placeholder_screen.dart';
 import 'package:zero_cart/features/settings/ui/settings_placeholder_screen.dart';
 import 'package:zero_cart/features/stores/ui/store_details_screen.dart';
 import 'package:zero_cart/features/stores/ui/stores_screen.dart';
-import 'package:zero_cart/features/wishlist/ui/wishlist_placeholder_screen.dart';
+import 'package:zero_cart/features/wishlist/ui/wishlist_screen.dart';
 
 export 'package:go_router/go_router.dart' show GoRouter;
 
@@ -82,7 +82,7 @@ abstract final class AppRouter {
               parentNavigatorKey: rootNavigatorKey,
               builder: (context, state) {
                 final id = state.pathParameters['id']!;
-                return WishlistPlaceholderScreen(storeId: id);
+                return WishlistScreen(storeId: id);
               },
             ),
           ],
