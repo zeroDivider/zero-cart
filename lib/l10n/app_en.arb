@@ -449,5 +449,68 @@
   "retry": "Retry",
   "@retry": {
     "description": "AsyncBody button that reloads after a load failure"
+  },
+  "assign": "Assign",
+  "@assign": {
+    "description": "Per-row action that opens the Inbox assignment sheet"
+  },
+  "assignSelected": "Assign selected",
+  "@assignSelected": {
+    "description": "App-bar action that assigns all multi-selected Inbox items"
+  },
+  "assignTitle": "Assign",
+  "@assignTitle": {
+    "description": "Title of the assignment bottom sheet"
+  },
+  "assignItemTitle": "Assign “{title}”",
+  "@assignItemTitle": {
+    "description": "Assignment sheet title when assigning one Inbox item",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "assignStoreLabel": "Store",
+  "@assignStoreLabel": {
+    "description": "Section label above store chips on the assignment sheet"
+  },
+  "assignListLabel": "List",
+  "@assignListLabel": {
+    "description": "Section label above list chips on the assignment sheet"
+  },
+  "addToList": "Add to list",
+  "@addToList": {
+    "description": "Confirm button on the assignment sheet"
+  },
+  "addedToList": "Added to {listName}",
+  "@addedToList": {
+    "description": "Success snackbar after assigning Inbox items to a list",
+    "placeholders": {
+      "listName": {
+        "type": "String"
+      }
+    }
+  },
+  "open": "Open",
+  "@open": {
+    "description": "Snackbar action that navigates to the list after assign"
+  },
+  "inboxSelectedCount": "{count, plural, one{{count} selected} other{{count} selected}}",
+  "@inboxSelectedCount": {
+    "description": "Inbox app-bar title while multi-select is active",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "clearSelection": "Clear selection",
+  "@clearSelection": {
+    "description": "App-bar action that exits Inbox multi-select"
+  },
+  "assignNeedsTarget": "Choose a store and a list",
+  "@assignNeedsTarget": {
+    "description": "Inline validation when Confirm is pressed without a target"
   }
 }

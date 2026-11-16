@@ -27,6 +27,11 @@ final listByIdProvider = StreamProvider.family<ShoppingList?, String>((
   return ref.watch(listsRepositoryProvider).watchById(id);
 });
 
+/// Active lists, newest activity first (assignment preselect).
+final activeListsByRecencyProvider = StreamProvider<List<ShoppingList>>((ref) {
+  return ref.watch(listsRepositoryProvider).watchActiveByRecency();
+});
+
 /// Items for a list ordered by `(position, created_at, id)`.
 final listItemsProvider = StreamProvider.family<List<ListItem>, String>((
   ref,

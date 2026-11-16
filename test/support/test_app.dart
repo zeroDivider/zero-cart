@@ -307,6 +307,27 @@ Future<TestAppHarness> pumpTestApp(
     }
   }
 
+  Stream<List<ShoppingList>> activeListsByRecencyBridge() async* {
+    List<ShoppingList> snapshot() {
+      final lists = <ShoppingList>[
+        for (final rows in latestListsByStore.values)
+          for (final row in rows) row.list,
+      ]..sort((a, b) {
+        final byUpdated = b.updatedAt.compareTo(a.updatedAt);
+        if (byUpdated != 0) {
+          return byUpdated;
+        }
+        return b.id.compareTo(a.id);
+      });
+      return lists;
+    }
+
+    yield snapshot();
+    await for (final _ in listsTickController.stream) {
+      yield snapshot();
+    }
+  }
+
   Stream<ShoppingList?> listByIdBridge(String id) async* {
     yield latestListById[id];
     await for (final _ in listDetailsTickController.stream) {
@@ -336,6 +357,9 @@ Future<TestAppHarness> pumpTestApp(
         storeByIdProvider.overrideWith((ref, id) => storeByIdBridge(id)),
         activeListsForStoreProvider.overrideWith(
           (ref, storeId) => listsBridge(storeId),
+        ),
+        activeListsByRecencyProvider.overrideWith(
+          (ref) => activeListsByRecencyBridge(),
         ),
         listByIdProvider.overrideWith((ref, id) => listByIdBridge(id)),
         listItemsProvider.overrideWith(

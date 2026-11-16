@@ -117,5 +117,38 @@
   "archiveStoresEmpty": "Nema arhiviranih prodavnica.",
   "archiveListsPlaceholder": "Arhivirane liste će se prikazati ovde.",
   "storeNotFound": "Prodavnica nije pronađena",
-  "archiveListFailed": "Couldn't archive. Try again."
+  "archiveListFailed": "Couldn't archive. Try again.",
+  "assign": "Dodeli",
+  "assignSelected": "Dodeli izabrano",
+  "assignTitle": "Dodeli",
+  "assignItemTitle": "Dodeli “{title}”",
+  "@assignItemTitle": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "assignStoreLabel": "Prodavnica",
+  "assignListLabel": "Lista",
+  "addToList": "Dodaj na listu",
+  "addedToList": "Dodato na {listName}",
+  "@addedToList": {
+    "placeholders": {
+      "listName": {
+        "type": "String"
+      }
+    }
+  },
+  "open": "Otvori",
+  "inboxSelectedCount": "{count, plural, one{{count} izabrano} few{{count} izabrana} other{{count} izabrano}}",
+  "@inboxSelectedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "clearSelection": "Poništi izbor",
+  "assignNeedsTarget": "Izaberi prodavnicu i listu"
 }
