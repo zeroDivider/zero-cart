@@ -234,9 +234,10 @@ class _AssignSheetState extends ConsumerState<AssignSheet> {
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (error, _) => Text(l10n.asyncLoadFailed),
           data: (stores) {
+            final progressLists = storeListsAsync?.asData?.value;
             final lists = <ShoppingList>[
-              for (final progress in storeListsAsync?.asData?.value ?? const [])
-                progress.list,
+              if (progressLists != null)
+                for (final progress in progressLists) progress.list,
             ];
             return SingleChildScrollView(
               child: Column(
