@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zero_cart/app/theme/app_tokens.dart';
 import 'package:zero_cart/core/limits.dart';
-import 'package:zero_cart/core/widgets/remove_undo_snackbar.dart';
+import 'package:zero_cart/core/ui/app_messenger.dart';
+import 'package:zero_cart/core/ui/write_runner.dart';
+import 'package:zero_cart/core/widgets/form_sheet.dart';
 import 'package:zero_cart/data/database.dart';
-import 'package:zero_cart/features/inbox/inbox_edit_notifier.dart';
 import 'package:zero_cart/features/inbox/inbox_providers.dart';
 import 'package:zero_cart/features/inbox/inbox_repository.dart';
 import 'package:zero_cart/l10n/generated/app_localizations.dart';
@@ -53,7 +54,6 @@ class _InboxEditSheetState extends ConsumerState<InboxEditSheet> {
   }
 
   void _onTitleChanged() {
-    ref.read(inboxEditNotifierProvider(widget.item.id).notifier).clearError();
     if (_titleError != null) {
       setState(() => _titleError = null);
     } else {
@@ -72,23 +72,20 @@ class _InboxEditSheetState extends ConsumerState<InboxEditSheet> {
 
   bool get _titleIsBlank => _titleController.text.trim().isEmpty;
 
-  Future<void> _save() async {
+  Future<void> _onSubmit() async {
     final l10n = AppLocalizations.of(context);
     if (_titleIsBlank) {
       setState(() => _titleError = l10n.titleRequired);
-      return;
+      throw const FormValidationAbort();
     }
     setState(() => _titleError = null);
-    final ok = await ref
-        .read(inboxEditNotifierProvider(widget.item.id).notifier)
-        .save(
+    await ref
+        .read(inboxRepositoryProvider)
+        .update(
+          id: widget.item.id,
           title: _titleController.text,
           description: _descriptionController.text,
-          errorMessage: l10n.writeFailed,
         );
-    if (ok && mounted) {
-      Navigator.of(context).pop();
-    }
   }
 
   Future<void> _remove() async {
@@ -96,40 +93,41 @@ class _InboxEditSheetState extends ConsumerState<InboxEditSheet> {
     final InboxRepository repository = ref.read(inboxRepositoryProvider);
     final id = widget.item.id;
     Navigator.of(context).pop();
-    final snapshot = await repository.remove(id);
-    showRemoveUndoSnackBar(
-      message: l10n.removedItem(snapshot.title),
-      undoLabel: l10n.undo,
-      onUndo: () => repository.restore(snapshot),
-    );
+    await runWrite(() async {
+      final snapshot = await repository.remove(id);
+      AppMessenger.undo(
+        message: l10n.removedItem(snapshot.title),
+        undoLabel: l10n.undo,
+        l10n: l10n,
+        onUndo: () => repository.restore(snapshot),
+      );
+    }, l10n: l10n);
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final tokens = Theme.of(context).extension<AppTokens>()!;
-    final ctrl = ref.watch(inboxEditNotifierProvider(widget.item.id));
-    final titleIsBlank = _titleIsBlank;
-    final canSave = !titleIsBlank && !ctrl.submitting;
 
-    return SafeArea(
-      top: false,
-      child: Padding(
-        padding: EdgeInsets.fromLTRB(
-          tokens.spacing16,
-          tokens.spacing8,
-          tokens.spacing16,
-          tokens.spacing16,
-        ),
-        child: Column(
+    return FormSheetScaffold<void>(
+      title: Text(l10n.editItem),
+      submitLabel: l10n.save,
+      submitKey: const Key('inbox_edit_save'),
+      onSubmit: _onSubmit,
+      secondaryAction: FormSheetSecondaryAction.button(
+        label: l10n.remove,
+        key: const Key('inbox_edit_remove'),
+        onPressed: _remove,
+      ),
+      body: (context, controller) {
+        return Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(l10n.editItem, style: Theme.of(context).textTheme.titleLarge),
-            SizedBox(height: tokens.spacing16),
             TextField(
               key: const Key('inbox_edit_title'),
               controller: _titleController,
+              enabled: !controller.isSubmitting,
               textInputAction: TextInputAction.done,
               maxLength: maxItemTitleLength,
               buildCounter: _titleCounter,
@@ -138,9 +136,10 @@ class _InboxEditSheetState extends ConsumerState<InboxEditSheet> {
                 hintText: l10n.itemTitleHint,
                 errorText: _titleError,
               ),
+              onChanged: (_) => controller.clearError(),
               onSubmitted: (_) {
-                if (canSave || titleIsBlank) {
-                  _save();
+                if (!controller.isSubmitting) {
+                  controller.submit();
                 }
               },
             ),
@@ -148,40 +147,18 @@ class _InboxEditSheetState extends ConsumerState<InboxEditSheet> {
             TextField(
               key: const Key('inbox_edit_description'),
               controller: _descriptionController,
+              enabled: !controller.isSubmitting,
               maxLength: maxItemDescriptionLength,
               decoration: InputDecoration(
                 labelText: l10n.itemDescriptionLabel,
                 hintText: l10n.itemDescriptionHint,
                 counterText: '',
               ),
-            ),
-            if (ctrl.error != null) ...[
-              SizedBox(height: tokens.spacing8),
-              Text(
-                ctrl.error!,
-                style: Theme.of(context).textTheme.bodySmall
-                    ?.copyWith(color: Theme.of(context).colorScheme.error),
-              ),
-            ],
-            SizedBox(height: tokens.spacing16),
-            Row(
-              children: [
-                TextButton(
-                  key: const Key('inbox_edit_remove'),
-                  onPressed: ctrl.submitting ? null : _remove,
-                  child: Text(l10n.remove),
-                ),
-                const Spacer(),
-                FilledButton(
-                  key: const Key('inbox_edit_save'),
-                  onPressed: canSave ? _save : (titleIsBlank ? _save : null),
-                  child: Text(l10n.save),
-                ),
-              ],
+              onChanged: (_) => controller.clearError(),
             ),
           ],
-        ),
-      ),
+        );
+      },
     );
   }
 
