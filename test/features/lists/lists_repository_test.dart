@@ -4,10 +4,12 @@ import 'package:zero_cart/core/ordering.dart';
 import 'package:zero_cart/data/database.dart';
 import 'package:zero_cart/features/inbox/inbox_repository.dart';
 import 'package:zero_cart/features/lists/assign_inbox_target.dart';
+import 'package:zero_cart/features/lists/copy_wishlist_target.dart';
 import 'package:zero_cart/features/lists/list_exceptions.dart';
 import 'package:zero_cart/features/lists/lists_repository.dart';
 import 'package:zero_cart/features/stores/store_draft.dart';
 import 'package:zero_cart/features/stores/stores_repository.dart';
+import 'package:zero_cart/features/wishlist/wishlist_repository.dart';
 
 void main() {
   late AppDatabase db;
@@ -836,5 +838,173 @@ void main() {
       expect((await inbox.watchAll().first).single.id, item.id);
       expect(await db.select(db.listItems).get(), isEmpty);
     });
+  });
+
+  group('copyWishlistItems', () {
+    late WishlistRepository wishlist;
+
+    setUp(() {
+      DateTime nextClock() {
+        if (clockTicks.isEmpty) {
+          fail('clock exhausted');
+        }
+        return clockTicks.removeAt(0);
+      }
+
+      String nextId() {
+        idCounter += 1;
+        return 'id-$idCounter';
+      }
+
+      wishlist = WishlistRepository(
+        database: db,
+        now: nextClock,
+        newId: nextId,
+      );
+    });
+
+    test(
+      'copies to existing list at max+1, leaves wishlist untouched',
+      () async {
+        final store = await stores.create(name: 'DM', colorKey: 'sky');
+        final list = await lists.create(storeId: store.id, name: 'Drugstore');
+        await lists.addItem(listId: list.id, title: 'Soap');
+
+        final older = await wishlist.add(
+          storeId: store.id,
+          title: 'Heads',
+          description: 'soft',
+        );
+        final newer = await wishlist.add(storeId: store.id, title: 'Cream');
+
+        final result = await lists.copyWishlistItems([
+          newer.id,
+          older.id,
+        ], ExistingList(list.id));
+        expect(result.listId, list.id);
+        expect(result.listName, 'Drugstore');
+
+        final items = await lists.watchItems(list.id).first;
+        expect(items.map((e) => e.title), ['Soap', 'Heads', 'Cream']);
+        expect(items[1].position, 2);
+        expect(items[1].description, 'soft');
+        expect(items[1].isPurchased, isFalse);
+        expect(items[2].position, 3);
+        expect(items[1].id, isNot(older.id));
+
+        final wishRows = await wishlist.watch(store.id).first;
+        expect(wishRows.map((e) => e.id), [older.id, newer.id]);
+        expect(wishRows.map((e) => e.title), ['Heads', 'Cream']);
+      },
+    );
+
+    test('creates new list in same transaction', () async {
+      final store = await stores.create(name: 'DM', colorKey: 'sky');
+      final wish = await wishlist.add(storeId: store.id, title: 'Heads');
+
+      final result = await lists.copyWishlistItems([
+        wish.id,
+      ], const NewList('Someday haul'));
+
+      final created = await lists.watchById(result.listId).first;
+      expect(created, isNotNull);
+      expect(created!.storeId, store.id);
+      expect(created.name, 'Someday haul');
+      expect(result.listName, 'Someday haul');
+
+      final items = await lists.watchItems(result.listId).first;
+      expect(items.single.title, 'Heads');
+      expect(await wishlist.watch(store.id).first, hasLength(1));
+    });
+
+    test('copies and wishlist stay independent after edits', () async {
+      final store = await stores.create(name: 'DM', colorKey: 'sky');
+      final list = await lists.create(storeId: store.id, name: 'Run');
+      final wish = await wishlist.add(
+        storeId: store.id,
+        title: 'Heads',
+        description: 'soft',
+      );
+
+      await lists.copyWishlistItems([wish.id], ExistingList(list.id));
+      final copy = (await lists.watchItems(list.id).first).single;
+
+      await lists.updateItem(
+        id: copy.id,
+        title: 'Copy edited',
+        description: 'changed',
+      );
+      await lists.removeItem(copy.id);
+      final afterListEdit = await wishlist.watch(store.id).first;
+      expect(afterListEdit.single.title, 'Heads');
+      expect(afterListEdit.single.description, 'soft');
+
+      await wishlist.update(
+        id: wish.id,
+        title: 'Wish edited',
+        description: 'new',
+      );
+      await lists.copyWishlistItems([wish.id], ExistingList(list.id));
+      final secondCopy = (await lists.watchItems(list.id).first).single;
+      expect(secondCopy.title, 'Wish edited');
+      expect(secondCopy.description, 'new');
+    });
+
+    test(
+      'rollback leaves no list or items when NewList name is blank',
+      () async {
+        final store = await stores.create(name: 'DM', colorKey: 'sky');
+        final wish = await wishlist.add(storeId: store.id, title: 'Heads');
+
+        await expectLater(
+          lists.copyWishlistItems([wish.id], const NewList('   ')),
+          throwsA(isA<ArgumentError>()),
+        );
+
+        expect(await lists.watchActiveForStore(store.id).first, isEmpty);
+        expect(await db.select(db.listItems).get(), isEmpty);
+        expect(await wishlist.watch(store.id).first, hasLength(1));
+      },
+    );
+
+    test(
+      'rejects archived list, archived store, other store, missing id',
+      () async {
+        final store = await stores.create(name: 'DM', colorKey: 'sky');
+        final other = await stores.create(name: 'Lidl', colorKey: 'lime');
+        final list = await lists.create(storeId: store.id, name: 'Run');
+        final otherList = await lists.create(storeId: other.id, name: 'Other');
+        final wish = await wishlist.add(storeId: store.id, title: 'Heads');
+
+        await lists.archive(list.id);
+        await expectLater(
+          lists.copyWishlistItems([wish.id], ExistingList(list.id)),
+          throwsA(isA<ListArchivedException>()),
+        );
+
+        await lists.restore(list.id);
+        await expectLater(
+          lists.copyWishlistItems([wish.id], ExistingList(otherList.id)),
+          throwsA(isA<StateError>()),
+        );
+
+        await expectLater(
+          lists.copyWishlistItems(['missing'], ExistingList(list.id)),
+          throwsA(isA<StateError>()),
+        );
+
+        await expectLater(
+          () => lists.copyWishlistItems([], ExistingList(list.id)),
+          throwsA(isA<ArgumentError>()),
+        );
+
+        await stores.archive(store.id);
+        await expectLater(
+          lists.copyWishlistItems([wish.id], ExistingList(list.id)),
+          throwsA(isA<StoreArchivedException>()),
+        );
+        expect(await wishlist.watch(store.id).first, hasLength(1));
+      },
+    );
   });
 }
