@@ -53,10 +53,45 @@ class _AssignSheetState extends ConsumerState<AssignSheet> {
   String? _newListName;
   bool _preselected = false;
   String? _targetError;
+  ProviderSubscription<AsyncValue<List<Store>>>? _storesSub;
+  ProviderSubscription<AsyncValue<List<ShoppingList>>>? _listsSub;
 
   bool get _hasStore => _storeId != null || _newStoreDraft != null;
 
   bool get _hasList => _listId != null || _newListName != null;
+
+  @override
+  void initState() {
+    super.initState();
+    void tryPreselect() {
+      if (_preselected) {
+        return;
+      }
+      final storesAsync = ref.read(activeStoresProvider);
+      final listsAsync = ref.read(activeListsByRecencyProvider);
+      if (storesAsync.hasValue && listsAsync.hasValue) {
+        _applyPreselect(storesAsync.requireValue, listsAsync.requireValue);
+      }
+    }
+
+    _storesSub = ref.listenManual(
+      activeStoresProvider,
+      (_, _) => tryPreselect(),
+      fireImmediately: true,
+    );
+    _listsSub = ref.listenManual(
+      activeListsByRecencyProvider,
+      (_, _) => tryPreselect(),
+      fireImmediately: true,
+    );
+  }
+
+  @override
+  void dispose() {
+    _storesSub?.close();
+    _listsSub?.close();
+    super.dispose();
+  }
 
   void _applyPreselect(List<Store> stores, List<ShoppingList> lists) {
     if (_preselected || !mounted) {
@@ -181,18 +216,9 @@ class _AssignSheetState extends ConsumerState<AssignSheet> {
     final l10n = AppLocalizations.of(context);
     final tokens = Theme.of(context).extension<AppTokens>()!;
     final storesAsync = ref.watch(activeStoresProvider);
-    final listsAsync = ref.watch(activeListsByRecencyProvider);
     final storeListsAsync = _storeId == null
         ? null
         : ref.watch(activeListsForStoreProvider(_storeId!));
-
-    if (!_preselected && storesAsync.hasValue && listsAsync.hasValue) {
-      final stores = storesAsync.requireValue;
-      final lists = listsAsync.requireValue;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _applyPreselect(stores, lists);
-      });
-    }
 
     final title = widget.itemTitle != null
         ? l10n.assignItemTitle(widget.itemTitle!)
