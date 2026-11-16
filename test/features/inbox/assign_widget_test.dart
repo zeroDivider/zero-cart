@@ -240,6 +240,38 @@ void main() {
     await harness.dispose(tester);
   });
 
+  testWidgets('shows validation error when no target selected', (tester) async {
+    final harness = await pumpTestApp(
+      tester,
+      router: AppRouter.create(initialLocation: AppRoutes.inbox),
+    );
+    await tester.runAsync(() async {
+      await harness.db
+          .into(harness.db.inboxItems)
+          .insert(
+            InboxItemsCompanion.insert(
+              id: 'inbox-1',
+              title: 'Milk',
+              createdAt: DateTime.utc(2026, 1, 1, 12),
+              updatedAt: DateTime.utc(2026, 1, 1, 12),
+            ),
+          );
+    });
+    await harness.refreshInbox();
+    await harness.refreshStores();
+    await harness.refreshLists();
+    await pumpApp(tester, harness);
+
+    await _tapButton(tester, const Key('inbox_assign_inbox-1'), harness);
+    expect(find.byType(AssignSheet), findsOneWidget);
+
+    await _tapButton(tester, const Key('assign_confirm'), harness);
+    expect(find.text('Choose a store and a list'), findsOneWidget);
+    expect(find.byType(AssignSheet), findsOneWidget);
+
+    await harness.dispose(tester);
+  });
+
   testWidgets('assign failure keeps sheet open and inbox unchanged', (
     tester,
   ) async {
