@@ -1,3 +1,0 @@
-# Temporary allowlist for ADR-0007 guards (APP-014a). May only shrink.
-# APP-014b/c remove entries as they migrate; APP-014c deletes this file.
-lib/features/inbox/ui/inbox_screen.dart

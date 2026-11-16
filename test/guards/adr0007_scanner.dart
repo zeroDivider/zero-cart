@@ -47,16 +47,3 @@ List<GuardViolation> scanSource(String path, String source) {
   }
   return violations;
 }
-
-/// Relative paths under [libRoot] that may still violate until APP-014c.
-Set<String> parseAllowlist(String contents) {
-  final paths = <String>{};
-  for (final raw in contents.split('\n')) {
-    final line = raw.trim();
-    if (line.isEmpty || line.startsWith('#')) {
-      continue;
-    }
-    paths.add(line.replaceAll(r'\', '/'));
-  }
-  return paths;
-}
