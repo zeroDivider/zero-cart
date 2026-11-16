@@ -2,8 +2,11 @@ import 'package:drift/drift.dart' show Value;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:zero_cart/core/ordering.dart';
 import 'package:zero_cart/data/database.dart';
+import 'package:zero_cart/features/inbox/inbox_repository.dart';
+import 'package:zero_cart/features/lists/assign_inbox_target.dart';
 import 'package:zero_cart/features/lists/list_exceptions.dart';
 import 'package:zero_cart/features/lists/lists_repository.dart';
+import 'package:zero_cart/features/stores/store_draft.dart';
 import 'package:zero_cart/features/stores/stores_repository.dart';
 
 void main() {
@@ -12,11 +15,12 @@ void main() {
   late int idCounter;
   late StoresRepository stores;
   late ListsRepository lists;
+  late InboxRepository inbox;
 
   setUp(() {
     db = AppDatabase.memory();
     clockTicks = <DateTime>[
-      for (var i = 0; i < 60; i++) DateTime.utc(2026, 1, 1, 12, i),
+      for (var i = 0; i < 120; i++) DateTime.utc(2026, 1, 1, 12, 0, i),
     ];
     idCounter = 0;
     DateTime nextClock() {
@@ -33,6 +37,7 @@ void main() {
 
     stores = StoresRepository(database: db, now: nextClock, newId: nextId);
     lists = ListsRepository(database: db, now: nextClock, newId: nextId);
+    inbox = InboxRepository(database: db, now: nextClock, newId: nextId);
   });
 
   tearDown(() async {
@@ -660,5 +665,176 @@ void main() {
       lists.restoreItem(orphan),
       throwsA(isA<ListUnavailableException>()),
     );
+  });
+
+  group('assignInbox', () {
+    test('assigns to existing store and list at max+1', () async {
+      final store = await stores.create(name: 'Lidl', colorKey: 'lime');
+      final list = await lists.create(storeId: store.id, name: 'Weekend');
+      await lists.addItem(listId: list.id, title: 'Bread');
+      final milk = await inbox.add(title: 'Milk', description: '2L');
+
+      final result = await lists.assignInbox(
+        [milk.id],
+        AssignInboxTarget(
+          store: ExistingStore(store.id),
+          list: ExistingList(list.id),
+        ),
+      );
+
+      expect(result.listId, list.id);
+      expect(result.listName, 'Weekend');
+      final items = await lists.watchItems(list.id).first;
+      expect(items.map((i) => i.title).toList(), ['Bread', 'Milk']);
+      expect(items.last.position, 2);
+      expect(items.last.description, '2L');
+      expect(await inbox.watchAll().first, isEmpty);
+    });
+
+    test('batch appends oldest-first and creates a new list', () async {
+      final store = await stores.create(name: 'Lidl', colorKey: 'lime');
+      final newer = await inbox.add(title: 'Newer');
+      final older = await inbox.add(title: 'Older');
+      // Swap created_at so Older is first despite later insert.
+      await (db.update(
+        db.inboxItems,
+      )..where((t) => t.id.equals(older.id))).write(
+        InboxItemsCompanion(createdAt: Value(DateTime.utc(2026, 1, 1, 10))),
+      );
+      await (db.update(
+        db.inboxItems,
+      )..where((t) => t.id.equals(newer.id))).write(
+        InboxItemsCompanion(createdAt: Value(DateTime.utc(2026, 1, 1, 11))),
+      );
+
+      final result = await lists.assignInbox(
+        [newer.id, older.id],
+        AssignInboxTarget(
+          store: ExistingStore(store.id),
+          list: const NewList('Party'),
+        ),
+      );
+
+      final items = await lists.watchItems(result.listId).first;
+      expect(items.map((i) => i.title).toList(), ['Older', 'Newer']);
+      expect(items.map((i) => i.position).toList(), [1, 2]);
+      expect(await inbox.watchAll().first, isEmpty);
+    });
+
+    test('creates new store and list in one transaction', () async {
+      final item = await inbox.add(title: 'Tablets');
+
+      final result = await lists.assignInbox(
+        [item.id],
+        AssignInboxTarget(
+          store: const NewStore(
+            StoreDraft(name: 'DM', colorKey: 'sky', address: 'Main'),
+          ),
+          list: const NewList('Drugstore'),
+        ),
+      );
+
+      expect(result.listName, 'Drugstore');
+      final createdStores = await stores.watchActive().first;
+      expect(createdStores.single.name, 'DM');
+      expect(createdStores.single.address, 'Main');
+      final items = await lists.watchItems(result.listId).first;
+      expect(items.single.title, 'Tablets');
+      expect(await inbox.watchAll().first, isEmpty);
+    });
+
+    test('rejects archived store and list without writing', () async {
+      final store = await stores.create(name: 'Lidl', colorKey: 'lime');
+      final list = await lists.create(storeId: store.id, name: 'Weekend');
+      final item = await inbox.add(title: 'Milk');
+      await lists.archive(list.id);
+
+      await expectLater(
+        lists.assignInbox(
+          [item.id],
+          AssignInboxTarget(
+            store: ExistingStore(store.id),
+            list: ExistingList(list.id),
+          ),
+        ),
+        throwsA(isA<ListArchivedException>()),
+      );
+      expect((await inbox.watchAll().first).single.id, item.id);
+
+      await lists.restore(list.id);
+      await stores.archive(store.id);
+      await expectLater(
+        lists.assignInbox(
+          [item.id],
+          AssignInboxTarget(
+            store: ExistingStore(store.id),
+            list: ExistingList(list.id),
+          ),
+        ),
+        throwsA(isA<StoreArchivedException>()),
+      );
+      expect((await inbox.watchAll().first).single.id, item.id);
+      expect(await db.select(db.listItems).get(), isEmpty);
+    });
+
+    test('aborts when an inbox id is missing', () async {
+      final store = await stores.create(name: 'Lidl', colorKey: 'lime');
+      final list = await lists.create(storeId: store.id, name: 'Weekend');
+      final item = await inbox.add(title: 'Milk');
+
+      await expectLater(
+        lists.assignInbox(
+          [item.id, 'missing'],
+          AssignInboxTarget(
+            store: ExistingStore(store.id),
+            list: ExistingList(list.id),
+          ),
+        ),
+        throwsStateError,
+      );
+      expect((await inbox.watchAll().first).single.id, item.id);
+      expect(await db.select(db.listItems).get(), isEmpty);
+    });
+
+    test('mid-transaction failure rolls back new store and inbox', () async {
+      final item = await inbox.add(title: 'Milk');
+      final storesBefore = await db.select(db.stores).get();
+
+      await expectLater(
+        lists.assignInbox(
+          [item.id],
+          AssignInboxTarget(
+            store: const NewStore(StoreDraft(name: 'DM', colorKey: 'sky')),
+            list: const NewList('   '),
+          ),
+        ),
+        throwsA(isA<ArgumentError>()),
+      );
+
+      expect(await db.select(db.stores).get(), storesBefore);
+      expect(await db.select(db.shoppingLists).get(), isEmpty);
+      expect(await db.select(db.listItems).get(), isEmpty);
+      expect((await inbox.watchAll().first).single.id, item.id);
+    });
+
+    test('rejects list that belongs to another store', () async {
+      final lidl = await stores.create(name: 'Lidl', colorKey: 'lime');
+      final dm = await stores.create(name: 'DM', colorKey: 'sky');
+      final dmList = await lists.create(storeId: dm.id, name: 'Run');
+      final item = await inbox.add(title: 'Milk');
+
+      await expectLater(
+        lists.assignInbox(
+          [item.id],
+          AssignInboxTarget(
+            store: ExistingStore(lidl.id),
+            list: ExistingList(dmList.id),
+          ),
+        ),
+        throwsStateError,
+      );
+      expect((await inbox.watchAll().first).single.id, item.id);
+      expect(await db.select(db.listItems).get(), isEmpty);
+    });
   });
 }

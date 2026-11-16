@@ -1,11 +1,14 @@
 import 'package:drift/drift.dart';
+import 'package:zero_cart/app/theme/app_tokens.dart';
 import 'package:zero_cart/core/clock.dart';
 import 'package:zero_cart/core/ids.dart';
 import 'package:zero_cart/core/ordering.dart';
 import 'package:zero_cart/core/text_normalize.dart';
 import 'package:zero_cart/data/database.dart';
 import 'package:zero_cart/features/lists/active_list_progress.dart';
+import 'package:zero_cart/features/lists/assign_inbox_target.dart';
 import 'package:zero_cart/features/lists/list_exceptions.dart';
+import 'package:zero_cart/features/stores/store_draft.dart';
 
 /// List lifecycle and item operations (LI-1, LI-2, LI-5; IT-1 to IT-7).
 class ListsRepository {
@@ -374,6 +377,74 @@ ORDER BY sl.created_at ASC, sl.id ASC
     });
   }
 
+  /// Moves Inbox rows onto a list in one transaction (ops 5–6, D-17).
+  ///
+  /// Loads inbox rows oldest-first and aborts if any id is missing. Resolves
+  /// or creates the store (rejects archived), then the list (existing must be
+  /// active and in that store). Appends items at max+1 in creation order,
+  /// touches the list, and deletes the inbox rows. Any failure rolls back.
+  Future<AssignInboxResult> assignInbox(
+    List<String> inboxIds,
+    AssignInboxTarget target,
+  ) {
+    if (inboxIds.isEmpty) {
+      throw ArgumentError.value(inboxIds, 'inboxIds', 'must not be empty');
+    }
+    return _db.transaction(() async {
+      final inboxRows =
+          await (_db.select(_db.inboxItems)
+                ..where((t) => t.id.isIn(inboxIds))
+                ..orderBy([
+                  (t) => OrderingTerm.asc(t.createdAt),
+                  (t) => OrderingTerm.asc(t.id),
+                ]))
+              .get();
+      if (inboxRows.length != inboxIds.toSet().length) {
+        throw StateError('One or more inbox items were not found');
+      }
+
+      final storeId = await _resolveAssignStore(target.store);
+      final list = await _resolveAssignList(storeId, target.list);
+
+      final maxRow = await _db
+          .customSelect(
+            'SELECT MAX(position) AS max_pos FROM list_items WHERE list_id = ?',
+            variables: [Variable.withString(list.id)],
+            readsFrom: {_db.listItems},
+          )
+          .getSingle();
+      var nextPosition = (maxRow.readNullable<int>('max_pos') ?? 0) + 1;
+      final now = _clock();
+
+      for (final inbox in inboxRows) {
+        await _db
+            .into(_db.listItems)
+            .insert(
+              ListItemsCompanion.insert(
+                id: _idGenerator(),
+                listId: list.id,
+                title: inbox.title,
+                description: Value(inbox.description),
+                isPurchased: const Value(false),
+                position: nextPosition,
+                createdAt: now,
+                updatedAt: now,
+              ),
+            );
+        nextPosition += 1;
+      }
+
+      await (_db.update(_db.shoppingLists)..where((t) => t.id.equals(list.id)))
+          .write(ShoppingListsCompanion(updatedAt: Value(now)));
+
+      await (_db.delete(
+        _db.inboxItems,
+      )..where((t) => t.id.isIn(inboxIds))).go();
+
+      return AssignInboxResult(listId: list.id, listName: list.name);
+    });
+  }
+
   /// Dense-renumbers active items into existing active slots (D-06, op 4).
   ///
   /// Aborts with [StaleOrderException] when [orderedActiveIds] does not match
@@ -416,5 +487,116 @@ ORDER BY sl.created_at ASC, sl.id ASC
     if (list.archivedAt != null) {
       throw ListArchivedException(listId);
     }
+  }
+
+  Future<String> _resolveAssignStore(AssignStoreTarget target) async {
+    switch (target) {
+      case ExistingStore(:final id):
+        final store = await (_db.select(
+          _db.stores,
+        )..where((t) => t.id.equals(id))).getSingleOrNull();
+        if (store == null) {
+          throw StateError('Store $id not found');
+        }
+        if (store.archivedAt != null) {
+          throw StoreArchivedException(id);
+        }
+        return store.id;
+      case NewStore(:final draft):
+        return _insertStoreFromDraft(draft);
+    }
+  }
+
+  Future<ShoppingList> _resolveAssignList(
+    String storeId,
+    AssignListTarget target,
+  ) async {
+    switch (target) {
+      case ExistingList(:final listId):
+        final list = await (_db.select(
+          _db.shoppingLists,
+        )..where((t) => t.id.equals(listId))).getSingleOrNull();
+        if (list == null) {
+          throw StateError('List $listId not found');
+        }
+        if (list.archivedAt != null) {
+          throw ListArchivedException(listId);
+        }
+        if (list.storeId != storeId) {
+          throw StateError('List $listId does not belong to store $storeId');
+        }
+        return list;
+      case NewList(:final name):
+        final normalizedName = normalizeListName(name);
+        if (normalizedName.isEmpty) {
+          throw ArgumentError.value(name, 'name', 'must not be empty');
+        }
+        final now = _clock();
+        final id = _idGenerator();
+        await _db
+            .into(_db.shoppingLists)
+            .insert(
+              ShoppingListsCompanion.insert(
+                id: id,
+                storeId: storeId,
+                name: normalizedName,
+                createdAt: now,
+                updatedAt: now,
+              ),
+            );
+        return ShoppingList(
+          id: id,
+          storeId: storeId,
+          name: normalizedName,
+          archivedAt: null,
+          archiveReason: null,
+          createdAt: now,
+          updatedAt: now,
+        );
+    }
+  }
+
+  /// Inserts a store inside the assign transaction (same rules as StoresRepository).
+  Future<String> _insertStoreFromDraft(StoreDraft draft) async {
+    final normalizedName = normalizeStoreName(draft.name);
+    if (normalizedName.isEmpty) {
+      throw ArgumentError.value(draft.name, 'name', 'must not be empty');
+    }
+    if (!AppTokens.storePaletteKeys.contains(draft.colorKey)) {
+      throw ArgumentError.value(
+        draft.colorKey,
+        'colorKey',
+        'unknown palette key',
+      );
+    }
+    final now = _clock();
+    final id = _idGenerator();
+    final address = _normalizeOptionalStoreLine(draft.address);
+    final note = _normalizeOptionalStoreLine(draft.note);
+    await _db
+        .into(_db.stores)
+        .insert(
+          StoresCompanion.insert(
+            id: id,
+            name: normalizedName,
+            colorKey: draft.colorKey,
+            address: Value(address),
+            note: Value(note),
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+    return id;
+  }
+
+  static String? _normalizeOptionalStoreLine(String? value) {
+    if (value == null) {
+      return null;
+    }
+    final normalized = value.replaceAll(RegExp(r'[\r\n]+'), ' ').trim();
+    if (normalized.isEmpty) {
+      return null;
+    }
+    return normalized;
   }
 }
