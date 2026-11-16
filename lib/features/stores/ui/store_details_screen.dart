@@ -20,83 +20,59 @@ class StoreDetailsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final asyncStore = ref.watch(storeByIdProvider(storeId));
-
-    return AsyncBody(
-      value: asyncStore,
-      onRetry: () => ref.invalidate(storeByIdProvider(storeId)),
-      builder: (context, store) {
-        if (store == null) {
-          return Scaffold(
-            appBar: AppBar(title: Text(l10n.storeDetailsPlaceholder)),
-            body: Center(child: Text(l10n.storeNotFound)),
-          );
-        }
-        return _StoreDetailsBody(store: store);
-      },
-    );
-  }
-}
-
-class _StoreDetailsBody extends ConsumerWidget {
-  const _StoreDetailsBody({required this.store});
-
-  final Store store;
-
-  bool get _isArchived => store.archivedAt != null;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final l10n = AppLocalizations.of(context);
-    final tokens = Theme.of(context).extension<AppTokens>()!;
-    final colorScheme = Theme.of(context).colorScheme;
+    final store = asyncStore.asData?.value;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(store.name),
+        title: Text(store?.name ?? l10n.storeDetailsPlaceholder),
         actions: [
-          if (_isArchived)
-            TextButton(
-              key: const Key('store_details_restore'),
-              onPressed: () => _restore(context, ref),
-              child: Text(l10n.restore),
-            )
-          else ...[
-            TextButton(
-              key: const Key('store_details_edit'),
-              onPressed: () => _edit(context, ref),
-              child: Text(l10n.edit),
-            ),
-            TextButton(
-              key: const Key('store_details_archive'),
-              onPressed: () => _archive(context, ref),
-              child: Text(l10n.archiveAction),
-            ),
-          ],
+          if (store != null) ..._storeActions(context, ref, store, l10n),
         ],
       ),
-      body: ListView(
-        padding: EdgeInsets.all(tokens.spacing16),
-        children: [
-          _StoreHeader(store: store),
-          SizedBox(height: tokens.spacing24),
-          StoreActiveListsSection(storeId: store.id, readOnly: _isArchived),
-          SizedBox(height: tokens.spacing24),
-          Text(
-            l10n.storeWishlistSection,
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
-          SizedBox(height: tokens.spacing8),
-          Text(
-            l10n.storeWishlistPlaceholder,
-            style: Theme.of(context).textTheme.bodyMedium
-                ?.copyWith(color: colorScheme.onSurfaceVariant),
-          ),
-        ],
+      body: AsyncBody(
+        value: asyncStore,
+        onRetry: () => ref.invalidate(storeByIdProvider(storeId)),
+        builder: (context, data) {
+          if (data == null) {
+            return Center(child: Text(l10n.storeNotFound));
+          }
+          return _StoreDetailsBody(store: data);
+        },
       ),
     );
   }
 
-  Future<void> _edit(BuildContext context, WidgetRef ref) async {
+  List<Widget> _storeActions(
+    BuildContext context,
+    WidgetRef ref,
+    Store store,
+    AppLocalizations l10n,
+  ) {
+    final isArchived = store.archivedAt != null;
+    if (isArchived) {
+      return [
+        TextButton(
+          key: const Key('store_details_restore'),
+          onPressed: () => _restore(context, ref, store),
+          child: Text(l10n.restore),
+        ),
+      ];
+    }
+    return [
+      TextButton(
+        key: const Key('store_details_edit'),
+        onPressed: () => _edit(context, ref, store),
+        child: Text(l10n.edit),
+      ),
+      TextButton(
+        key: const Key('store_details_archive'),
+        onPressed: () => _archive(context, ref, store),
+        child: Text(l10n.archiveAction),
+      ),
+    ];
+  }
+
+  Future<void> _edit(BuildContext context, WidgetRef ref, Store store) async {
     await showStoreFormSheet(
       context,
       existing: store,
@@ -104,7 +80,11 @@ class _StoreDetailsBody extends ConsumerWidget {
     );
   }
 
-  Future<void> _archive(BuildContext context, WidgetRef ref) async {
+  Future<void> _archive(
+    BuildContext context,
+    WidgetRef ref,
+    Store store,
+  ) async {
     final l10n = AppLocalizations.of(context);
     final repository = ref.read(storesRepositoryProvider);
     final count = await repository.countActiveLists(store.id);
@@ -145,11 +125,50 @@ class _StoreDetailsBody extends ConsumerWidget {
     }
   }
 
-  Future<void> _restore(BuildContext context, WidgetRef ref) async {
+  Future<void> _restore(
+    BuildContext context,
+    WidgetRef ref,
+    Store store,
+  ) async {
     final l10n = AppLocalizations.of(context);
     await runWrite(
       () => ref.read(storesRepositoryProvider).restore(store.id),
       l10n: l10n,
+    );
+  }
+}
+
+class _StoreDetailsBody extends StatelessWidget {
+  const _StoreDetailsBody({required this.store});
+
+  final Store store;
+
+  bool get _isArchived => store.archivedAt != null;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final tokens = Theme.of(context).extension<AppTokens>()!;
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return ListView(
+      padding: EdgeInsets.all(tokens.spacing16),
+      children: [
+        _StoreHeader(store: store),
+        SizedBox(height: tokens.spacing24),
+        StoreActiveListsSection(storeId: store.id, readOnly: _isArchived),
+        SizedBox(height: tokens.spacing24),
+        Text(
+          l10n.storeWishlistSection,
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
+        SizedBox(height: tokens.spacing8),
+        Text(
+          l10n.storeWishlistPlaceholder,
+          style: Theme.of(context).textTheme.bodyMedium
+              ?.copyWith(color: colorScheme.onSurfaceVariant),
+        ),
+      ],
     );
   }
 }

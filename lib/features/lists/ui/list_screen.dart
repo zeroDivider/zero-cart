@@ -32,20 +32,106 @@ class ListScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final asyncList = ref.watch(listByIdProvider(listId));
+    final list = asyncList.asData?.value;
 
-    return AsyncBody(
-      value: asyncList,
-      onRetry: () => ref.invalidate(listByIdProvider(listId)),
-      builder: (context, list) {
-        if (list == null) {
-          return Scaffold(
-            appBar: AppBar(),
-            body: Center(child: Text(l10n.listNotFound)),
-          );
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(list?.name ?? l10n.listDetailsPlaceholder),
+        actions: [
+          if (list != null && list.archivedAt == null) _ListMenu(list: list),
+        ],
+      ),
+      body: AsyncBody(
+        value: asyncList,
+        onRetry: () => ref.invalidate(listByIdProvider(listId)),
+        builder: (context, data) {
+          if (data == null) {
+            return Center(child: Text(l10n.listNotFound));
+          }
+          return _ListScreenBody(list: data);
+        },
+      ),
+    );
+  }
+}
+
+class _ListMenu extends ConsumerWidget {
+  const _ListMenu({required this.list});
+
+  final ShoppingList list;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
+    return PopupMenuButton<String>(
+      key: const Key('list_menu'),
+      onSelected: (value) {
+        if (value == 'rename') {
+          _rename(context, ref);
+        } else if (value == 'archive') {
+          _archive(context, ref);
         }
-        return _ListScreenBody(list: list);
+      },
+      itemBuilder: (context) => [
+        PopupMenuItem(
+          key: const Key('list_menu_rename'),
+          value: 'rename',
+          child: Text(l10n.listMenuRename),
+        ),
+        PopupMenuItem(
+          key: const Key('list_menu_archive'),
+          value: 'archive',
+          child: Text(l10n.listMenuArchive),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _rename(BuildContext context, WidgetRef ref) async {
+    await showListFormSheet(
+      context,
+      existing: list,
+      onSubmit: (draft) {
+        return ref
+            .read(listsRepositoryProvider)
+            .rename(id: list.id, name: draft.name);
       },
     );
+  }
+
+  Future<void> _archive(BuildContext context, WidgetRef ref) async {
+    final l10n = AppLocalizations.of(context);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          key: const Key('archive_list_dialog'),
+          title: Text(l10n.archiveListTitle),
+          content: Text(l10n.archiveListBody),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: Text(l10n.cancel),
+            ),
+            TextButton(
+              key: const Key('archive_list_confirm'),
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: Text(l10n.archiveAction),
+            ),
+          ],
+        );
+      },
+    );
+    if (confirmed != true || !context.mounted) {
+      return;
+    }
+    final ok = await runWrite(
+      () => ref.read(listsRepositoryProvider).archive(list.id),
+      l10n: l10n,
+    );
+    if (ok && context.mounted) {
+      context.go(AppRoutes.storeDetailsLocation(list.storeId));
+    }
   }
 }
 
@@ -75,53 +161,6 @@ class _ListScreenBodyState extends ConsumerState<_ListScreenBody> {
   }
 
   GlobalKey _keyFor(String id) => _itemKeys.putIfAbsent(id, GlobalKey.new);
-
-  Future<void> _rename() async {
-    await showListFormSheet(
-      context,
-      existing: list,
-      onSubmit: (draft) {
-        return ref
-            .read(listsRepositoryProvider)
-            .rename(id: list.id, name: draft.name);
-      },
-    );
-  }
-
-  Future<void> _archive() async {
-    final l10n = AppLocalizations.of(context);
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          key: const Key('archive_list_dialog'),
-          title: Text(l10n.archiveListTitle),
-          content: Text(l10n.archiveListBody),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(false),
-              child: Text(l10n.cancel),
-            ),
-            TextButton(
-              key: const Key('archive_list_confirm'),
-              onPressed: () => Navigator.of(dialogContext).pop(true),
-              child: Text(l10n.archiveAction),
-            ),
-          ],
-        );
-      },
-    );
-    if (confirmed != true || !mounted) {
-      return;
-    }
-    final ok = await runWrite(
-      () => ref.read(listsRepositoryProvider).archive(list.id),
-      l10n: l10n,
-    );
-    if (ok && mounted) {
-      context.go(AppRoutes.storeDetailsLocation(list.storeId));
-    }
-  }
 
   Future<void> _setPurchased(ListItem item, bool value) async {
     final l10n = AppLocalizations.of(context);
@@ -268,146 +307,113 @@ class _ListScreenBodyState extends ConsumerState<_ListScreenBody> {
     final purchasedExpanded = ref.watch(purchasedExpandedProvider(list.id));
     final pendingScrollId = ref.watch(addItemNotifierProvider(list.id));
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(list.name),
-        actions: [
-          if (!_readOnly)
-            PopupMenuButton<String>(
-              key: const Key('list_menu'),
-              onSelected: (value) {
-                if (value == 'rename') {
-                  _rename();
-                } else if (value == 'archive') {
-                  _archive();
-                }
-              },
-              itemBuilder: (context) => [
-                PopupMenuItem(
-                  key: const Key('list_menu_rename'),
-                  value: 'rename',
-                  child: Text(l10n.listMenuRename),
-                ),
-                PopupMenuItem(
-                  key: const Key('list_menu_archive'),
-                  value: 'archive',
-                  child: Text(l10n.listMenuArchive),
-                ),
-              ],
-            ),
-        ],
-      ),
-      body: AsyncBody(
-        value: asyncItems,
-        onRetry: () => ref.invalidate(listItemsProvider(list.id)),
-        builder: (context, items) {
-          final activeFromDb = items.where((i) => !i.isPurchased).toList();
-          final active = _activeForDisplay(activeFromDb);
-          final purchased = items.where((i) => i.isPurchased).toList();
-          if (pendingScrollId != null) {
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (mounted) {
-                _scrollToPending(pendingScrollId);
-              }
-            });
-          }
+    return AsyncBody(
+      value: asyncItems,
+      onRetry: () => ref.invalidate(listItemsProvider(list.id)),
+      builder: (context, items) {
+        final activeFromDb = items.where((i) => !i.isPurchased).toList();
+        final active = _activeForDisplay(activeFromDb);
+        final purchased = items.where((i) => i.isPurchased).toList();
+        if (pendingScrollId != null) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              _scrollToPending(pendingScrollId);
+            }
+          });
+        }
 
-          return CustomScrollView(
-            key: const Key('list_items_scroll'),
-            controller: _scrollController,
-            slivers: [
-              if (_readOnly)
+        return CustomScrollView(
+          key: const Key('list_items_scroll'),
+          controller: _scrollController,
+          slivers: [
+            if (_readOnly)
+              SliverList(
+                delegate: SliverChildBuilderDelegate((context, index) {
+                  final item = active[index];
+                  return KeyedSubtree(
+                    key: ValueKey(item.id),
+                    child: _activeRow(item, active, index),
+                  );
+                }, childCount: active.length),
+              )
+            else
+              SliverReorderableList(
+                itemCount: active.length,
+                onReorderItem: (oldIndex, newIndex) {
+                  _onReorderItem(active, oldIndex, newIndex);
+                },
+                onReorderStart: (_) {
+                  HapticFeedback.lightImpact();
+                },
+                proxyDecorator: _proxyDecorator,
+                itemBuilder: (context, index) {
+                  final item = active[index];
+                  return KeyedSubtree(
+                    key: ValueKey(item.id),
+                    child: _activeRow(item, active, index),
+                  );
+                },
+              ),
+            if (!_readOnly)
+              SliverToBoxAdapter(child: AddItemRow(listId: list.id)),
+            if (items.isEmpty && !_readOnly)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.all(tokens.spacing24),
+                  child: Column(
+                    children: [
+                      Text(
+                        l10n.listEmptyTitle,
+                        style: Theme.of(context).textTheme.headlineSmall,
+                        textAlign: TextAlign.center,
+                      ),
+                      SizedBox(height: tokens.spacing8),
+                      Text(
+                        l10n.listEmptyBody,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            if (purchased.isNotEmpty) ...[
+              SliverToBoxAdapter(
+                child: PurchasedHeader(
+                  listId: list.id,
+                  count: purchased.length,
+                  expanded: purchasedExpanded,
+                ),
+              ),
+              if (purchasedExpanded)
                 SliverList(
                   delegate: SliverChildBuilderDelegate((context, index) {
-                    final item = active[index];
+                    final item = purchased[index];
                     return KeyedSubtree(
-                      key: ValueKey(item.id),
-                      child: _activeRow(item, active, index),
+                      key: _keyFor(item.id),
+                      child: _wrapRemovable(
+                        item,
+                        ItemRow(
+                          item: item,
+                          readOnly: _readOnly,
+                          onPurchasedChanged: _readOnly
+                              ? null
+                              : (value) => _setPurchased(item, value),
+                          onOpenEdit: _readOnly
+                              ? null
+                              : () => showItemEditSheet(context, item),
+                        ),
+                      ),
                     );
-                  }, childCount: active.length),
-                )
-              else
-                SliverReorderableList(
-                  itemCount: active.length,
-                  onReorderItem: (oldIndex, newIndex) {
-                    _onReorderItem(active, oldIndex, newIndex);
-                  },
-                  onReorderStart: (_) {
-                    HapticFeedback.lightImpact();
-                  },
-                  proxyDecorator: _proxyDecorator,
-                  itemBuilder: (context, index) {
-                    final item = active[index];
-                    return KeyedSubtree(
-                      key: ValueKey(item.id),
-                      child: _activeRow(item, active, index),
-                    );
-                  },
+                  }, childCount: purchased.length),
                 ),
-              if (!_readOnly)
-                SliverToBoxAdapter(child: AddItemRow(listId: list.id)),
-              if (items.isEmpty && !_readOnly)
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: EdgeInsets.all(tokens.spacing24),
-                    child: Column(
-                      children: [
-                        Text(
-                          l10n.listEmptyTitle,
-                          style: Theme.of(context).textTheme.headlineSmall,
-                          textAlign: TextAlign.center,
-                        ),
-                        SizedBox(height: tokens.spacing8),
-                        Text(
-                          l10n.listEmptyBody,
-                          style: Theme.of(context).textTheme.bodyMedium
-                              ?.copyWith(
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .onSurfaceVariant,
-                              ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              if (purchased.isNotEmpty) ...[
-                SliverToBoxAdapter(
-                  child: PurchasedHeader(
-                    listId: list.id,
-                    count: purchased.length,
-                    expanded: purchasedExpanded,
-                  ),
-                ),
-                if (purchasedExpanded)
-                  SliverList(
-                    delegate: SliverChildBuilderDelegate((context, index) {
-                      final item = purchased[index];
-                      return KeyedSubtree(
-                        key: _keyFor(item.id),
-                        child: _wrapRemovable(
-                          item,
-                          ItemRow(
-                            item: item,
-                            readOnly: _readOnly,
-                            onPurchasedChanged: _readOnly
-                                ? null
-                                : (value) => _setPurchased(item, value),
-                            onOpenEdit: _readOnly
-                                ? null
-                                : () => showItemEditSheet(context, item),
-                          ),
-                        ),
-                      );
-                    }, childCount: purchased.length),
-                  ),
-              ],
-              SliverToBoxAdapter(child: SizedBox(height: tokens.spacing24)),
             ],
-          );
-        },
-      ),
+            SliverToBoxAdapter(child: SizedBox(height: tokens.spacing24)),
+          ],
+        );
+      },
     );
   }
 }
