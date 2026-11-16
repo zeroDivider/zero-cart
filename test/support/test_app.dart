@@ -94,9 +94,10 @@ class TestAppHarness {
 /// FakeAsync on Windows, `.watch()` does not emit, so [inboxItemsProvider],
 /// [activeStoresProvider], [activeStoreSummariesProvider],
 /// [archivedStoresProvider], [storeByIdProvider],
-/// [activeListsForStoreProvider], [listByIdProvider] and [listItemsProvider]
-/// are bridged by broadcast streams that [pumpApp] refreshes after real
-/// writes against [TestAppHarness.db].
+/// [activeListsForStoreProvider], [activeListsByRecencyProvider],
+/// [listByIdProvider] and [listItemsProvider] are bridged by broadcast
+/// streams that [pumpApp] refreshes after real writes against
+/// [TestAppHarness.db].
 /// See `inbox_providers_test.dart` for a live-stream check without FakeAsync.
 Future<TestAppHarness> pumpTestApp(
   WidgetTester tester, {
@@ -309,16 +310,17 @@ Future<TestAppHarness> pumpTestApp(
 
   Stream<List<ShoppingList>> activeListsByRecencyBridge() async* {
     List<ShoppingList> snapshot() {
-      final lists = <ShoppingList>[
-        for (final rows in latestListsByStore.values)
-          for (final row in rows) row.list,
-      ]..sort((a, b) {
-        final byUpdated = b.updatedAt.compareTo(a.updatedAt);
-        if (byUpdated != 0) {
-          return byUpdated;
-        }
-        return b.id.compareTo(a.id);
-      });
+      final lists =
+          <ShoppingList>[
+            for (final rows in latestListsByStore.values)
+              for (final row in rows) row.list,
+          ]..sort((a, b) {
+            final byUpdated = b.updatedAt.compareTo(a.updatedAt);
+            if (byUpdated != 0) {
+              return byUpdated;
+            }
+            return b.id.compareTo(a.id);
+          });
       return lists;
     }
 
