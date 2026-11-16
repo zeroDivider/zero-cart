@@ -26,6 +26,11 @@ class InboxSelectionNotifier extends Notifier<Set<String>> {
   }
 }
 
+/// App-lifetime selection set: intentionally survives tab navigation.
+///
+/// Callers must call [InboxSelectionNotifier.clear] on explicit dismissal
+/// (cancel, successful assign, leaving multi-select) so a stale selection
+/// does not reappear after the user returns to Inbox.
 final inboxSelectionProvider =
     NotifierProvider<InboxSelectionNotifier, Set<String>>(
       InboxSelectionNotifier.new,
