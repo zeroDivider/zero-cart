@@ -225,12 +225,24 @@
   },
   "archiveStoreBody": "{count, plural, one{{count} active list will be hidden until you restore the store.} other{{count} active lists will be hidden until you restore the store.}}",
   "@archiveStoreBody": {
-    "description": "Body of the archive-store dialog naming the active-list count",
+    "description": "Body of the archive-store dialog when the store has active lists",
     "placeholders": {
       "count": {
         "type": "int"
       }
     }
+  },
+  "archiveStoreBodyNone": "You can restore it later from Archive.",
+  "@archiveStoreBodyNone": {
+    "description": "Body of the archive-store dialog when the store has no active lists"
+  },
+  "archiveListTitle": "Archive list?",
+  "@archiveListTitle": {
+    "description": "Title of the archive-list confirmation dialog"
+  },
+  "archiveListBody": "You can restore it later from Archive.",
+  "@archiveListBody": {
+    "description": "Body of the archive-list confirmation dialog"
   },
   "storeListsSection": "Shopping lists",
   "@storeListsSection": {

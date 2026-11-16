@@ -67,7 +67,7 @@ Binding unless you override. Items marked \[REVIEW\] are the ones I most want yo
 ## 1.2 Conflicts and risks
 
 - **Gestures:** vertical scroll, drag-to-reorder and swipe-to-dismiss compete. Resolution: Dismissible only end-to-start, drag only from a 48dp handle.
-- **'Minimal confirmations' vs destructive actions:** only two dialogs exist, archiving a store with active lists and replace-all restore. Everything else is Undo or a reversible archive.
+- **'Minimal confirmations' vs destructive actions:** confirm dialogs for manual store archive, manual list archive, and replace-all restore. Removals use Undo (D-07). (Updated 2026-11-16; see `docs/deviations.md`.)
 - **Restore is the highest-risk operation.** The confirmation dialog offers 'Export current data first'.
 - **Fonts:** the prototype may load Google Fonts online, but the app bundles DynaPuff (OFL, wordmark only) and Roboto (confirm its licence from the downloaded files; Apache 2.0 in my recollection) because the app is offline-first.
 - **iPad:** the share sheet needs a source rectangle on iPad. Always pass the Share button's rect to share\_plus.

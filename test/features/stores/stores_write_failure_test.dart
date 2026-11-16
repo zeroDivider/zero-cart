@@ -181,6 +181,8 @@ void main() {
       await tester.tap(find.byKey(Key('store_row_${store!.id}')));
       await pumpApp(tester, harness);
       await _tapButton(tester, const Key('store_details_archive'), harness);
+      expect(find.byKey(const Key('archive_store_dialog')), findsOneWidget);
+      await _tapButton(tester, const Key('archive_store_confirm'), harness);
 
       expect(find.text(_genericError), findsOneWidget);
       expect(find.byKey(const Key('store_details_archive')), findsOneWidget);

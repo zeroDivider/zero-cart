@@ -87,7 +87,7 @@ void main() {
     await harness.dispose(tester);
   });
 
-  testWidgets('archive with no active lists archives immediately', (
+  testWidgets('archive with no active lists shows dialog then archives', (
     tester,
   ) async {
     final harness = await pumpTestApp(
@@ -103,8 +103,10 @@ void main() {
     await pumpApp(tester, harness);
 
     await _tapButton(tester, const Key('store_details_archive'), harness);
+    expect(find.byKey(const Key('archive_store_dialog')), findsOneWidget);
+    expect(find.text('You can restore it later from Archive.'), findsOneWidget);
 
-    expect(find.byKey(const Key('archive_store_dialog')), findsNothing);
+    await _tapButton(tester, const Key('archive_store_confirm'), harness);
     expect(find.byType(StoresScreen), findsOneWidget);
     expect(find.text('Lidl'), findsNothing);
 

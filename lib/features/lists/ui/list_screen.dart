@@ -3,6 +3,8 @@ import 'dart:ui' show lerpDouble;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:zero_cart/app/router.dart';
 import 'package:zero_cart/app/theme/app_tokens.dart';
 import 'package:zero_cart/core/ui/write_runner.dart';
 import 'package:zero_cart/core/widgets/async_body.dart';
@@ -87,10 +89,37 @@ class _ListScreenBodyState extends ConsumerState<_ListScreenBody> {
 
   Future<void> _archive() async {
     final l10n = AppLocalizations.of(context);
-    await runWrite(
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          key: const Key('archive_list_dialog'),
+          title: Text(l10n.archiveListTitle),
+          content: Text(l10n.archiveListBody),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: Text(l10n.cancel),
+            ),
+            TextButton(
+              key: const Key('archive_list_confirm'),
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: Text(l10n.archiveAction),
+            ),
+          ],
+        );
+      },
+    );
+    if (confirmed != true || !mounted) {
+      return;
+    }
+    final ok = await runWrite(
       () => ref.read(listsRepositoryProvider).archive(list.id),
       l10n: l10n,
     );
+    if (ok && mounted) {
+      context.go(AppRoutes.storeDetailsLocation(list.storeId));
+    }
   }
 
   Future<void> _setPurchased(ListItem item, bool value) async {

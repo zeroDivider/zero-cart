@@ -74,6 +74,9 @@
   "restore": "Vrati",
   "archiveStoreTitle": "Arhivirati prodavnicu?",
   "archiveStoreBody": "{count, plural, one{{count} aktivna lista biće sakrivena dok ne vratiš prodavnicu.} few{{count} aktivne liste biće sakrivene dok ne vratiš prodavnicu.} other{{count} aktivnih listi biće sakriveno dok ne vratiš prodavnicu.}}",
+  "archiveStoreBodyNone": "Možeš je kasnije vratiti iz Arhive.",
+  "archiveListTitle": "Arhivirati listu?",
+  "archiveListBody": "Možeš je kasnije vratiti iz Arhive.",
   "@archiveStoreBody": {
     "placeholders": {
       "count": {

@@ -111,31 +111,33 @@ class _StoreDetailsBody extends ConsumerWidget {
     if (!context.mounted) {
       return;
     }
-    if (count > 0) {
-      final confirmed = await showDialog<bool>(
-        context: context,
-        builder: (dialogContext) {
-          return AlertDialog(
-            key: const Key('archive_store_dialog'),
-            title: Text(l10n.archiveStoreTitle),
-            content: Text(l10n.archiveStoreBody(count)),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(dialogContext).pop(false),
-                child: Text(l10n.cancel),
-              ),
-              TextButton(
-                key: const Key('archive_store_confirm'),
-                onPressed: () => Navigator.of(dialogContext).pop(true),
-                child: Text(l10n.archiveAction),
-              ),
-            ],
-          );
-        },
-      );
-      if (confirmed != true || !context.mounted) {
-        return;
-      }
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          key: const Key('archive_store_dialog'),
+          title: Text(l10n.archiveStoreTitle),
+          content: Text(
+            count > 0
+                ? l10n.archiveStoreBody(count)
+                : l10n.archiveStoreBodyNone,
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: Text(l10n.cancel),
+            ),
+            TextButton(
+              key: const Key('archive_store_confirm'),
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: Text(l10n.archiveAction),
+            ),
+          ],
+        );
+      },
+    );
+    if (confirmed != true || !context.mounted) {
+      return;
     }
     final ok = await runWrite(() => repository.archive(store.id), l10n: l10n);
     if (ok && context.mounted) {
