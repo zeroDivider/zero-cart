@@ -234,7 +234,10 @@ class _AssignSheetState extends ConsumerState<AssignSheet> {
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (error, _) => Text(l10n.asyncLoadFailed),
           data: (stores) {
-            final storeLists = storeListsAsync?.asData?.value ?? const [];
+            final lists = <ShoppingList>[
+              for (final progress in storeListsAsync?.asData?.value ?? const [])
+                progress.list,
+            ];
             return SingleChildScrollView(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -244,31 +247,13 @@ class _AssignSheetState extends ConsumerState<AssignSheet> {
                     style: Theme.of(context).textTheme.titleSmall,
                   ),
                   SizedBox(height: tokens.spacing8),
-                  Wrap(
-                    spacing: tokens.spacing8,
-                    runSpacing: tokens.spacing8,
-                    children: [
-                      for (final store in stores)
-                        _ChoiceChip(
-                          key: Key('assign_store_${store.id}'),
-                          label: store.name,
-                          selected:
-                              _storeId == store.id && _newStoreDraft == null,
-                          onSelected: controller.isSubmitting
-                              ? null
-                              : () => _selectStore(store.id),
-                        ),
-                      ActionChip(
-                        key: const Key('assign_new_store'),
-                        label: Text(l10n.newStoreAction),
-                        avatar: _newStoreDraft != null
-                            ? const Icon(Icons.check, size: 18)
-                            : null,
-                        onPressed: controller.isSubmitting
-                            ? null
-                            : _pickNewStore,
-                      ),
-                    ],
+                  _StoreChipsSection(
+                    stores: stores,
+                    selectedId: _newStoreDraft == null ? _storeId : null,
+                    hasNewStoreDraft: _newStoreDraft != null,
+                    enabled: !controller.isSubmitting,
+                    onStoreSelected: _selectStore,
+                    onNewStore: _pickNewStore,
                   ),
                   if (_newStoreDraft != null) ...[
                     SizedBox(height: tokens.spacing8),
@@ -284,34 +269,15 @@ class _AssignSheetState extends ConsumerState<AssignSheet> {
                     style: Theme.of(context).textTheme.titleSmall,
                   ),
                   SizedBox(height: tokens.spacing8),
-                  Wrap(
-                    spacing: tokens.spacing8,
-                    runSpacing: tokens.spacing8,
-                    children: [
-                      if (_newStoreDraft == null)
-                        for (final progress in storeLists)
-                          _ChoiceChip(
-                            key: Key('assign_list_${progress.list.id}'),
-                            label: progress.list.name,
-                            selected:
-                                _listId == progress.list.id &&
-                                _newListName == null,
-                            onSelected: controller.isSubmitting
-                                ? null
-                                : () => _selectList(progress.list.id),
-                          ),
-                      if (_hasStore)
-                        ActionChip(
-                          key: const Key('assign_new_list'),
-                          label: Text(l10n.newListAction),
-                          avatar: _newListName != null
-                              ? const Icon(Icons.check, size: 18)
-                              : null,
-                          onPressed: controller.isSubmitting
-                              ? null
-                              : _pickNewList,
-                        ),
-                    ],
+                  _ListChipsSection(
+                    lists: lists,
+                    selectedId: _newListName == null ? _listId : null,
+                    showExistingLists: _newStoreDraft == null,
+                    showNewList: _hasStore,
+                    hasNewListDraft: _newListName != null,
+                    enabled: !controller.isSubmitting,
+                    onListSelected: _selectList,
+                    onNewList: _pickNewList,
                   ),
                   if (_newListName != null) ...[
                     SizedBox(height: tokens.spacing8),
@@ -336,6 +302,98 @@ class _AssignSheetState extends ConsumerState<AssignSheet> {
           },
         );
       },
+    );
+  }
+}
+
+class _StoreChipsSection extends StatelessWidget {
+  const _StoreChipsSection({
+    required this.stores,
+    required this.selectedId,
+    required this.hasNewStoreDraft,
+    required this.enabled,
+    required this.onStoreSelected,
+    required this.onNewStore,
+  });
+
+  final List<Store> stores;
+  final String? selectedId;
+  final bool hasNewStoreDraft;
+  final bool enabled;
+  final ValueChanged<String> onStoreSelected;
+  final VoidCallback onNewStore;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final tokens = Theme.of(context).extension<AppTokens>()!;
+    return Wrap(
+      spacing: tokens.spacing8,
+      runSpacing: tokens.spacing8,
+      children: [
+        for (final store in stores)
+          _ChoiceChip(
+            key: Key('assign_store_${store.id}'),
+            label: store.name,
+            selected: selectedId == store.id,
+            onSelected: enabled ? () => onStoreSelected(store.id) : null,
+          ),
+        ActionChip(
+          key: const Key('assign_new_store'),
+          label: Text(l10n.newStoreAction),
+          avatar: hasNewStoreDraft ? const Icon(Icons.check, size: 18) : null,
+          onPressed: enabled ? onNewStore : null,
+        ),
+      ],
+    );
+  }
+}
+
+class _ListChipsSection extends StatelessWidget {
+  const _ListChipsSection({
+    required this.lists,
+    required this.selectedId,
+    required this.showExistingLists,
+    required this.showNewList,
+    required this.hasNewListDraft,
+    required this.enabled,
+    required this.onListSelected,
+    required this.onNewList,
+  });
+
+  final List<ShoppingList> lists;
+  final String? selectedId;
+  final bool showExistingLists;
+  final bool showNewList;
+  final bool hasNewListDraft;
+  final bool enabled;
+  final ValueChanged<String> onListSelected;
+  final VoidCallback onNewList;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final tokens = Theme.of(context).extension<AppTokens>()!;
+    return Wrap(
+      spacing: tokens.spacing8,
+      runSpacing: tokens.spacing8,
+      children: [
+        if (showExistingLists)
+          for (final list in lists)
+            _ChoiceChip(
+              key: Key('assign_list_${list.id}'),
+              label: list.name,
+              selected: selectedId == list.id,
+              onSelected: enabled ? () => onListSelected(list.id) : null,
+            ),
+        if (showNewList)
+          ActionChip(
+            key: const Key('assign_new_list'),
+            label: Text(l10n.newListAction),
+            avatar: hasNewListDraft ? const Icon(Icons.check, size: 18) : null,
+            onPressed: enabled ? onNewList : null,
+          ),
+      ],
     );
   }
 }
