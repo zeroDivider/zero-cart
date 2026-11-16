@@ -234,7 +234,7 @@ void main() {
     expect(find.text('Removed Milk'), findsOneWidget);
 
     final action = tester.widget<SnackBarAction>(find.byType(SnackBarAction));
-    action.onPressed!();
+    action.onPressed();
     await tester.pumpAndSettle();
 
     expect(find.text('Removed Milk'), findsNothing);
