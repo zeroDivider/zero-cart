@@ -7,6 +7,7 @@ import 'package:zero_cart/core/text_normalize.dart';
 import 'package:zero_cart/data/database.dart';
 import 'package:zero_cart/features/lists/active_list_progress.dart';
 import 'package:zero_cart/features/lists/assign_inbox_target.dart';
+import 'package:zero_cart/features/lists/copy_wishlist_target.dart';
 import 'package:zero_cart/features/lists/list_exceptions.dart';
 import 'package:zero_cart/features/stores/store_draft.dart';
 
@@ -453,6 +454,90 @@ ORDER BY sl.created_at ASC, sl.id ASC
       )..where((t) => t.id.isIn(inboxIds))).go();
 
       return AssignInboxResult(listId: list.id, listName: list.name);
+    });
+  }
+
+  /// Copies wishlist rows into an active list of the same store (op 7, D-18).
+  ///
+  /// One transaction: resolve/create the list, insert copies at max+1 with new
+  /// ids (oldest wishlist first), touch `updated_at`. Wishlist rows are never
+  /// modified (I7). Rejects empty [wishlistIds], missing ids, mixed stores,
+  /// archived targets, and archived stores (I3).
+  Future<CopyWishlistResult> copyWishlistItems(
+    List<String> wishlistIds,
+    CopyWishlistTarget target,
+  ) {
+    if (wishlistIds.isEmpty) {
+      throw ArgumentError.value(
+        wishlistIds,
+        'wishlistIds',
+        'must not be empty',
+      );
+    }
+    return _db.transaction(() async {
+      final wishlistRows =
+          await (_db.select(_db.wishlistItems)
+                ..where((t) => t.id.isIn(wishlistIds))
+                ..orderBy([
+                  (t) => OrderingTerm.asc(t.createdAt),
+                  (t) => OrderingTerm.asc(t.id),
+                ]))
+              .get();
+      if (wishlistRows.length != wishlistIds.toSet().length) {
+        throw StateError('One or more wishlist items were not found');
+      }
+
+      final storeId = wishlistRows.first.storeId;
+      for (final row in wishlistRows) {
+        if (row.storeId != storeId) {
+          throw StateError('Wishlist items must belong to one store');
+        }
+      }
+
+      final store = await (_db.select(
+        _db.stores,
+      )..where((t) => t.id.equals(storeId))).getSingleOrNull();
+      if (store == null) {
+        throw StateError('Store $storeId not found');
+      }
+      if (store.archivedAt != null) {
+        throw StoreArchivedException(storeId);
+      }
+
+      final list = await _resolveAssignList(storeId, target);
+
+      final maxRow = await _db
+          .customSelect(
+            'SELECT MAX(position) AS max_pos FROM list_items WHERE list_id = ?',
+            variables: [Variable.withString(list.id)],
+            readsFrom: {_db.listItems},
+          )
+          .getSingle();
+      var nextPosition = (maxRow.readNullable<int>('max_pos') ?? 0) + 1;
+      final now = _clock();
+
+      for (final wish in wishlistRows) {
+        await _db
+            .into(_db.listItems)
+            .insert(
+              ListItemsCompanion.insert(
+                id: _idGenerator(),
+                listId: list.id,
+                title: wish.title,
+                description: Value(wish.description),
+                isPurchased: const Value(false),
+                position: nextPosition,
+                createdAt: now,
+                updatedAt: now,
+              ),
+            );
+        nextPosition += 1;
+      }
+
+      await (_db.update(_db.shoppingLists)..where((t) => t.id.equals(list.id)))
+          .write(ShoppingListsCompanion(updatedAt: Value(now)));
+
+      return CopyWishlistResult(listId: list.id, listName: list.name);
     });
   }
 
