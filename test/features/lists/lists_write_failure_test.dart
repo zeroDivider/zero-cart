@@ -210,6 +210,9 @@ void main() {
     );
     archiveMenu.onSelected!('archive');
     await pumpApp(tester, harness);
+    expect(find.byKey(const Key('archive_list_dialog')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('archive_list_confirm')));
+    await pumpApp(tester, harness);
 
     expect(find.text(_genericError), findsOneWidget);
     expect(find.text('Weekend'), findsOneWidget);

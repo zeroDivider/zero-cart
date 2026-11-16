@@ -498,8 +498,42 @@ void main() {
     );
     menu.onSelected!('archive');
     await pumpApp(tester);
+    expect(find.byKey(const Key('archive_list_dialog')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('archive_list_confirm')));
+    await pumpApp(tester);
 
     expect(find.text('Something went wrong. Try again.'), findsOneWidget);
+    await harness.dispose(tester);
+  });
+
+  testWidgets('archive list confirms then returns to store details', (
+    tester,
+  ) async {
+    final harness = await pumpTestApp(
+      tester,
+      router: AppRouter.create(initialLocation: AppRoutes.stores),
+    );
+    final (store, list) = await _seedList(tester, harness);
+    await pumpApp(tester, harness);
+    await _openList(tester, harness, store, list);
+
+    final menu = tester.widget<PopupMenuButton<String>>(
+      find.byKey(const Key('list_menu')),
+    );
+    menu.onSelected!('archive');
+    await pumpApp(tester, harness);
+    expect(find.byKey(const Key('archive_list_dialog')), findsOneWidget);
+    expect(find.text('Archive list?'), findsOneWidget);
+
+    await _tapButton(tester, const Key('archive_list_confirm'), harness);
+    expect(find.byType(ListScreen), findsNothing);
+    expect(find.byType(StoreDetailsScreen), findsOneWidget);
+    expect(find.text(store.name), findsWidgets);
+
+    final row = await tester.runAsync(
+      () => harness.db.select(harness.db.shoppingLists).getSingle(),
+    );
+    expect(row!.archivedAt, isNotNull);
     await harness.dispose(tester);
   });
 
