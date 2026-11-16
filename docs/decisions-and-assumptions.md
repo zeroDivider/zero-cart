@@ -31,7 +31,7 @@ Binding unless you override. Items marked \[REVIEW\] are the ones I most want yo
 **Inbox and wishlist**
 
 - **D-16** Inbox is ordered newest first. The assignment sheet offers store chips plus New store, then that store's active lists plus New list. It preselects the store/list with the most recent activity (`updated_at`). Long-press multi-select enables batch assignment to one target. \[REVIEW, small scope addition that serves capture-first\]
-- **D-17** Assignment is one transaction including any new store/list; the Inbox row is deleted in the same transaction. On failure nothing changes, the sheet stays open, an error snackbar shows. Batches append in creation order (oldest first).
+- **D-17** Assignment is one transaction including any new store/list; the Inbox row is deleted in the same transaction. On failure nothing changes and the sheet stays open with an inline error (ADR-0007 form submit, same as APP-014 sheets). Batches append in creation order (oldest first).
 - **D-18** Wishlist is ordered by creation (no manual order in v1). 'Add to list' copies title and description to an active list of the same store (or a new one), multi-select supported. The wishlist entry stays. No link column, so copies are independent.
 - **D-19** Inbox and wishlist items are edited in a sheet and removed by swipe-left with Undo, same pattern as list items.
 
