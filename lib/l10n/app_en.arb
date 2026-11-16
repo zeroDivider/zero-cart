@@ -46,7 +46,92 @@
   },
   "wishlistPlaceholder": "Wishlist",
   "@wishlistPlaceholder": {
-    "description": "Placeholder title for store wishlist"
+    "description": "App-bar title for the store wishlist screen"
+  },
+  "wishlistEmptyTitle": "Wishlist is empty",
+  "@wishlistEmptyTitle": {
+    "description": "Empty-state headline on the wishlist screen"
+  },
+  "wishlistEmptyBody": "Keep things for someday here.",
+  "@wishlistEmptyBody": {
+    "description": "Empty-state supporting text on the wishlist screen"
+  },
+  "addToWishlist": "Add to wishlist",
+  "@addToWishlist": {
+    "description": "Title of the add-to-wishlist form sheet"
+  },
+  "addToList": "Add to list",
+  "@addToList": {
+    "description": "Per-row and confirm action that copies wishlist items to a list"
+  },
+  "addSelectedToList": "Add selected to list",
+  "@addSelectedToList": {
+    "description": "App-bar action that copies multi-selected wishlist items"
+  },
+  "copyToListTitle": "Add to list",
+  "@copyToListTitle": {
+    "description": "Title of the wishlist copy-to-list sheet for multiple items"
+  },
+  "copyToListItemTitle": "Add “{title}” to list",
+  "@copyToListItemTitle": {
+    "description": "Copy-to-list sheet title when copying one wishlist item",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "copyNeedsList": "Choose a list",
+  "@copyNeedsList": {
+    "description": "Inline validation when Confirm is pressed without a list target"
+  },
+  "addedToList": "Added to {listName}",
+  "@addedToList": {
+    "description": "Success snackbar after copying wishlist items to a list",
+    "placeholders": {
+      "listName": {
+        "type": "String"
+      }
+    }
+  },
+  "open": "Open",
+  "@open": {
+    "description": "Snackbar action that navigates to the list after copy"
+  },
+  "wishlistSelectedCount": "{count, plural, one{{count} selected} other{{count} selected}}",
+  "@wishlistSelectedCount": {
+    "description": "Wishlist app-bar title while multi-select is active",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "clearSelection": "Clear selection",
+  "@clearSelection": {
+    "description": "Tooltip for the button that exits wishlist multi-select"
+  },
+  "selectItem": "Select",
+  "@selectItem": {
+    "description": "Semantics action that starts wishlist multi-select on a row"
+  },
+  "wishlistItemsForSomeday": "{count, plural, one{{count} item for someday} other{{count} items for someday}}",
+  "@wishlistItemsForSomeday": {
+    "description": "Subtitle on the store-details wishlist card",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "wishlistCardSemantics": "Wishlist, {count, plural, one{{count} item} other{{count} items}}",
+  "@wishlistCardSemantics": {
+    "description": "Accessibility label for the store-details wishlist card",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "archivePlaceholder": "Archive",
   "@archivePlaceholder": {
@@ -243,10 +328,6 @@
   "storeWishlistSection": "Wishlist",
   "@storeWishlistSection": {
     "description": "Section header for wishlist on store details"
-  },
-  "storeWishlistPlaceholder": "Wishlist will show here.",
-  "@storeWishlistPlaceholder": {
-    "description": "Placeholder under Wishlist until APP-016"
   },
   "newList": "New list",
   "@newList": {

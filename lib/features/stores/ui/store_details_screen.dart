@@ -8,6 +8,7 @@ import 'package:zero_cart/data/database.dart';
 import 'package:zero_cart/features/stores/stores_providers.dart';
 import 'package:zero_cart/features/stores/ui/sheets/store_form_sheet.dart';
 import 'package:zero_cart/features/stores/ui/store_active_lists_section.dart';
+import 'package:zero_cart/features/stores/ui/wishlist_card.dart';
 import 'package:zero_cart/l10n/generated/app_localizations.dart';
 
 /// Store details at `/stores/:id` (ST-3, ST-4, F12).
@@ -147,9 +148,7 @@ class _StoreDetailsBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
     final tokens = Theme.of(context).extension<AppTokens>()!;
-    final colorScheme = Theme.of(context).colorScheme;
 
     return ListView(
       padding: EdgeInsets.all(tokens.spacing16),
@@ -158,16 +157,7 @@ class _StoreDetailsBody extends StatelessWidget {
         SizedBox(height: tokens.spacing24),
         StoreActiveListsSection(storeId: store.id, readOnly: _isArchived),
         SizedBox(height: tokens.spacing24),
-        Text(
-          l10n.storeWishlistSection,
-          style: Theme.of(context).textTheme.titleMedium,
-        ),
-        SizedBox(height: tokens.spacing8),
-        Text(
-          l10n.storeWishlistPlaceholder,
-          style: Theme.of(context).textTheme.bodyMedium
-              ?.copyWith(color: colorScheme.onSurfaceVariant),
-        ),
+        StoreWishlistCard(storeId: store.id),
       ],
     );
   }

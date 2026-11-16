@@ -12,6 +12,56 @@
   "storeDetailsPlaceholder": "Prodavnica",
   "listDetailsPlaceholder": "Lista",
   "wishlistPlaceholder": "Lista želja",
+  "wishlistEmptyTitle": "Lista želja je prazna",
+  "wishlistEmptyBody": "Ostavi stvari za jednog dana ovde.",
+  "addToWishlist": "Dodaj na listu želja",
+  "addToList": "Dodaj na listu",
+  "addSelectedToList": "Dodaj izabrano na listu",
+  "copyToListTitle": "Dodaj na listu",
+  "copyToListItemTitle": "Dodaj „{title}“ na listu",
+  "@copyToListItemTitle": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "copyNeedsList": "Izaberi listu",
+  "addedToList": "Dodato na {listName}",
+  "@addedToList": {
+    "placeholders": {
+      "listName": {
+        "type": "String"
+      }
+    }
+  },
+  "open": "Otvori",
+  "wishlistSelectedCount": "{count, plural, one{{count} izabrano} few{{count} izabrano} other{{count} izabrano}}",
+  "@wishlistSelectedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "clearSelection": "Poništi izbor",
+  "selectItem": "Izaberi",
+  "wishlistItemsForSomeday": "{count, plural, one{{count} stavka za jednog dana} few{{count} stavke za jednog dana} other{{count} stavki za jednog dana}}",
+  "@wishlistItemsForSomeday": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "wishlistCardSemantics": "Lista želja, {count, plural, one{{count} stavka} few{{count} stavke} other{{count} stavki}}",
+  "@wishlistCardSemantics": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "archivePlaceholder": "Arhiva",
   "aboutPlaceholder": "O aplikaciji",
   "itemTitleLabel": "Naziv",
@@ -84,7 +134,6 @@
   },
   "storeListsSection": "Liste za kupovinu",
   "storeWishlistSection": "Lista želja",
-  "storeWishlistPlaceholder": "Lista želja će se prikazati ovde.",
   "newList": "Nova lista",
   "newListAction": "+ Nova lista",
   "renameList": "Preimenuj listu",
