@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:zero_cart/app/router.dart';
@@ -238,6 +239,42 @@ void main() {
     expect(find.text('Bread'), findsNothing);
     expect(find.text('Added to Weekend'), findsOneWidget);
     await harness.dispose(tester);
+  });
+
+  testWidgets('assign semantics action opens assign sheet', (tester) async {
+    final handle = tester.ensureSemantics();
+    try {
+      final harness = await pumpTestApp(
+        tester,
+        router: AppRouter.create(initialLocation: AppRoutes.inbox),
+      );
+      final seed = await tester.runAsync(() => _seed(harness));
+      await harness.refreshInbox();
+      await harness.refreshStores();
+      await harness.refreshLists();
+      await pumpApp(tester, harness);
+
+      final rowFinder = find.byKey(Key('inbox_row_${seed!.item.id}'));
+      final node = tester.getSemantics(rowFinder);
+      final actionId = CustomSemanticsAction.getIdentifier(
+        const CustomSemanticsAction(label: 'Assign'),
+      );
+      node.owner!.performAction(
+        node.id,
+        SemanticsAction.customAction,
+        actionId,
+      );
+      await pumpApp(tester, harness);
+      await tester.pump(const Duration(milliseconds: 300));
+      await pumpApp(tester, harness);
+
+      expect(find.byType(AssignSheet), findsOneWidget);
+      expect(find.text('Assign “Milk”'), findsOneWidget);
+
+      await harness.dispose(tester);
+    } finally {
+      handle.dispose();
+    }
   });
 
   testWidgets('shows validation error when no target selected', (tester) async {
