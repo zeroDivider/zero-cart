@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zero_cart/app/router.dart';
 import 'package:zero_cart/app/theme/app_tokens.dart';
@@ -151,73 +152,90 @@ class _InboxList extends ConsumerWidget {
       itemBuilder: (context, index) {
         final item = items[index];
         final isSelected = selected.contains(item.id);
-        final row = InkWell(
-          key: Key('inbox_row_${item.id}'),
-          onTap: () {
-            if (selecting) {
-              ref.read(inboxSelectionProvider.notifier).toggle(item.id);
-            } else {
-              showInboxEditSheet(context, item);
-            }
-          },
-          onLongPress: selecting
+        final row = Semantics(
+          customSemanticsActions: selecting
               ? null
-              : () => ref.read(inboxSelectionProvider.notifier).start(item.id),
-          child: ConstrainedBox(
-            constraints: BoxConstraints(minHeight: tokens.spacing48 + 8),
-            child: Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: tokens.spacing16,
-                vertical: tokens.spacing12,
-              ),
-              child: Row(
-                children: [
-                  if (selecting) ...[
-                    Icon(
-                      isSelected
-                          ? Icons.check_box
-                          : Icons.check_box_outline_blank,
-                      key: Key('inbox_select_${item.id}'),
-                      color: isSelected
-                          ? colorScheme.primary
-                          : colorScheme.onSurfaceVariant,
-                    ),
-                    SizedBox(width: tokens.spacing12),
-                  ],
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          item.title,
-                          style: Theme.of(context).textTheme.bodyLarge,
-                        ),
-                        if (item.description != null &&
-                            item.description!.isNotEmpty) ...[
-                          SizedBox(height: tokens.spacing4),
-                          Text(
-                            item.description!,
-                            style: Theme.of(context).textTheme.bodyMedium
-                                ?.copyWith(color: colorScheme.onSurfaceVariant),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
-                      ],
-                    ),
+              : <CustomSemanticsAction, VoidCallback>{
+                  CustomSemanticsAction(label: l10n.assign): () => _assignIds(
+                    context: context,
+                    ref: ref,
+                    ids: [item.id],
+                    itemTitle: item.title,
                   ),
-                  if (!selecting)
-                    TextButton(
-                      key: Key('inbox_assign_${item.id}'),
-                      onPressed: () => _assignIds(
-                        context: context,
-                        ref: ref,
-                        ids: [item.id],
-                        itemTitle: item.title,
+                  CustomSemanticsAction(label: l10n.selectItem): () =>
+                      ref.read(inboxSelectionProvider.notifier).start(item.id),
+                },
+          child: InkWell(
+            key: Key('inbox_row_${item.id}'),
+            onTap: () {
+              if (selecting) {
+                ref.read(inboxSelectionProvider.notifier).toggle(item.id);
+              } else {
+                showInboxEditSheet(context, item);
+              }
+            },
+            onLongPress: selecting
+                ? null
+                : () =>
+                      ref.read(inboxSelectionProvider.notifier).start(item.id),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: tokens.spacing48 + 8),
+              child: Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: tokens.spacing16,
+                  vertical: tokens.spacing12,
+                ),
+                child: Row(
+                  children: [
+                    if (selecting) ...[
+                      Icon(
+                        isSelected
+                            ? Icons.check_box
+                            : Icons.check_box_outline_blank,
+                        key: Key('inbox_select_${item.id}'),
+                        color: isSelected
+                            ? colorScheme.primary
+                            : colorScheme.onSurfaceVariant,
                       ),
-                      child: Text(l10n.assign),
+                      SizedBox(width: tokens.spacing12),
+                    ],
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            item.title,
+                            style: Theme.of(context).textTheme.bodyLarge,
+                          ),
+                          if (item.description != null &&
+                              item.description!.isNotEmpty) ...[
+                            SizedBox(height: tokens.spacing4),
+                            Text(
+                              item.description!,
+                              style: Theme.of(context).textTheme.bodyMedium
+                                  ?.copyWith(
+                                    color: colorScheme.onSurfaceVariant,
+                                  ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ],
+                      ),
                     ),
-                ],
+                    if (!selecting)
+                      TextButton(
+                        key: Key('inbox_assign_${item.id}'),
+                        onPressed: () => _assignIds(
+                          context: context,
+                          ref: ref,
+                          ids: [item.id],
+                          itemTitle: item.title,
+                        ),
+                        child: Text(l10n.assign),
+                      ),
+                  ],
+                ),
               ),
             ),
           ),

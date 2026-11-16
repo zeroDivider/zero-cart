@@ -150,5 +150,6 @@
     }
   },
   "clearSelection": "Poništi izbor",
-  "assignNeedsTarget": "Izaberi prodavnicu i listu"
+  "assignNeedsTarget": "Izaberi prodavnicu i listu",
+  "selectItem": "Izaberi"
 }

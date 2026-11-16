@@ -726,11 +726,11 @@ void main() {
 
       final result = await lists.assignInbox(
         [item.id],
-        AssignInboxTarget(
-          store: const NewStore(
+        const AssignInboxTarget(
+          store: NewStore(
             StoreDraft(name: 'DM', colorKey: 'sky', address: 'Main'),
           ),
-          list: const NewList('Drugstore'),
+          list: NewList('Drugstore'),
         ),
       );
 
@@ -803,9 +803,9 @@ void main() {
       await expectLater(
         lists.assignInbox(
           [item.id],
-          AssignInboxTarget(
-            store: const NewStore(StoreDraft(name: 'DM', colorKey: 'sky')),
-            list: const NewList('   '),
+          const AssignInboxTarget(
+            store: NewStore(StoreDraft(name: 'DM', colorKey: 'sky')),
+            list: NewList('   '),
           ),
         ),
         throwsA(isA<ArgumentError>()),
