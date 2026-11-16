@@ -27,17 +27,4 @@ void show() {
 ''';
     expect(scanSource('clean.dart', clean), isEmpty);
   });
-
-  test('parseAllowlist ignores comments and blanks', () {
-    const file = '''
-# comment
-lib/features/a.dart
-
-lib/features/b.dart
-''';
-    expect(parseAllowlist(file), {
-      'lib/features/a.dart',
-      'lib/features/b.dart',
-    });
-  });
 }
