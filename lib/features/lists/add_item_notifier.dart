@@ -1,55 +1,28 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:zero_cart/core/form_submit_state.dart';
-import 'package:zero_cart/features/lists/lists_providers.dart';
 
-class AddItemState extends FormSubmitState {
-  const AddItemState({super.submitting, super.error, this.pendingScrollId});
-  const AddItemState.idle() : pendingScrollId = null, super.idle();
-
-  final String? pendingScrollId;
-}
-
-class AddItemNotifier extends Notifier<AddItemState> {
+/// Holds the id of a newly added item so [ListScreen] can scroll to it.
+///
+/// Submit and inline-error state live in [AddItemRow] (ADR-0007 / APP-014c).
+class AddItemNotifier extends Notifier<String?> {
   AddItemNotifier(this.listId);
 
   final String listId;
 
   @override
-  AddItemState build() => const AddItemState.idle();
+  String? build() => null;
 
-  Future<void> addItem({
-    required String title,
-    String? description,
-    required String errorMessage,
-  }) async {
-    if (state.submitting) {
-      return;
-    }
-    state = const AddItemState(submitting: true);
-    try {
-      final created = await ref
-          .read(listsRepositoryProvider)
-          .addItem(listId: listId, title: title, description: description);
-      state = AddItemState(pendingScrollId: created.id);
-    } on Object {
-      state = AddItemState(error: errorMessage);
-    }
+  void setPendingScroll(String id) {
+    state = id;
   }
 
   void clearPendingScroll() {
-    if (state.pendingScrollId != null) {
-      state = const AddItemState.idle();
-    }
-  }
-
-  void clearError() {
-    if (state.error != null) {
-      state = const AddItemState.idle();
+    if (state != null) {
+      state = null;
     }
   }
 }
 
 final addItemNotifierProvider = NotifierProvider.autoDispose
-    .family<AddItemNotifier, AddItemState, String>(
+    .family<AddItemNotifier, String?, String>(
       (listId) => AddItemNotifier(listId),
     );

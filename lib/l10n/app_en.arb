@@ -100,10 +100,6 @@
   "@titleRequired": {
     "description": "Inline validation error when title is empty"
   },
-  "writeFailed": "Couldn't save. Try again.",
-  "@writeFailed": {
-    "description": "Inline error when a write to the database fails"
-  },
   "removedItem": "Removed {title}",
   "@removedItem": {
     "description": "SnackBar message after removing an item",
@@ -112,10 +108,6 @@
         "type": "String"
       }
     }
-  },
-  "couldNotRestore": "Could not restore",
-  "@couldNotRestore": {
-    "description": "SnackBar when Undo fails because the list is missing or archived"
   },
   "inboxEmptyTitle": "Inbox is empty",
   "@inboxEmptyTitle": {

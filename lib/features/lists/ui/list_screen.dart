@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:zero_cart/app/router.dart';
 import 'package:zero_cart/app/theme/app_tokens.dart';
+import 'package:zero_cart/core/ui/app_messenger.dart';
 import 'package:zero_cart/core/ui/write_runner.dart';
 import 'package:zero_cart/core/widgets/async_body.dart';
 import 'package:zero_cart/core/widgets/swipe_to_remove_row.dart';
@@ -15,7 +16,7 @@ import 'package:zero_cart/features/lists/lists_providers.dart';
 import 'package:zero_cart/features/lists/lists_repository.dart';
 import 'package:zero_cart/features/lists/remove_item_undo.dart';
 import 'package:zero_cart/features/lists/ui/add_item_row.dart';
-import 'package:zero_cart/features/lists/ui/item_edit_sheet.dart';
+import 'package:zero_cart/features/lists/ui/sheets/item_edit_sheet.dart';
 import 'package:zero_cart/features/lists/ui/item_row.dart';
 import 'package:zero_cart/features/lists/ui/purchased_header.dart';
 import 'package:zero_cart/features/lists/ui/sheets/list_form_sheet.dart';
@@ -144,13 +145,15 @@ class _ListScreenBodyState extends ConsumerState<_ListScreenBody> {
   }
 
   Future<void> _applyActiveOrder(List<String> orderedActiveIds) async {
+    final l10n = AppLocalizations.of(context);
     setState(() => _optimisticActiveIds = List<String>.from(orderedActiveIds));
     try {
       await ref
           .read(listsRepositoryProvider)
           .reorderActive(list.id, orderedActiveIds);
-    } on Object {
-      // Stale or other failure: drop optimistic order; stream reloads (F6).
+    } on Object catch (error) {
+      // Drop optimistic order; stream is source of truth (F6 / ADR-0007).
+      AppMessenger.error(messageFor(l10n, error));
     } finally {
       if (mounted) {
         setState(() => _optimisticActiveIds = null);
@@ -263,7 +266,7 @@ class _ListScreenBodyState extends ConsumerState<_ListScreenBody> {
     final tokens = Theme.of(context).extension<AppTokens>()!;
     final asyncItems = ref.watch(listItemsProvider(list.id));
     final purchasedExpanded = ref.watch(purchasedExpandedProvider(list.id));
-    final addCtrl = ref.watch(addItemNotifierProvider(list.id));
+    final pendingScrollId = ref.watch(addItemNotifierProvider(list.id));
 
     return Scaffold(
       appBar: AppBar(
@@ -301,7 +304,6 @@ class _ListScreenBodyState extends ConsumerState<_ListScreenBody> {
           final activeFromDb = items.where((i) => !i.isPurchased).toList();
           final active = _activeForDisplay(activeFromDb);
           final purchased = items.where((i) => i.isPurchased).toList();
-          final pendingScrollId = addCtrl.pendingScrollId;
           if (pendingScrollId != null) {
             WidgetsBinding.instance.addPostFrameCallback((_) {
               if (mounted) {

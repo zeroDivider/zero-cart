@@ -7,7 +7,7 @@ import 'package:zero_cart/app/router.dart';
 import 'package:zero_cart/core/widgets/swipe_to_remove_row.dart';
 import 'package:zero_cart/data/database.dart';
 import 'package:zero_cart/features/lists/lists_repository.dart';
-import 'package:zero_cart/features/lists/ui/item_edit_sheet.dart';
+import 'package:zero_cart/features/lists/ui/sheets/item_edit_sheet.dart';
 import 'package:zero_cart/features/lists/ui/item_row.dart';
 import 'package:zero_cart/features/lists/ui/list_screen.dart';
 import 'package:zero_cart/features/lists/ui/sheets/list_form_sheet.dart';
@@ -956,7 +956,7 @@ void main() {
     await harness.dispose(tester);
   });
 
-  testWidgets('failed Undo after archive shows Could not restore', (
+  testWidgets('failed Undo after archive shows messageFor immediately', (
     tester,
   ) async {
     final harness = await pumpTestApp(
@@ -997,8 +997,7 @@ void main() {
     final onPressed = action.onPressed;
     expect(onPressed, isNotNull);
     onPressed();
-    rootScaffoldMessengerKey.currentState?.hideCurrentSnackBar();
-    // Restore fails on the real async timeline; [closed] needs frame pumps.
+    // AppMessenger.undo replaces Removed immediately with messageFor.
     var sawFailure = false;
     for (var i = 0; i < 20; i++) {
       await tester.runAsync(() async {
@@ -1006,12 +1005,16 @@ void main() {
       });
       await tester.pump();
       await pumpApp(tester, harness);
-      if (find.text('Could not restore').evaluate().isNotEmpty) {
+      if (find
+          .text('This list is no longer available.')
+          .evaluate()
+          .isNotEmpty) {
         sawFailure = true;
         break;
       }
     }
     expect(sawFailure, isTrue, reason: 'failed-Undo snackbar never appeared');
+    expect(find.text('Removed Jam'), findsNothing);
 
     final rows = await tester.runAsync(
       () => harness.db.select(harness.db.listItems).get(),

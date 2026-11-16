@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zero_cart/app/theme/app_tokens.dart';
 import 'package:zero_cart/core/limits.dart';
+import 'package:zero_cart/core/ui/error_messages.dart';
 import 'package:zero_cart/features/lists/add_item_notifier.dart';
+import 'package:zero_cart/features/lists/lists_providers.dart';
 import 'package:zero_cart/l10n/generated/app_localizations.dart';
 
 /// Inline quick-add row at the end of the active section (IT-1).
@@ -20,7 +22,9 @@ class _AddItemRowState extends ConsumerState<AddItemRow> {
   final _descriptionController = TextEditingController();
   final _addFocus = FocusNode();
   bool _showDetails = false;
+  bool _submitting = false;
   String? _addError;
+  String? _writeError;
 
   @override
   void dispose() {
@@ -31,27 +35,49 @@ class _AddItemRowState extends ConsumerState<AddItemRow> {
   }
 
   Future<void> _doAddItem() async {
+    if (_submitting) {
+      return;
+    }
     final l10n = AppLocalizations.of(context);
     final title = _addController.text;
     if (title.trim().isEmpty) {
-      setState(() => _addError = l10n.titleRequired);
+      setState(() {
+        _addError = l10n.titleRequired;
+        _writeError = null;
+      });
       return;
     }
-    setState(() => _addError = null);
-    await ref
-        .read(addItemNotifierProvider(widget.listId).notifier)
-        .addItem(
-          title: title,
-          description: _showDetails ? _descriptionController.text : null,
-          errorMessage: l10n.writeFailed,
-        );
-    if (!mounted) {
-      return;
-    }
-    final ctrl = ref.read(addItemNotifierProvider(widget.listId));
-    if (ctrl.error == null && !ctrl.submitting) {
+    setState(() {
+      _addError = null;
+      _writeError = null;
+      _submitting = true;
+    });
+    try {
+      final created = await ref
+          .read(listsRepositoryProvider)
+          .addItem(
+            listId: widget.listId,
+            title: title,
+            description: _showDetails ? _descriptionController.text : null,
+          );
+      if (!mounted) {
+        return;
+      }
+      ref
+          .read(addItemNotifierProvider(widget.listId).notifier)
+          .setPendingScroll(created.id);
       _addController.clear();
       _descriptionController.clear();
+      setState(() => _submitting = false);
+      _addFocus.requestFocus();
+    } on Object catch (error) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _submitting = false;
+        _writeError = messageFor(l10n, error);
+      });
       _addFocus.requestFocus();
     }
   }
@@ -60,7 +86,6 @@ class _AddItemRowState extends ConsumerState<AddItemRow> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final tokens = Theme.of(context).extension<AppTokens>()!;
-    final addCtrl = ref.watch(addItemNotifierProvider(widget.listId));
 
     return Padding(
       padding: EdgeInsets.symmetric(
@@ -77,6 +102,7 @@ class _AddItemRowState extends ConsumerState<AddItemRow> {
                   key: const Key('list_add_title'),
                   controller: _addController,
                   focusNode: _addFocus,
+                  enabled: !_submitting,
                   textInputAction: TextInputAction.done,
                   maxLength: maxItemTitleLength,
                   buildCounter:
@@ -93,19 +119,19 @@ class _AddItemRowState extends ConsumerState<AddItemRow> {
                       },
                   decoration: InputDecoration(
                     hintText: l10n.addItemHint,
-                    errorText: _addError ?? addCtrl.error,
+                    errorText: _addError ?? _writeError,
                     border: InputBorder.none,
                   ),
                   onChanged: (_) {
-                    ref
-                        .read(addItemNotifierProvider(widget.listId).notifier)
-                        .clearError();
-                    if (_addError != null) {
-                      setState(() => _addError = null);
+                    if (_addError != null || _writeError != null) {
+                      setState(() {
+                        _addError = null;
+                        _writeError = null;
+                      });
                     }
                   },
                   onSubmitted: (_) {
-                    if (!addCtrl.submitting) {
+                    if (!_submitting) {
                       _doAddItem();
                     }
                   },
@@ -113,7 +139,9 @@ class _AddItemRowState extends ConsumerState<AddItemRow> {
               ),
               TextButton(
                 key: const Key('list_add_details_toggle'),
-                onPressed: () => setState(() => _showDetails = !_showDetails),
+                onPressed: _submitting
+                    ? null
+                    : () => setState(() => _showDetails = !_showDetails),
                 child: Text(l10n.addItemDetailsToggle),
               ),
             ],
@@ -122,6 +150,7 @@ class _AddItemRowState extends ConsumerState<AddItemRow> {
             TextField(
               key: const Key('list_add_description'),
               controller: _descriptionController,
+              enabled: !_submitting,
               textInputAction: TextInputAction.done,
               maxLength: maxItemDescriptionLength,
               decoration: InputDecoration(
@@ -130,7 +159,7 @@ class _AddItemRowState extends ConsumerState<AddItemRow> {
                 border: InputBorder.none,
               ),
               onSubmitted: (_) {
-                if (!addCtrl.submitting) {
+                if (!_submitting) {
                   _doAddItem();
                 }
               },
