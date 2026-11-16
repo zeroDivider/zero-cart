@@ -95,11 +95,15 @@ class FormSheetController {
     required this.isSubmitting,
     required this.error,
     required this.clearError,
+    required this.submit,
   });
 
   final bool isSubmitting;
   final String? error;
   final VoidCallback clearError;
+
+  /// Runs the primary submit path (same as the FilledButton).
+  final VoidCallback submit;
 }
 
 class _FormSheetScaffoldState<T> extends State<FormSheetScaffold<T>> {
@@ -159,6 +163,7 @@ class _FormSheetScaffoldState<T> extends State<FormSheetScaffold<T>> {
       isSubmitting: _submitting,
       error: _error,
       clearError: _clearError,
+      submit: () => _submit(shouldPop: widget.popOnSuccess),
     );
     final secondary = widget.secondaryAction;
 

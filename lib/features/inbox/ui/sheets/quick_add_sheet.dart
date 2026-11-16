@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zero_cart/app/theme/app_tokens.dart';
 import 'package:zero_cart/core/limits.dart';
-import 'package:zero_cart/features/inbox/quick_add_notifier.dart';
+import 'package:zero_cart/core/widgets/form_sheet.dart';
+import 'package:zero_cart/features/inbox/inbox_providers.dart';
 import 'package:zero_cart/l10n/generated/app_localizations.dart';
 
 /// Opens the Quick add bottom sheet (D-02 / F1).
@@ -49,7 +50,6 @@ class _QuickAddSheetState extends ConsumerState<QuickAddSheet> {
   }
 
   void _onTitleChanged() {
-    ref.read(quickAddNotifierProvider.notifier).clearError();
     if (_titleError != null) {
       setState(() => _titleError = null);
     } else {
@@ -69,60 +69,54 @@ class _QuickAddSheetState extends ConsumerState<QuickAddSheet> {
 
   bool get _titleIsBlank => _titleController.text.trim().isEmpty;
 
-  Future<void> _submit({required bool addAnother}) async {
+  void _clearFieldsKeepFocus() {
+    _titleController.clear();
+    _descriptionController.clear();
+    _titleFocus.requestFocus();
+  }
+
+  Future<void> _onSubmit() async {
     final l10n = AppLocalizations.of(context);
     if (_titleIsBlank) {
       setState(() => _titleError = l10n.titleRequired);
-      return;
+      throw const FormValidationAbort();
     }
     setState(() => _titleError = null);
-    final ok = await ref
-        .read(quickAddNotifierProvider.notifier)
-        .submit(
+    await ref
+        .read(inboxRepositoryProvider)
+        .add(
           title: _titleController.text,
           description: _descriptionController.text,
-          errorMessage: l10n.writeFailed,
         );
-    if (!ok || !mounted) {
-      return;
-    }
-    if (addAnother) {
-      _titleController.clear();
-      _descriptionController.clear();
-      _titleFocus.requestFocus();
-    } else {
-      Navigator.of(context).pop();
-    }
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final tokens = Theme.of(context).extension<AppTokens>()!;
-    final ctrl = ref.watch(quickAddNotifierProvider);
-    final titleIsBlank = _titleIsBlank;
-    final canSubmit = !titleIsBlank && !ctrl.submitting;
 
-    return SafeArea(
-      top: false,
-      child: Padding(
-        padding: EdgeInsets.fromLTRB(
-          tokens.spacing16,
-          tokens.spacing8,
-          tokens.spacing16,
-          tokens.spacing16,
-        ),
-        child: Column(
+    return FormSheetScaffold<void>(
+      title: Text(l10n.quickAdd),
+      submitLabel: l10n.add,
+      submitKey: const Key('quick_add_submit'),
+      onSubmit: _onSubmit,
+      secondaryAction: FormSheetSecondaryAction.submit(
+        label: l10n.addAnother,
+        key: const Key('quick_add_another'),
+        popOnSuccess: false,
+        onKeepOpenSuccess: _clearFieldsKeepFocus,
+      ),
+      body: (context, controller) {
+        return Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(l10n.quickAdd, style: Theme.of(context).textTheme.titleLarge),
-            SizedBox(height: tokens.spacing16),
             TextField(
               key: const Key('quick_add_title'),
               controller: _titleController,
               focusNode: _titleFocus,
               autofocus: true,
+              enabled: !controller.isSubmitting,
               textInputAction: TextInputAction.done,
               maxLength: maxItemTitleLength,
               buildCounter: _titleCounter,
@@ -131,9 +125,10 @@ class _QuickAddSheetState extends ConsumerState<QuickAddSheet> {
                 hintText: l10n.itemTitleHint,
                 errorText: _titleError,
               ),
+              onChanged: (_) => controller.clearError(),
               onSubmitted: (_) {
-                if (canSubmit || titleIsBlank) {
-                  _submit(addAnother: false);
+                if (!controller.isSubmitting) {
+                  controller.submit();
                 }
               },
             ),
@@ -141,6 +136,7 @@ class _QuickAddSheetState extends ConsumerState<QuickAddSheet> {
             TextField(
               key: const Key('quick_add_description'),
               controller: _descriptionController,
+              enabled: !controller.isSubmitting,
               textInputAction: TextInputAction.done,
               maxLength: maxItemDescriptionLength,
               decoration: InputDecoration(
@@ -148,45 +144,16 @@ class _QuickAddSheetState extends ConsumerState<QuickAddSheet> {
                 hintText: l10n.itemDescriptionHint,
                 counterText: '',
               ),
+              onChanged: (_) => controller.clearError(),
               onSubmitted: (_) {
-                if (canSubmit || titleIsBlank) {
-                  _submit(addAnother: false);
+                if (!controller.isSubmitting) {
+                  controller.submit();
                 }
               },
             ),
-            if (ctrl.error != null) ...[
-              SizedBox(height: tokens.spacing8),
-              Text(
-                ctrl.error!,
-                style: Theme.of(context).textTheme.bodySmall
-                    ?.copyWith(color: Theme.of(context).colorScheme.error),
-              ),
-            ],
-            SizedBox(height: tokens.spacing16),
-            Row(
-              children: [
-                TextButton(
-                  key: const Key('quick_add_another'),
-                  onPressed: canSubmit
-                      ? () => _submit(addAnother: true)
-                      : (titleIsBlank ? () => _submit(addAnother: true) : null),
-                  child: Text(l10n.addAnother),
-                ),
-                const Spacer(),
-                FilledButton(
-                  key: const Key('quick_add_submit'),
-                  onPressed: canSubmit
-                      ? () => _submit(addAnother: false)
-                      : (titleIsBlank
-                            ? () => _submit(addAnother: false)
-                            : null),
-                  child: Text(l10n.add),
-                ),
-              ],
-            ),
           ],
-        ),
-      ),
+        );
+      },
     );
   }
 

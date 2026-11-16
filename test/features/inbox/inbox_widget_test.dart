@@ -8,8 +8,8 @@ import 'package:zero_cart/data/database.dart';
 import 'package:zero_cart/data/providers.dart';
 import 'package:zero_cart/features/inbox/inbox_providers.dart';
 import 'package:zero_cart/features/inbox/inbox_repository.dart';
-import 'package:zero_cart/features/inbox/ui/inbox_edit_sheet.dart';
-import 'package:zero_cart/features/inbox/ui/quick_add_sheet.dart';
+import 'package:zero_cart/features/inbox/ui/sheets/inbox_edit_sheet.dart';
+import 'package:zero_cart/features/inbox/ui/sheets/quick_add_sheet.dart';
 
 import '../../support/test_app.dart';
 

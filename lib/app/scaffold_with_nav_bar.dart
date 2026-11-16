@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:zero_cart/core/widgets/quick_add_fab.dart';
 import 'package:zero_cart/features/inbox/inbox_providers.dart';
-import 'package:zero_cart/features/inbox/ui/quick_add_sheet.dart';
+import 'package:zero_cart/features/inbox/ui/sheets/quick_add_sheet.dart';
 import 'package:zero_cart/l10n/generated/app_localizations.dart';
 
 /// Three-tab shell with [NavigationBar] (D-01). Inbox badge shows count (IB-4).

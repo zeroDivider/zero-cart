@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zero_cart/app/theme/app_tokens.dart';
-import 'package:zero_cart/core/widgets/remove_undo_snackbar.dart';
+import 'package:zero_cart/core/ui/app_messenger.dart';
+import 'package:zero_cart/core/ui/write_runner.dart';
+import 'package:zero_cart/core/widgets/async_body.dart';
 import 'package:zero_cart/core/widgets/swipe_to_remove_row.dart';
 import 'package:zero_cart/data/database.dart';
 import 'package:zero_cart/features/inbox/inbox_providers.dart';
 import 'package:zero_cart/features/inbox/inbox_repository.dart';
-import 'package:zero_cart/features/inbox/ui/inbox_edit_sheet.dart';
-import 'package:zero_cart/features/inbox/ui/quick_add_sheet.dart';
+import 'package:zero_cart/features/inbox/ui/sheets/inbox_edit_sheet.dart';
+import 'package:zero_cart/features/inbox/ui/sheets/quick_add_sheet.dart';
 import 'package:zero_cart/l10n/generated/app_localizations.dart';
 
 /// Inbox tab: newest-first capture backlog with edit and swipe-remove.
@@ -21,17 +23,15 @@ class InboxScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.navInbox)),
-      body: asyncItems.when(
-        data: (items) {
+      body: AsyncBody(
+        value: asyncItems,
+        onRetry: () => ref.invalidate(inboxItemsProvider),
+        builder: (context, items) {
           if (items.isEmpty) {
             return const _InboxEmptyState();
           }
           return _InboxList(items: items);
         },
-        // Static placeholder: an indeterminate progress indicator never settles
-        // under widget-test pumpAndSettle.
-        loading: () => const SizedBox.shrink(),
-        error: (error, _) => Center(child: Text('$error')),
       ),
     );
   }
@@ -142,11 +142,14 @@ class _InboxList extends ConsumerWidget {
     required InboxRepository repository,
     required InboxItem item,
   }) async {
-    final snapshot = await repository.remove(item.id);
-    showRemoveUndoSnackBar(
-      message: l10n.removedItem(snapshot.title),
-      undoLabel: l10n.undo,
-      onUndo: () => repository.restore(snapshot),
-    );
+    await runWrite(() async {
+      final snapshot = await repository.remove(item.id);
+      AppMessenger.undo(
+        message: l10n.removedItem(snapshot.title),
+        undoLabel: l10n.undo,
+        l10n: l10n,
+        onUndo: () => repository.restore(snapshot),
+      );
+    }, l10n: l10n);
   }
 }
