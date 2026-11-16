@@ -42,7 +42,7 @@ WishlistRepository _wishlist(TestAppHarness harness, {String id = 'wish-1'}) {
   return WishlistRepository(
     database: harness.db,
     now: () => DateTime.utc(2026, 1, 1, 12, n++),
-    newId: () => '$id-${n}',
+    newId: () => '$id-$n',
   );
 }
 
@@ -167,7 +167,7 @@ void main() {
     expect(find.text('Removed Heads soft'), findsOneWidget);
 
     final snackBar = tester.widget<SnackBar>(find.byType(SnackBar));
-    snackBar.action!.onPressed!();
+    snackBar.action!.onPressed();
     await tester.runAsync(() async {
       await Future<void>.delayed(const Duration(milliseconds: 50));
     });
@@ -238,7 +238,7 @@ void main() {
     expect(find.text('Heads'), findsOneWidget);
 
     final snackBar = tester.widget<SnackBar>(find.byType(SnackBar));
-    snackBar.action!.onPressed!();
+    snackBar.action!.onPressed();
     await pumpApp(tester, harness);
     expect(find.byType(ListScreen), findsOneWidget);
     await harness.dispose(tester);
