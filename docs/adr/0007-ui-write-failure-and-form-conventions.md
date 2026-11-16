@@ -56,3 +56,7 @@ Approved during APP-014c migration:
 
 1. **`FormSheetScaffold` extensions.** The scaffold may take an optional `secondaryAction` (a second submit path such as Quick-add “Add another”, or a custom button such as Remove) and per-path `popOnSuccess`. Primary submit still defaults to closing on success. Secondary submit with `popOnSuccess: false` keeps the sheet open, clears submitting state, and may run an `onKeepOpenSuccess` callback (clear fields and restore focus). On failure the sheet stays open with the inline `messageFor` error and input is kept.
 2. **Inline non-sheet fields.** Rows that are not modal sheets (for example the list add-item row) follow the same inline-error rule without a shared abstraction: local `StatefulWidget` state owns submitting and the error string, mapped with `messageFor`. Success clears the field, keeps focus, and may set a scroll target; failure keeps the text, shows the inline error, and keeps focus.
+
+## Amendment (APP-015)
+
+Owner confirmed 2026-11-16: from APP-015 onward, tasks follow the APP-014 / 014a–c conventions in this ADR without re-litigating them — sheets under `<feature>/ui/sheets/`, FormSheetScaffold inline errors on sheet Confirm (including assign), `runWrite` + snackbar only for direct actions. Plan Component paths that still say `ui/foo_sheet.dart` mean `ui/sheets/foo_sheet.dart`.
