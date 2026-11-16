@@ -232,11 +232,13 @@ class _AssignSheetState extends ConsumerState<AssignSheet> {
                               ? null
                               : () => _selectStore(store.id),
                         ),
-                      _ChoiceChip(
+                      ActionChip(
                         key: const Key('assign_new_store'),
-                        label: l10n.newStoreAction,
-                        selected: _newStoreDraft != null,
-                        onSelected: controller.isSubmitting
+                        label: Text(l10n.newStoreAction),
+                        avatar: _newStoreDraft != null
+                            ? const Icon(Icons.check, size: 18)
+                            : null,
+                        onPressed: controller.isSubmitting
                             ? null
                             : _pickNewStore,
                       ),
@@ -273,11 +275,13 @@ class _AssignSheetState extends ConsumerState<AssignSheet> {
                                 : () => _selectList(progress.list.id),
                           ),
                       if (_hasStore)
-                        _ChoiceChip(
+                        ActionChip(
                           key: const Key('assign_new_list'),
-                          label: l10n.newListAction,
-                          selected: _newListName != null,
-                          onSelected: controller.isSubmitting
+                          label: Text(l10n.newListAction),
+                          avatar: _newListName != null
+                              ? const Icon(Icons.check, size: 18)
+                              : null,
+                          onPressed: controller.isSubmitting
                               ? null
                               : _pickNewList,
                         ),
