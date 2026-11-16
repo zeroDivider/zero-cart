@@ -25,7 +25,6 @@
   "undo": "Opozovi",
   "editItem": "Izmeni stavku",
   "titleRequired": "Unesi naziv",
-  "writeFailed": "Nije sačuvano. Pokušaj ponovo.",
   "removedItem": "Uklonjeno {title}",
   "@removedItem": {
     "placeholders": {
@@ -34,7 +33,6 @@
       }
     }
   },
-  "couldNotRestore": "Nije moguće vratiti",
   "inboxEmptyTitle": "Sanduče je prazno",
   "inboxEmptyBody": "Dodaj stvari čim ti padnu na pamet.",
   "newStore": "Nova prodavnica",
