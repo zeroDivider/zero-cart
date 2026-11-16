@@ -934,7 +934,6 @@ void main() {
         title: 'Copy edited',
         description: 'changed',
       );
-      await lists.removeItem(copy.id);
       final afterListEdit = await wishlist.watch(store.id).first;
       expect(afterListEdit.single.title, 'Heads');
       expect(afterListEdit.single.description, 'soft');
@@ -944,10 +943,17 @@ void main() {
         title: 'Wish edited',
         description: 'new',
       );
-      await lists.copyWishlistItems([wish.id], ExistingList(list.id));
-      final secondCopy = (await lists.watchItems(list.id).first).single;
-      expect(secondCopy.title, 'Wish edited');
-      expect(secondCopy.description, 'new');
+      final afterWishEdit = await lists.watchItems(list.id).first;
+      expect(afterWishEdit.single.id, copy.id);
+      expect(afterWishEdit.single.title, 'Copy edited');
+      expect(afterWishEdit.single.description, 'changed');
+
+      await wishlist.remove(wish.id);
+      expect(await wishlist.watch(store.id).first, isEmpty);
+      expect((await lists.watchItems(list.id).first).single.id, copy.id);
+
+      await lists.removeItem(copy.id);
+      expect(await lists.watchItems(list.id).first, isEmpty);
     });
 
     test(
@@ -966,6 +972,39 @@ void main() {
         expect(await wishlist.watch(store.id).first, hasLength(1));
       },
     );
+
+    test('mid-transaction id failure rolls back new list and items', () async {
+      final store = await stores.create(name: 'DM', colorKey: 'sky');
+      final wish = await wishlist.add(storeId: store.id, title: 'Heads');
+
+      var idsIssued = 0;
+      final flakyLists = ListsRepository(
+        database: db,
+        now: () {
+          if (clockTicks.isEmpty) {
+            fail('clock exhausted');
+          }
+          return clockTicks.removeAt(0);
+        },
+        newId: () {
+          idsIssued += 1;
+          // NewList consumes id 1; first list item would be id 2.
+          if (idsIssued == 2) {
+            throw StateError('forced id failure');
+          }
+          return 'flaky-$idsIssued';
+        },
+      );
+
+      await expectLater(
+        flakyLists.copyWishlistItems([wish.id], const NewList('Someday')),
+        throwsA(isA<StateError>()),
+      );
+
+      expect(await lists.watchActiveForStore(store.id).first, isEmpty);
+      expect(await db.select(db.listItems).get(), isEmpty);
+      expect(await wishlist.watch(store.id).first, hasLength(1));
+    });
 
     test(
       'rejects archived list, archived store, other store, missing id',
