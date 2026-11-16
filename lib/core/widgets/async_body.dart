@@ -24,7 +24,10 @@ class AsyncBody<T> extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return value.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
+      loading: () => ColoredBox(
+        color: Theme.of(context).colorScheme.surface,
+        child: const Center(child: CircularProgressIndicator()),
+      ),
       error: (error, _) => _AsyncError(error: error, onRetry: onRetry),
       data: (data) => builder(context, data),
     );
