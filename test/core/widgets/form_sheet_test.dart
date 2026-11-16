@@ -149,4 +149,154 @@ void main() {
     expect(await resultFuture, 'draft-value');
     expect(find.byType(FormSheetScaffold<String>), findsNothing);
   });
+
+  testWidgets('secondary submit keeps sheet open and calls onKeepOpenSuccess', (
+    tester,
+  ) async {
+    late AppLocalizations l10n;
+    var keepOpenCalls = 0;
+    await tester.pumpWidget(
+      _app(
+        home: Builder(
+          builder: (context) {
+            l10n = AppLocalizations.of(context);
+            return Scaffold(
+              body: ElevatedButton(
+                onPressed: () {
+                  showModalBottomSheet<void>(
+                    context: context,
+                    isScrollControlled: true,
+                    builder: (sheetContext) {
+                      return FormSheetScaffold<void>(
+                        title: const Text('Quick add'),
+                        submitLabel: l10n.add,
+                        onSubmit: () async {},
+                        secondaryAction: FormSheetSecondaryAction.submit(
+                          label: l10n.addAnother,
+                          key: const Key('secondary_submit'),
+                          popOnSuccess: false,
+                          onKeepOpenSuccess: () => keepOpenCalls++,
+                        ),
+                        body: (context, controller) => const SizedBox.shrink(),
+                      );
+                    },
+                  );
+                },
+                child: const Text('Open'),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Open'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('secondary_submit')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Quick add'), findsOneWidget);
+    expect(keepOpenCalls, 1);
+  });
+
+  testWidgets('secondary submit failure shows inline error and stays open', (
+    tester,
+  ) async {
+    late AppLocalizations l10n;
+    await tester.pumpWidget(
+      _app(
+        home: Builder(
+          builder: (context) {
+            l10n = AppLocalizations.of(context);
+            return Scaffold(
+              body: ElevatedButton(
+                onPressed: () {
+                  showModalBottomSheet<void>(
+                    context: context,
+                    isScrollControlled: true,
+                    builder: (sheetContext) {
+                      return FormSheetScaffold<void>(
+                        title: const Text('Quick add'),
+                        submitLabel: l10n.add,
+                        onSubmit: () async {
+                          throw Exception('write failed');
+                        },
+                        secondaryAction: FormSheetSecondaryAction.submit(
+                          label: l10n.addAnother,
+                          key: const Key('secondary_submit'),
+                          popOnSuccess: false,
+                        ),
+                        body: (context, controller) => const SizedBox.shrink(),
+                      );
+                    },
+                  );
+                },
+                child: const Text('Open'),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Open'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('secondary_submit')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Quick add'), findsOneWidget);
+    expect(find.text(l10n.errorGeneric), findsOneWidget);
+  });
+
+  testWidgets('secondary button calls onPressed without submitting', (
+    tester,
+  ) async {
+    late AppLocalizations l10n;
+    var pressed = 0;
+    var submitted = 0;
+    await tester.pumpWidget(
+      _app(
+        home: Builder(
+          builder: (context) {
+            l10n = AppLocalizations.of(context);
+            return Scaffold(
+              body: ElevatedButton(
+                onPressed: () {
+                  showModalBottomSheet<void>(
+                    context: context,
+                    isScrollControlled: true,
+                    builder: (sheetContext) {
+                      return FormSheetScaffold<void>(
+                        title: const Text('Edit'),
+                        submitLabel: l10n.save,
+                        onSubmit: () async {
+                          submitted++;
+                        },
+                        secondaryAction: FormSheetSecondaryAction.button(
+                          label: l10n.remove,
+                          key: const Key('secondary_button'),
+                          onPressed: () => pressed++,
+                        ),
+                        body: (context, controller) => const SizedBox.shrink(),
+                      );
+                    },
+                  );
+                },
+                child: const Text('Open'),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Open'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('secondary_button')));
+    await tester.pumpAndSettle();
+
+    expect(pressed, 1);
+    expect(submitted, 0);
+    expect(find.text('Edit'), findsOneWidget);
+  });
 }

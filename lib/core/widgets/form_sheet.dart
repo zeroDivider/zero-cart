@@ -11,12 +11,48 @@ class FormValidationAbort implements Exception {
   const FormValidationAbort();
 }
 
+/// Optional left-side action for [FormSheetScaffold] (ADR-0007 amendment).
+///
+/// Use [FormSheetSecondaryAction.submit] for a second submit path (e.g. Add
+/// another) or [FormSheetSecondaryAction.button] for a custom action (e.g.
+/// Remove) that does not run [FormSheetScaffold.onSubmit].
+class FormSheetSecondaryAction {
+  /// Runs [FormSheetScaffold.onSubmit]; pops only when [popOnSuccess] is true.
+  const FormSheetSecondaryAction.submit({
+    required this.label,
+    this.key,
+    this.popOnSuccess = false,
+    this.onKeepOpenSuccess,
+  }) : onPressed = null,
+       _submits = true;
+
+  /// Calls [onPressed] without running submit (disabled while submitting).
+  const FormSheetSecondaryAction.button({
+    required this.label,
+    required VoidCallback this.onPressed,
+    this.key,
+  }) : popOnSuccess = false,
+       onKeepOpenSuccess = null,
+       _submits = false;
+
+  final String label;
+  final Key? key;
+  final bool popOnSuccess;
+  final VoidCallback? onPressed;
+
+  /// Called after a successful secondary submit when [popOnSuccess] is false.
+  final VoidCallback? onKeepOpenSuccess;
+
+  final bool _submits;
+}
+
 /// Shared bottom-sheet form shell: submitting state, inline error, close on
 /// success (ADR-0007).
 ///
 /// [onSubmit] performs the write (or returns a draft and writes nothing).
-/// On success the sheet pops with the result; on failure it stays open and
-/// shows a localised inline error. Actions are disabled while submitting.
+/// On success the sheet pops with the result when [popOnSuccess] is true; on
+/// failure it stays open and shows a localised inline error. Actions are
+/// disabled while submitting.
 class FormSheetScaffold<T> extends StatefulWidget {
   const FormSheetScaffold({
     super.key,
@@ -25,6 +61,8 @@ class FormSheetScaffold<T> extends StatefulWidget {
     required this.onSubmit,
     required this.body,
     this.submitKey,
+    this.popOnSuccess = true,
+    this.secondaryAction,
   });
 
   final Widget title;
@@ -39,6 +77,13 @@ class FormSheetScaffold<T> extends StatefulWidget {
 
   /// Optional key for the submit button (widget tests).
   final Key? submitKey;
+
+  /// When true (default), pops with the submit result after a successful
+  /// primary submit. Secondary submit uses its own [FormSheetSecondaryAction.popOnSuccess].
+  final bool popOnSuccess;
+
+  /// Optional TextButton shown to the left of the primary submit.
+  final FormSheetSecondaryAction? secondaryAction;
 
   @override
   State<FormSheetScaffold<T>> createState() => _FormSheetScaffoldState<T>();
@@ -67,7 +112,10 @@ class _FormSheetScaffoldState<T> extends State<FormSheetScaffold<T>> {
     }
   }
 
-  Future<void> _submit() async {
+  Future<void> _submit({
+    required bool shouldPop,
+    VoidCallback? onKeepOpenSuccess,
+  }) async {
     if (_submitting) {
       return;
     }
@@ -81,7 +129,12 @@ class _FormSheetScaffoldState<T> extends State<FormSheetScaffold<T>> {
       if (!mounted) {
         return;
       }
-      Navigator.of(context).pop(result);
+      if (shouldPop) {
+        Navigator.of(context).pop(result);
+      } else {
+        setState(() => _submitting = false);
+        onKeepOpenSuccess?.call();
+      }
     } on FormValidationAbort {
       if (!mounted) {
         return;
@@ -107,6 +160,52 @@ class _FormSheetScaffoldState<T> extends State<FormSheetScaffold<T>> {
       error: _error,
       clearError: _clearError,
     );
+    final secondary = widget.secondaryAction;
+
+    final primaryButton = FilledButton(
+      key: widget.submitKey,
+      onPressed: _submitting
+          ? null
+          : () => _submit(shouldPop: widget.popOnSuccess),
+      child: _submitting
+          ? SizedBox(
+              height: tokens.spacing24,
+              width: tokens.spacing24,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: theme.colorScheme.onPrimary,
+              ),
+            )
+          : Text(widget.submitLabel),
+    );
+
+    final Widget actions;
+    if (secondary == null) {
+      actions = primaryButton;
+    } else {
+      final VoidCallback? secondaryPressed;
+      if (_submitting) {
+        secondaryPressed = null;
+      } else if (secondary._submits) {
+        secondaryPressed = () => _submit(
+          shouldPop: secondary.popOnSuccess,
+          onKeepOpenSuccess: secondary.onKeepOpenSuccess,
+        );
+      } else {
+        secondaryPressed = secondary.onPressed;
+      }
+      actions = Row(
+        children: [
+          TextButton(
+            key: secondary.key,
+            onPressed: secondaryPressed,
+            child: Text(secondary.label),
+          ),
+          const Spacer(),
+          primaryButton,
+        ],
+      );
+    }
 
     return PopScope(
       canPop: !_submitting,
@@ -139,20 +238,7 @@ class _FormSheetScaffoldState<T> extends State<FormSheetScaffold<T>> {
                 ),
               ],
               SizedBox(height: tokens.spacing16),
-              FilledButton(
-                key: widget.submitKey,
-                onPressed: _submitting ? null : _submit,
-                child: _submitting
-                    ? SizedBox(
-                        height: tokens.spacing24,
-                        width: tokens.spacing24,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: theme.colorScheme.onPrimary,
-                        ),
-                      )
-                    : Text(widget.submitLabel),
-              ),
+              actions,
             ],
           ),
         ),
