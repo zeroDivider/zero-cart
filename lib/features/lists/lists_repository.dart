@@ -84,6 +84,17 @@ ORDER BY sl.created_at ASC, sl.id ASC
         .map((rows) => rows.isEmpty ? null : rows.first);
   }
 
+  /// Active lists across all stores, most recently updated first (D-16).
+  Stream<List<ShoppingList>> watchActiveByRecency() {
+    return (_db.select(_db.shoppingLists)
+          ..where((t) => t.archivedAt.isNull())
+          ..orderBy([
+            (t) => OrderingTerm.desc(t.updatedAt),
+            (t) => OrderingTerm.desc(t.id),
+          ]))
+        .watch();
+  }
+
   /// Creates an empty active list. Rejects archived or missing stores.
   Future<ShoppingList> create({required String storeId, required String name}) {
     return _db.transaction(() async {

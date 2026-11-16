@@ -22,6 +22,22 @@ abstract final class AppMessenger {
     _show(SnackBar(content: Text(message)));
   }
 
+  /// Info snackbar with a single action (e.g. Open after assign).
+  static void action({
+    required String message,
+    required String actionLabel,
+    required VoidCallback onPressed,
+    Duration duration = const Duration(seconds: 5),
+  }) {
+    _show(
+      SnackBar(
+        content: Text(message),
+        duration: duration,
+        action: SnackBarAction(label: actionLabel, onPressed: onPressed),
+      ),
+    );
+  }
+
   /// Undo snackbar. [onUndo] must capture repositories, not a disposed [ref].
   ///
   /// If [onUndo] throws, an error snackbar replaces this one immediately
