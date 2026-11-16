@@ -49,3 +49,10 @@ Four small shared widgets and helpers to maintain; a migration cost (APP-014a to
 ## Reconsider if
 
 A second platform surface appears (desktop, widgets), or the number of form types makes a form-state library worthwhile.
+
+## Amendment (APP-014c)
+
+Approved during APP-014c migration:
+
+1. **`FormSheetScaffold` extensions.** The scaffold may take an optional `secondaryAction` (a second submit path such as Quick-add “Add another”, or a custom button such as Remove) and per-path `popOnSuccess`. Primary submit still defaults to closing on success. Secondary submit with `popOnSuccess: false` keeps the sheet open, clears submitting state, and may run an `onKeepOpenSuccess` callback (clear fields and restore focus). On failure the sheet stays open with the inline `messageFor` error and input is kept.
+2. **Inline non-sheet fields.** Rows that are not modal sheets (for example the list add-item row) follow the same inline-error rule without a shared abstraction: local `StatefulWidget` state owns submitting and the error string, mapped with `messageFor`. Success clears the field, keeps focus, and may set a scroll target; failure keeps the text, shows the inline error, and keeps focus.
