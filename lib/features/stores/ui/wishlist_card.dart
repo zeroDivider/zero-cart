@@ -20,59 +20,48 @@ class StoreWishlistCard extends ConsumerWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final asyncCount = ref.watch(wishlistCountProvider(storeId));
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Text(
-          l10n.storeWishlistSection,
-          style: Theme.of(context).textTheme.titleMedium,
-        ),
-        SizedBox(height: tokens.spacing8),
-        AsyncBody(
-          value: asyncCount,
-          onRetry: () => ref.invalidate(wishlistCountProvider(storeId)),
-          builder: (context, count) {
-            return Semantics(
-              button: true,
-              label: l10n.wishlistCardSemantics(count),
-              child: Material(
-                color: colorScheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(tokens.radiusMd),
-                child: InkWell(
-                  key: const Key('store_wishlist_card'),
-                  borderRadius: BorderRadius.circular(tokens.radiusMd),
-                  onTap: () =>
-                      context.push(AppRoutes.wishlistLocation(storeId)),
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(minHeight: tokens.spacing48),
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: tokens.spacing16,
-                        vertical: tokens.spacing12,
+    return AsyncBody(
+      value: asyncCount,
+      onRetry: () => ref.invalidate(wishlistCountProvider(storeId)),
+      builder: (context, count) {
+        return Semantics(
+          button: true,
+          label: l10n.wishlistCardSemantics(count),
+          child: Material(
+            color: colorScheme.surfaceContainerHighest,
+            borderRadius: BorderRadius.circular(tokens.radiusMd),
+            child: InkWell(
+              key: const Key('store_wishlist_card'),
+              borderRadius: BorderRadius.circular(tokens.radiusMd),
+              onTap: () => context.push(AppRoutes.wishlistLocation(storeId)),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minHeight: tokens.spacing48),
+                child: Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: tokens.spacing16,
+                    vertical: tokens.spacing12,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        l10n.storeWishlistSection,
+                        style: Theme.of(context).textTheme.titleSmall,
                       ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            l10n.storeWishlistSection,
-                            style: Theme.of(context).textTheme.titleSmall,
-                          ),
-                          SizedBox(height: tokens.spacing4),
-                          Text(
-                            l10n.wishlistItemsForSomeday(count),
-                            style: Theme.of(context).textTheme.bodyMedium
-                                ?.copyWith(color: colorScheme.onSurfaceVariant),
-                          ),
-                        ],
+                      SizedBox(height: tokens.spacing4),
+                      Text(
+                        l10n.wishlistItemsForSomeday(count),
+                        style: Theme.of(context).textTheme.bodyMedium
+                            ?.copyWith(color: colorScheme.onSurfaceVariant),
                       ),
-                    ),
+                    ],
                   ),
                 ),
               ),
-            );
-          },
-        ),
-      ],
+            ),
+          ),
+        );
+      },
     );
   }
 }
