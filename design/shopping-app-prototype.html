@@ -85,7 +85,7 @@ const G=(v,i)=>`data-v="${v}" data-i="${i??''}"`;
 const tp=(t,back,r='')=>`<div class="top">${back?B('back','←','ib','aria-label="Back"'):''}<h1>${t}</h1>${r}</div>`;
 const free=()=>Object.keys(C).find(k=>!aSt().some(s=>s.c==k))||'sky';
 const empty=(t,p,b='')=>`<div class="empty"><div class="disp">${t}</div><p>${p}</p>${b}</div>`;
-const shareTxt=l=>[LI(l).n,...its(l).filter(i=>!i.p).map(i=>i.t+(i.d?' - '+i.d:''))].join('\n');
+const shareTxt=l=>{const rows=its(l).filter(i=>!i.p).map(i=>i.t+(i.d?' - '+i.d:''));return rows.length?[LI(l).n,'---',...rows].join('\n'):LI(l).n;};
 
 const home=()=>{const g=aSt();
 return `<div class="top"><div class="logo">ZeroCart<i>.</i></div>${B('go','⚙','ib',G('set')+' aria-label="Settings"')}</div><div class="body">`+

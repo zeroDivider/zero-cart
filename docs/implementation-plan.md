@@ -110,7 +110,7 @@ Instruction to give Cursor for each task: 'Implement task APP-0NN according to t
 - **Requirements:** `core/limits.dart` (title 50, description 70, list name 60, store name 40); `core/text_normalize.dart` (trim, newlines to spaces, clamp, empty description to null); `core/ids.dart` (UUID v4 wrapper); `core/clock.dart` (injectable now); `core/ordering.dart` with `computeDenseReorder(allItemsInOrder, orderedActiveIds)` per D-06, returning only changed positions and throwing a typed stale-order error when the id sets differ; `core/share_text.dart` with `formatShareText(listName, items)` per D-20.
 - **Components:** `lib/core/`, `test/core/`.
 - **Depends on:** APP-004.
-- **Acceptance:** reorder tests cover purchased items in the middle, ties, a single item, no change, stale input; share text tests cover empty description, no unpurchased items, special characters and emoji (copied verbatim), and the exact format `List name` newline `Title - Description`.
+- **Acceptance:** reorder tests cover purchased items in the middle, ties, a single item, no change, stale input; share text tests cover empty description, no unpurchased items, special characters and emoji (copied verbatim), and the exact format `List name` newline `---` newline `Title - Description`.
 - **Verify:** unit tests.
 - **Docs:** none.
 
@@ -341,7 +341,7 @@ Future<FinishListResult> finishList(String listId,
 ### APP-018 Share a list
 
 - **Context:** plain-text sharing (D-20, PRD SH-1).
-- **Requirements:** add share\_plus. A thin `ShareService` wraps the platform call so tests can fake it. List screen share icon builds the text with `formatShareText` (list name first line, then unpurchased items in position order as `Title` or `Title - Description`). With nothing to share, show `AppMessenger.info` 'Nothing left to share' and do not open the share sheet. Always pass the button's rectangle as the share origin (required on iPad, harmless elsewhere). Platform share failures use `AppMessenger.error` / `messageFor` (no `ScaffoldMessenger.of`).
+- **Requirements:** add share\_plus. A thin `ShareService` wraps the platform call so tests can fake it. List screen share icon builds the text with `formatShareText` (list name, then `---`, then unpurchased items in position order as `Title` or `Title - Description`). With nothing to share, show `AppMessenger.info` 'Nothing left to share' and do not open the share sheet. Always pass the button's rectangle as the share origin (required on iPad, harmless elsewhere). Platform share failures use `AppMessenger.error` / `messageFor` (no `ScaffoldMessenger.of`).
 - **Components:** `core/share_service.dart`, `features/lists/ui/list_screen.dart`.
 - **Depends on:** APP-017b, APP-007.
 - **Reuse:** `lib/core/share_text.dart` (`formatShareText`); `lib/core/ui/app_messenger.dart`; `lib/features/lists/ui/list_screen.dart`; `listItemsProvider` / `ListsRepository.watchItems`.
