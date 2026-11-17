@@ -836,10 +836,11 @@ void main() {
 
     expect(find.text('List finished'), findsNothing);
     expect(find.text(_genericError), findsOneWidget);
+    final listId = list.id;
     final row = await tester.runAsync(
       () => (harness.db.select(
         harness.db.shoppingLists,
-      )..where((t) => t.id.equals(list!.id))).getSingle(),
+      )..where((t) => t.id.equals(listId))).getSingle(),
     );
     expect(row!.archivedAt, isNotNull);
     await harness.dispose(tester);
