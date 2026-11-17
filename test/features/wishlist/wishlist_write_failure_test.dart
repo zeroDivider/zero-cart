@@ -10,6 +10,7 @@ import 'package:zero_cart/features/lists/lists_repository.dart';
 import 'package:zero_cart/features/stores/stores_repository.dart';
 import 'package:zero_cart/features/wishlist/ui/sheets/copy_to_list_sheet.dart';
 import 'package:zero_cart/features/wishlist/ui/sheets/wishlist_add_sheet.dart';
+import 'package:zero_cart/features/wishlist/ui/sheets/wishlist_edit_sheet.dart';
 import 'package:zero_cart/features/wishlist/wishlist_providers.dart';
 import 'package:zero_cart/features/wishlist/wishlist_repository.dart';
 
@@ -23,9 +24,11 @@ class _ThrowingWishlistRepository extends WishlistRepository {
     required super.now,
     required super.newId,
     this.throwOnAdd = false,
+    this.throwOnUpdate = false,
   });
 
   final bool throwOnAdd;
+  final bool throwOnUpdate;
 
   @override
   Future<WishlistItem> add({
@@ -37,6 +40,18 @@ class _ThrowingWishlistRepository extends WishlistRepository {
       throw Exception('add failed');
     }
     return super.add(storeId: storeId, title: title, description: description);
+  }
+
+  @override
+  Future<WishlistItem> update({
+    required String id,
+    required String title,
+    String? description,
+  }) {
+    if (throwOnUpdate) {
+      throw Exception('update failed');
+    }
+    return super.update(id: id, title: title, description: description);
   }
 }
 
@@ -71,7 +86,10 @@ Future<void> _tapButton(
   await pumpApp(tester, harness);
 }
 
-List<Override> _wishlistOverrides({required bool throwOnAdd}) {
+List<Override> _wishlistOverrides({
+  bool throwOnAdd = false,
+  bool throwOnUpdate = false,
+}) {
   return [
     wishlistRepositoryProvider.overrideWith((ref) {
       return _ThrowingWishlistRepository(
@@ -79,12 +97,80 @@ List<Override> _wishlistOverrides({required bool throwOnAdd}) {
         now: ref.watch(nowProvider),
         newId: ref.watch(idGeneratorProvider),
         throwOnAdd: throwOnAdd,
+        throwOnUpdate: throwOnUpdate,
       );
     }),
   ];
 }
 
 void main() {
+  testWidgets('edit failure keeps sheet open with inline error and input', (
+    tester,
+  ) async {
+    final harness = await pumpTestApp(
+      tester,
+      router: AppRouter.create(initialLocation: AppRoutes.stores),
+      overrides: _wishlistOverrides(throwOnUpdate: true),
+    );
+    final store = (await tester.runAsync(
+      () => StoresRepository(
+        database: harness.db,
+        now: () => DateTime.utc(2026, 1, 1, 12),
+        newId: () => 'store-1',
+      ).create(name: 'DM', colorKey: 'sky'),
+    ))!;
+    final item = await tester.runAsync(
+      () => WishlistRepository(
+        database: harness.db,
+        now: () => DateTime.utc(2026, 1, 1, 13),
+        newId: () => 'wish-1',
+      ).add(storeId: store.id, title: 'Heads', description: 'soft'),
+    );
+    await pumpApp(tester, harness);
+
+    await tester.tap(find.byKey(Key('store_row_${store.id}')));
+    await pumpApp(tester, harness);
+    await tester.tap(find.byKey(const Key('store_wishlist_card')));
+    await pumpApp(tester, harness);
+    await tester.tap(find.byKey(Key('wishlist_row_${item!.id}')));
+    await pumpApp(tester, harness);
+
+    await tester.enterText(
+      find.byKey(const Key('wishlist_edit_title')),
+      'Heads edited',
+    );
+    await tester.enterText(
+      find.byKey(const Key('wishlist_edit_description')),
+      'kept detail',
+    );
+    await pumpApp(tester, harness);
+    await _tapButton(tester, const Key('wishlist_edit_save'), harness);
+
+    expect(find.byType(WishlistEditSheet), findsOneWidget);
+    expect(find.text(_genericError), findsOneWidget);
+    expect(
+      tester
+          .widget<TextField>(find.byKey(const Key('wishlist_edit_title')))
+          .controller!
+          .text,
+      'Heads edited',
+    );
+    expect(
+      tester
+          .widget<TextField>(find.byKey(const Key('wishlist_edit_description')))
+          .controller!
+          .text,
+      'kept detail',
+    );
+
+    final row = await tester.runAsync(
+      () => harness.db.select(harness.db.wishlistItems).getSingle(),
+    );
+    expect(row!.title, 'Heads');
+    expect(row.description, 'soft');
+    await harness.dispose(tester);
+  });
+
   testWidgets('add failure keeps sheet open with inline error', (tester) async {
     final harness = await pumpTestApp(
       tester,
