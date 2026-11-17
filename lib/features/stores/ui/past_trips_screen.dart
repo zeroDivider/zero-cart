@@ -21,7 +21,9 @@ class PastTripsScreen extends ConsumerWidget {
     final l10n = AppLocalizations.of(context);
     final asyncLists = ref.watch(finishedListsForStoreProvider(storeId));
     final asyncStore = ref.watch(storeByIdProvider(storeId));
-    final storeArchived = asyncStore.asData?.value?.archivedAt != null;
+    // Disable Restore until the store is known active (LI-5).
+    final store = asyncStore.asData?.value;
+    final storeArchived = store == null || store.archivedAt != null;
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.pastTripsScreenTitle)),
