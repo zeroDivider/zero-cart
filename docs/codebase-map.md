@@ -1,6 +1,6 @@
 # Codebase map
 
-Facts verified against the tree as of APP-017a. Prefer this over recreating shared code.
+Facts verified against the tree as of APP-017b. Prefer this over recreating shared code.
 
 ## Shared primitives
 
@@ -54,7 +54,7 @@ Facts verified against the tree as of APP-017a. Prefer this over recreating shar
 
 - **Writes / failures:** direct actions → `runWrite`; forms → `FormSheetScaffold.onSubmit` (inline error). No `ScaffoldMessenger.of(context)` outside `lib/core/ui/`.
 - **Forms / sheets:** bottom sheets under `lib/features/<feature>/ui/sheets/`; wrap body in `FormSheetScaffold`.
-- **Undo:** hard delete → snapshot → `AppMessenger.undo` with captured repository (`removeListItemWithUndo` in `lists/remove_item_undo.dart`; same pattern in inbox/wishlist).
+- **Undo:** hard delete → snapshot → `AppMessenger.undo` with captured repository (`removeListItemWithUndo` in `lists/remove_item_undo.dart`; same pattern in inbox/wishlist). Zero-leftover Finish uses `finishListWithUndo` (`lists/finish_list_undo.dart`) the same way.
 - **Errors:** throw `RepositoryException` subtypes; UI uses `messageFor` / `AsyncBody`.
 - **Async loading:** screens wrap `AsyncValue` in `AsyncBody` + `ref.invalidate` Retry.
 - **UI state:** ephemeral form fields in sheet `State`; cross-widget / navigation-surviving selection via `Notifier` (ADR-0007).
@@ -74,13 +74,14 @@ Routes in `lib/app/router.dart` (`AppRoutes` / `AppRouter`):
 - `/lists/:id` `ListScreen`, `/archive` `ArchiveScreen` (stores segment live)
 - `/settings` / `/settings/about` — placeholder screens only
 
-Sheets: store form; list form; item edit; inbox quick-add / edit / assign; wishlist add / edit / copy-to-list.
+Sheets: store form; list form; item edit; finish list; inbox quick-add / edit / assign; wishlist add / edit / copy-to-list.
+
+List screen (`/lists/:id`): Finish (active) opens `finish_list_sheet` when leftovers remain, else `finishListWithUndo` then navigates to the store; Restore (archived) via `runWrite(restore)`. Read-only archived body already hides checkbox, handle, add row and edit.
 
 ## Known gaps (from code, not the plan)
 
 - Home body is still a placeholder string.
-- Archive **Lists** segment is `_ArchivedListsPlaceholder`; no list-archive watch UI.
-- `finishList` exists; Finish UI / Past trips watches are APP-017b/c.
+- Archive **Lists** segment is `_ArchivedListsPlaceholder`; Past trips / finished browsing is APP-017c.
 - `formatShareText` has no feature caller / share UI.
 - No backup/export/import Dart code.
 - Settings / About are placeholders (entry from Home settings icon exists).
