@@ -31,7 +31,7 @@ Agent (Analyze, Plan, Implement, Verify, Document):
 
 **Start a task**
 ```
-Implement task APP-0NN according to the approved product specification, architecture, ADRs, and acceptance criteria. Follow AGENTS.md and the project rules. Verify your work before proceeding. Work on branch task/APP-0NN-<slug>, commit after every step, do not push or merge.
+Implement task APP-0NN according to the approved product specification, architecture, ADRs, and acceptance criteria. Follow @AGENTS.md and the project rules. Read @docs/codebase-map.md and reuse what it lists. Verify your work before proceeding. Work on branch task/APP-0NN-<slug>, commit after every step, do not push or merge.
 ```
 **Continue after review comments**
 ```
