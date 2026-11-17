@@ -4,7 +4,6 @@ import 'package:zero_cart/core/ordering.dart';
 import 'package:zero_cart/data/database.dart';
 import 'package:zero_cart/features/inbox/inbox_repository.dart';
 import 'package:zero_cart/features/lists/assign_inbox_target.dart';
-import 'package:zero_cart/features/lists/copy_wishlist_target.dart';
 import 'package:zero_cart/features/lists/list_exceptions.dart';
 import 'package:zero_cart/features/lists/lists_repository.dart';
 import 'package:zero_cart/features/stores/store_draft.dart';
