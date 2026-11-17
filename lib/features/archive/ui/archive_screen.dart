@@ -232,17 +232,29 @@ class _ArchivedListRow extends ConsumerWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final list = row.list;
     final storeArchived = row.isStoreArchived;
-    final reasonLabel =
-        list.archiveReason == ListsRepository.archiveReasonFinished
-        ? l10n.archiveReasonFinishedLabel
-        : l10n.archiveReasonManualLabel;
-    final subtitle = storeArchived
-        ? l10n.archivedListSubtitleStoreArchived(
-            row.storeName,
-            reasonLabel,
-            l10n.restoreStoreFirstHint,
-          )
-        : l10n.archivedListSubtitle(row.storeName, reasonLabel);
+    final finished =
+        list.archiveReason == ListsRepository.archiveReasonFinished;
+    // Manual: store name only. Finished: show "finished". Never say "manual".
+    final String subtitle;
+    if (finished) {
+      subtitle = storeArchived
+          ? l10n.archivedListSubtitleFinishedStoreArchived(
+              row.storeName,
+              l10n.archiveReasonFinishedLabel,
+              l10n.restoreStoreFirstHint,
+            )
+          : l10n.archivedListSubtitleFinished(
+              row.storeName,
+              l10n.archiveReasonFinishedLabel,
+            );
+    } else if (storeArchived) {
+      subtitle = l10n.archivedListSubtitleStoreArchived(
+        row.storeName,
+        l10n.restoreStoreFirstHint,
+      );
+    } else {
+      subtitle = row.storeName;
+    }
 
     return ConstrainedBox(
       constraints: BoxConstraints(minHeight: tokens.spacing48 + 8),
