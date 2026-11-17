@@ -495,6 +495,44 @@
   "@listMenuArchive": {
     "description": "List app-bar menu action to archive the list"
   },
+  "finishAction": "Finish",
+  "@finishAction": {
+    "description": "List app-bar action that finishes shopping (LI-4, F10)"
+  },
+  "finishSheetTitle": "Finish shopping",
+  "@finishSheetTitle": {
+    "description": "Title of the finish-list sheet when leftovers remain"
+  },
+  "finishSheetLeftCount": "{count, plural, one{{count} item left unpurchased} other{{count} items left unpurchased}}",
+  "@finishSheetLeftCount": {
+    "description": "Count line on the finish-list sheet",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "finishCarryForward": "Carry forward",
+  "@finishCarryForward": {
+    "description": "Primary finish-sheet action that archives and creates a leftovers list"
+  },
+  "finishArchiveWithout": "Archive without carrying",
+  "@finishArchiveWithout": {
+    "description": "Secondary finish-sheet action that archives without a leftovers list"
+  },
+  "leftoversName": "Leftovers: {name}",
+  "@leftoversName": {
+    "description": "Default name for a carry-forward leftovers list",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "listFinished": "List finished",
+  "@listFinished": {
+    "description": "Snackbar after finishing a list with no leftovers (Undo available)"
+  },
   "purchaseWriteFailed": "Couldn't update. Try again.",
   "@purchaseWriteFailed": {
     "description": "SnackBar when setPurchased fails and the checkbox reverts"
