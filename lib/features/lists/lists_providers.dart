@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zero_cart/data/database.dart';
 import 'package:zero_cart/data/providers.dart';
 import 'package:zero_cart/features/lists/active_list_progress.dart';
+import 'package:zero_cart/features/lists/archived_list_with_store.dart';
 import 'package:zero_cart/features/lists/lists_repository.dart';
 
 /// App-lifetime lists repository (not autoDispose).
@@ -31,6 +32,29 @@ final listByIdProvider = StreamProvider.family<ShoppingList?, String>((
 final activeListsByRecencyProvider = StreamProvider<List<ShoppingList>>((ref) {
   return ref.watch(listsRepositoryProvider).watchActiveByRecency();
 });
+
+/// Finished lists for a store (Past trips), newest first.
+final finishedListsForStoreProvider =
+    StreamProvider.family<List<ShoppingList>, String>((ref, storeId) {
+      return ref
+          .watch(listsRepositoryProvider)
+          .watchFinishedListsForStore(storeId);
+    });
+
+/// Live finished-list count for a store (Past trips card).
+final finishedCountForStoreProvider = StreamProvider.family<int, String>((
+  ref,
+  storeId,
+) {
+  return ref.watch(listsRepositoryProvider).watchFinishedCountForStore(storeId);
+});
+
+/// Manually archived lists with store join (Archive Lists segment).
+final manualArchivedListsProvider = StreamProvider<List<ArchivedListWithStore>>(
+  (ref) {
+    return ref.watch(listsRepositoryProvider).watchManualArchivedLists();
+  },
+);
 
 /// Items for a list ordered by `(position, created_at, id)`.
 final listItemsProvider = StreamProvider.family<List<ListItem>, String>((

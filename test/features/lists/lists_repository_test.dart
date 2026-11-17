@@ -1119,4 +1119,85 @@ void main() {
       expect(await wishlist.watch(other.id).first, hasLength(1));
     });
   });
+
+  group('archive browsing watches', () {
+    test(
+      'finished and manual watches separate reasons; count updates live',
+      () async {
+        final store = await stores.create(name: 'Lidl', colorKey: 'lime');
+        final finished = await lists.create(storeId: store.id, name: 'Trip A');
+        final manual = await lists.create(storeId: store.id, name: 'Trip B');
+        final otherStore = await stores.create(name: 'DM', colorKey: 'sky');
+        final otherFinished = await lists.create(
+          storeId: otherStore.id,
+          name: 'Elsewhere',
+        );
+
+        await lists.finishList(finished.id, carryForward: false);
+        await lists.archive(manual.id);
+        await lists.finishList(otherFinished.id, carryForward: false);
+
+        final finishedRows = await lists
+            .watchFinishedListsForStore(store.id)
+            .first;
+        expect(finishedRows.map((l) => l.id), [finished.id]);
+        expect(
+          finishedRows.single.archiveReason,
+          ListsRepository.archiveReasonFinished,
+        );
+
+        expect(await lists.watchFinishedCountForStore(store.id).first, 1);
+
+        final manualRows = await lists.watchManualArchivedLists().first;
+        expect(manualRows.map((r) => r.list.id), [manual.id]);
+        expect(
+          manualRows.single.list.archiveReason,
+          ListsRepository.archiveReasonManual,
+        );
+        expect(manualRows.single.storeName, 'Lidl');
+        expect(manualRows.single.storeColorKey, 'lime');
+        expect(manualRows.single.isStoreArchived, isFalse);
+
+        await lists.restore(finished.id);
+        expect(await lists.watchFinishedCountForStore(store.id).first, 0);
+        expect(await lists.watchFinishedListsForStore(store.id).first, isEmpty);
+      },
+    );
+
+    test(
+      'manual watch joins store archived flag and orders by store then updated',
+      () async {
+        final zebra = await stores.create(name: 'Zebra', colorKey: 'grape');
+        final alpha = await stores.create(name: 'Alpha', colorKey: 'sky');
+        final older = await lists.create(storeId: zebra.id, name: 'Older');
+        final newer = await lists.create(storeId: zebra.id, name: 'Newer');
+        final alphaList = await lists.create(
+          storeId: alpha.id,
+          name: 'Alpha trip',
+        );
+
+        await lists.archive(older.id);
+        await lists.archive(newer.id);
+        await lists.archive(alphaList.id);
+        await stores.archive(zebra.id);
+
+        final finished = await lists.create(
+          storeId: alpha.id,
+          name: 'Finished only',
+        );
+        await lists.finishList(finished.id, carryForward: false);
+
+        final rows = await lists.watchManualArchivedLists().first;
+        expect(rows.map((r) => r.list.name), ['Alpha trip', 'Newer', 'Older']);
+        expect(rows[0].storeName, 'Alpha');
+        expect(rows[0].isStoreArchived, isFalse);
+        expect(rows[1].storeName, 'Zebra');
+        expect(rows[1].isStoreArchived, isTrue);
+        expect(rows[1].storeArchivedAt, isNotNull);
+        expect(rows[2].list.name, 'Older');
+        expect(rows[2].isStoreArchived, isTrue);
+        expect(rows.any((r) => r.list.id == finished.id), isFalse);
+      },
+    );
+  });
 }

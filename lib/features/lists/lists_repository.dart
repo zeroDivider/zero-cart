@@ -6,6 +6,7 @@ import 'package:zero_cart/core/ordering.dart';
 import 'package:zero_cart/core/text_normalize.dart';
 import 'package:zero_cart/data/database.dart';
 import 'package:zero_cart/features/lists/active_list_progress.dart';
+import 'package:zero_cart/features/lists/archived_list_with_store.dart';
 import 'package:zero_cart/features/lists/assign_inbox_target.dart';
 import 'package:zero_cart/features/lists/copy_wishlist_target.dart';
 import 'package:zero_cart/features/lists/finish_list_result.dart';
@@ -96,6 +97,78 @@ ORDER BY sl.created_at ASC, sl.id ASC
             (t) => OrderingTerm.desc(t.id),
           ]))
         .watch();
+  }
+
+  /// Finished lists for [storeId] (Past trips), newest [ShoppingList.updatedAt] first.
+  Stream<List<ShoppingList>> watchFinishedListsForStore(String storeId) {
+    return (_db.select(_db.shoppingLists)
+          ..where(
+            (t) =>
+                t.storeId.equals(storeId) &
+                t.archivedAt.isNotNull() &
+                t.archiveReason.equals(archiveReasonFinished),
+          )
+          ..orderBy([
+            (t) => OrderingTerm.desc(t.updatedAt),
+            (t) => OrderingTerm.desc(t.id),
+          ]))
+        .watch();
+  }
+
+  /// Live count of finished lists for [storeId] (Past trips card).
+  Stream<int> watchFinishedCountForStore(String storeId) {
+    return watchFinishedListsForStore(storeId).map((rows) => rows.length);
+  }
+
+  /// Manually archived lists joined with store name, colour and archive flag.
+  ///
+  /// Ordered by store name (case-insensitive), then list [ShoppingList.updatedAt]
+  /// descending within each store. Finished lists are excluded (Archive Lists).
+  Stream<List<ArchivedListWithStore>> watchManualArchivedLists() {
+    return _db
+        .customSelect(
+          '''
+SELECT
+  sl.id,
+  sl.store_id,
+  sl.name,
+  sl.archived_at,
+  sl.archive_reason,
+  sl.created_at,
+  sl.updated_at,
+  s.name AS store_name,
+  s.color_key AS store_color_key,
+  s.archived_at AS store_archived_at
+FROM shopping_lists AS sl
+INNER JOIN stores AS s ON s.id = sl.store_id
+WHERE sl.archived_at IS NOT NULL AND sl.archive_reason = ?
+ORDER BY s.name COLLATE NOCASE ASC, s.id ASC, sl.updated_at DESC, sl.id DESC
+''',
+          variables: [Variable.withString(archiveReasonManual)],
+          readsFrom: {_db.shoppingLists, _db.stores},
+        )
+        .watch()
+        .map((rows) {
+          return [
+            for (final row in rows)
+              ArchivedListWithStore(
+                list: ShoppingList(
+                  id: row.read<String>('id'),
+                  storeId: row.read<String>('store_id'),
+                  name: row.read<String>('name'),
+                  archivedAt: row.readNullable<DateTime>('archived_at'),
+                  archiveReason: row.readNullable<String>('archive_reason'),
+                  createdAt: row.read<DateTime>('created_at'),
+                  updatedAt: row.read<DateTime>('updated_at'),
+                ),
+                storeName: row.read<String>('store_name'),
+                storeColorKey: row.read<String>('store_color_key'),
+                storeArchivedAt: row.readNullable<DateTime>(
+                  'store_archived_at',
+                ),
+              ),
+          ];
+        });
   }
 
   /// Creates an empty active list. Rejects archived or missing stores.
