@@ -80,6 +80,7 @@ Built-in Material icons, rounded variants, 24dp, no extra icon package. Icons th
 
 - **NavigationBar** with three destinations; Inbox shows a badge. **FAB** (coral) for Quick add on tab screens.
 - **Filled card** for stores and lists; custom row for items (checkbox, content, handle).
+- **Store-details section cards** (Wishlist, Past trips): a filled card with a title and a live count that opens a dedicated screen; same card style as list and store cards.
 - **Checkbox** M3 with rounded corners; checked fill is primary with a white check.
 - **Bottom sheets** with a drag handle, scroll-safe, padded by keyboard insets; used for all forms. **AlertDialog** only for store archive with active lists and replace-all restore.
 - **ChoiceChip** for store selection and colour swatches; **SegmentedButton** for the theme and the Archive segments.

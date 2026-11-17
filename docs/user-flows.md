@@ -9,6 +9,7 @@ Shell with NavigationBar (state kept per tab)
   Inbox   /inbox
   Stores  /stores   store row -> /stores/:id -> /lists/:id
                                               -> /stores/:id/wishlist
+                                              -> /stores/:id/past-trips -> /lists/:id (read-only)
                     archive icon -> /archive -> /stores/:id, /lists/:id (read-only)
 Modal, not routes: quick add, assign, store form, list form, item edit,
                    finish shopping, copy to list, dialogs
@@ -23,10 +24,11 @@ Quick-add FAB shows on Home, Inbox and Stores only. List screens use the inline 
 | Home | /home | Go-shopping view | Wordmark, settings icon, Inbox pill, staggered board of large store cards, empty state |
 | Inbox | /inbox | Capture backlog | Newest-first rows, multi-select, Assign action, empty state |
 | Stores | /stores | Manage stores | Store rows, New store, archive icon |
-| Store details | /stores/:id | One store | Header, active lists, wishlist card, archived lists section, edit and archive in menu |
+| Store details | /stores/:id | One store | Header, active lists, wishlist card, Past trips card, edit and archive in menu |
 | List details | /lists/:id | Shopping | Active items, add row, Purchased section, share, Finish, menu (rename, archive) |
 | Wishlist | /stores/:id/wishlist | Someday items | Rows, add, Add to list |
-| Archive | /archive | History | Segments: Stores, Lists; Restore actions |
+| Past trips | /stores/:id/past-trips | Finished lists | Read-only finished list rows, Restore |
+| Archive | /archive | History | Segments: Stores, Lists (manual archives only); Restore actions |
 | Settings | /settings | Preferences | Appearance, Backup and restore, About |
 | About | /settings/about | Info | Version, licences, MIT notice |
 
@@ -43,8 +45,8 @@ Each flow gives the entry point, the steps and state change, the resulting UI, a
 - **F7 Remove and Undo.** Entry: swipe left, or Remove in the edit sheet. State: row deleted, snapshot kept in memory. UI: row collapses, snackbar 'Removed \<title>' with Undo for about 5 seconds. Errors: Undo failing because the list was archived shows 'Couldn't restore'. Edge: a second removal makes the first final (D-07).
 - **F8 Edit an item.** Entry: tap the row content. State: title and description update on Save. UI: bottom sheet with Save and Remove. Errors: empty title blocks Save. Edge: dismissing the sheet discards the change.
 - **F9 Create a list.** Entry: 'New list' on store details. Enter a name, Create. State: empty active list. UI: opens the new list screen. Errors: empty name blocks Create.
-- **F10 Finish shopping.** Entry: Finish in the list app bar. With no leftovers: archived at once, snackbar Undo. With leftovers: sheet shows the count, a name field (default 'Leftovers: \<name>'), 'Carry forward' and 'Archive without carrying'. State: one transaction (data model operation 8 and 9). UI: back to store details, the new list highlighted. Errors: failure leaves the list active. Edge: an empty list can still be finished.
-- **F11 Archive and restore a list.** Entry: list menu 'Archive list', or Restore in Archive. State: `archived_at` and reason set or cleared. UI: snackbar with Undo on archive. Errors: Restore on a list of an archived store is disabled with a hint (LI-5).
+- **F10 Finish shopping.** Entry: Finish in the list app bar. With no leftovers: archived at once, snackbar Undo. With leftovers: sheet shows the count, a name field (default 'Leftovers: \<name>'), 'Carry forward' and 'Archive without carrying'. State: one transaction (data model operation 8 and 9). UI: back to store details, the new list highlighted. The finished list then appears under the store's Past trips section (read-only), not in the Archive screen. Errors: failure leaves the list active. Edge: an empty list can still be finished.
+- **F11 Archive and restore a list.** Entry: list menu 'Archive list', or Restore. State: `archived_at` and reason set or cleared. UI: snackbar with Undo on archive. The Archive screen's Lists segment lists only manually archived lists; finished lists are restored from the store's Past trips section. Both paths open the same read-only `/lists/:id` view. Errors: Restore on a list of an archived store is disabled with a hint (LI-5).
 - **F12 Archive and restore a store.** Entry: store menu. If active lists exist, a dialog names their count. State: `archived_at` set; lists untouched. UI: the store leaves Home, Stores and all pickers. Restore from Archive. Edge: archived stores open read-only.
 - **F13 Wishlist add and copy.** Entry: wishlist card on store details. Add items in the same sheet pattern as F1. 'Add to list' (single or multi-select) opens the list picker with a 'New list' option. State: copies inserted at max + 1; wishlist rows unchanged (D-18). UI: snackbar with Open. Errors: as F3.
 - **F14 Share.** Entry: share icon on the list screen. State: none. UI: native sheet with the D-20 text. Errors: nothing to share shows a snackbar and no sheet.
