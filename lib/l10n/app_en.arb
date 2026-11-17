@@ -566,10 +566,19 @@
   "@listMenuArchive": {
     "description": "List app-bar menu action to archive the list"
   },
+  "shareList": "Share",
+  "@shareList": {
+    "description": "List app-bar share icon tooltip and semantics (SH-1, D-20)"
+  },
+  "nothingLeftToShare": "Nothing left to share",
+  "@nothingLeftToShare": {
+    "description": "Info snackbar when Share is tapped with no unpurchased items (D-20)"
+  },
   "finishAction": "Finish",
   "@finishAction": {
     "description": "List app-bar action that finishes shopping (LI-4, F10)"
   },
+
   "finishSheetTitle": "Finish shopping",
   "@finishSheetTitle": {
     "description": "Title of the finish-list sheet when leftovers remain"
