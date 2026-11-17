@@ -3,6 +3,7 @@ library;
 
 export 'package:zero_cart/core/repository_exceptions.dart'
     show
+        InvalidWishlistCopyException,
         ListArchivedException,
         ListUnavailableException,
         StoreArchivedException;

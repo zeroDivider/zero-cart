@@ -115,7 +115,7 @@
   "@selectItem": {
     "description": "Semantics action that starts wishlist multi-select on a row"
   },
-  "wishlistItemsForSomeday": "{count, plural, one{{count} item for someday} other{{count} items for someday}}",
+  "wishlistItemsForSomeday": "{count, plural, =0{Nothing saved yet} =1{1 item for someday} other{{count} items for someday}}",
   "@wishlistItemsForSomeday": {
     "description": "Subtitle on the store-details wishlist card",
     "placeholders": {

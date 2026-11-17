@@ -43,6 +43,13 @@ void main() {
     expect(messageFor(l10n, const StaleOrderException()), l10n.errorStaleOrder);
   });
 
+  test('InvalidWishlistCopyException maps to the generic string', () {
+    expect(
+      messageFor(l10n, const InvalidWishlistCopyException()),
+      l10n.errorGeneric,
+    );
+  });
+
   test('unknown errors use the generic fallback', () {
     expect(messageFor(l10n, StateError('x')), l10n.errorGeneric);
     expect(messageFor(l10n, Exception('boom')), l10n.errorGeneric);

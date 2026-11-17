@@ -1018,18 +1018,18 @@ void main() {
         await lists.archive(list.id);
         await expectLater(
           lists.copyWishlistItems([wish.id], ExistingList(list.id)),
-          throwsA(isA<ListArchivedException>()),
+          throwsA(isA<InvalidWishlistCopyException>()),
         );
 
         await lists.restore(list.id);
         await expectLater(
           lists.copyWishlistItems([wish.id], ExistingList(otherList.id)),
-          throwsA(isA<StateError>()),
+          throwsA(isA<InvalidWishlistCopyException>()),
         );
 
         await expectLater(
           lists.copyWishlistItems(['missing'], ExistingList(list.id)),
-          throwsA(isA<StateError>()),
+          throwsA(isA<InvalidWishlistCopyException>()),
         );
 
         await expectLater(
@@ -1045,5 +1045,21 @@ void main() {
         expect(await wishlist.watch(store.id).first, hasLength(1));
       },
     );
+
+    test('rejects mixed-store wishlist ids with typed error', () async {
+      final store = await stores.create(name: 'DM', colorKey: 'sky');
+      final other = await stores.create(name: 'Lidl', colorKey: 'lime');
+      final list = await lists.create(storeId: store.id, name: 'Run');
+      final a = await wishlist.add(storeId: store.id, title: 'A');
+      final b = await wishlist.add(storeId: other.id, title: 'B');
+
+      await expectLater(
+        lists.copyWishlistItems([a.id, b.id], ExistingList(list.id)),
+        throwsA(isA<InvalidWishlistCopyException>()),
+      );
+      expect(await db.select(db.listItems).get(), isEmpty);
+      expect(await wishlist.watch(store.id).first, hasLength(1));
+      expect(await wishlist.watch(other.id).first, hasLength(1));
+    });
   });
 }

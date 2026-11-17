@@ -12,6 +12,8 @@ String messageFor(AppLocalizations l10n, Object error) {
       ListArchivedException() => l10n.errorListArchived,
       ListUnavailableException() => l10n.errorListUnavailable,
       StaleOrderException() => l10n.errorStaleOrder,
+      // Defensive copy path; UI cannot produce it — same copy as unknown errors.
+      InvalidWishlistCopyException() => l10n.errorGeneric,
     };
   }
   return l10n.errorGeneric;

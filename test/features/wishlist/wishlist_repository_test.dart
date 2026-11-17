@@ -153,4 +153,32 @@ void main() {
 
     await sub.cancel();
   });
+
+  test(
+    'update, remove and restore reject when the store is archived',
+    () async {
+      final store = await stores.create(name: 'DM', colorKey: 'sky');
+      final item = await wishlist.add(storeId: store.id, title: 'Heads');
+
+      await stores.archive(store.id);
+      await expectLater(
+        wishlist.update(id: item.id, title: 'Edited'),
+        throwsA(isA<StoreArchivedException>()),
+      );
+      await expectLater(
+        wishlist.remove(item.id),
+        throwsA(isA<StoreArchivedException>()),
+      );
+      expect(await wishlist.watch(store.id).first, hasLength(1));
+
+      await stores.restore(store.id);
+      final snapshot = await wishlist.remove(item.id);
+      await stores.archive(store.id);
+      await expectLater(
+        wishlist.restore(snapshot),
+        throwsA(isA<StoreArchivedException>()),
+      );
+      expect(await db.select(db.wishlistItems).get(), isEmpty);
+    },
+  );
 }
