@@ -1,6 +1,6 @@
 # Codebase map
 
-Facts verified against the tree as of APP-017b. Prefer this over recreating shared code.
+Facts verified against the tree as of APP-017c. Prefer this over recreating shared code.
 
 ## Shared primitives
 
@@ -32,6 +32,8 @@ Facts verified against the tree as of APP-017b. Prefer this over recreating shar
 
 ### `ListsRepository` — `lib/features/lists/lists_repository.dart`
 - `watchActiveForStore` / `watchById` / `watchActiveByRecency` / `watchItems`
+- `watchFinishedListsForStore` / `watchFinishedCountForStore` — Past trips (`archiveReasonFinished`)
+- `watchManualArchivedLists` — Archive Lists join → `ArchivedListWithStore` (store name, colour, `storeArchivedAt`)
 - `create` / `rename` / `archive` (reason `manual`) / `restore` (fails if store archived)
 - `finishList` — archives with `archiveReasonFinished`; optional carry-forward via `_insertNewList` (I3); returns `FinishListResult` (`lib/features/lists/finish_list_result.dart`)
 - `addItem` / `updateItem` / `setPurchased` / `removeItem` / `restoreItem` / `reorderActive`
@@ -47,7 +49,7 @@ Facts verified against the tree as of APP-017b. Prefer this over recreating shar
 
 - `lib/data/providers.dart` — `appDatabaseProvider` (must override), `nowProvider`, `idGeneratorProvider`
 - Feature `*RepositoryProvider`s — app-lifetime; wire clock/ids from above
-- Streams: `inboxItemsProvider`; `activeStoresProvider`, `activeStoreSummariesProvider`, `archivedStoresProvider`, `storeByIdProvider`; `activeListsForStoreProvider`, `listByIdProvider`, `activeListsByRecencyProvider`, `listItemsProvider`; `wishlistItemsProvider`, `wishlistCountProvider`
+- Streams: `inboxItemsProvider`; `activeStoresProvider`, `activeStoreSummariesProvider`, `archivedStoresProvider`, `storeByIdProvider`; `activeListsForStoreProvider`, `listByIdProvider`, `activeListsByRecencyProvider`, `finishedListsForStoreProvider`, `finishedCountForStoreProvider`, `manualArchivedListsProvider`, `listItemsProvider`; `wishlistItemsProvider`, `wishlistCountProvider`
 - UI Notifiers: `inboxSelectionProvider`; `wishlistSelectionProvider` (autoDispose); `purchasedExpandedProvider` / `addItemNotifierProvider` (autoDispose family)
 
 ## Patterns established
@@ -70,18 +72,19 @@ Facts verified against the tree as of APP-017b. Prefer this over recreating shar
 
 Routes in `lib/app/router.dart` (`AppRoutes` / `AppRouter`):
 - Tabs: `/home` `HomeScreen`, `/inbox` `InboxScreen`, `/stores` `StoresScreen`
-- `/stores/:id` `StoreDetailsScreen`, `/stores/:id/wishlist` `WishlistScreen`
-- `/lists/:id` `ListScreen`, `/archive` `ArchiveScreen` (stores segment live)
+- `/stores/:id` `StoreDetailsScreen`, `/stores/:id/wishlist` `WishlistScreen`, `/stores/:id/past-trips` `PastTripsScreen`
+- `/lists/:id` `ListScreen`, `/archive` `ArchiveScreen` (Stores + manual Lists)
 - `/settings` / `/settings/about` — placeholder screens only
 
 Sheets: store form; list form; item edit; finish list; inbox quick-add / edit / assign; wishlist add / edit / copy-to-list.
+
+Store details: `StoreWishlistCard` then `StorePastTripsCard` (live counts; open child routes). Past trips / Archive Lists use lists providers only (never list screens); Restore via `runWrite`; LI-5 disables Restore when the store is archived.
 
 List screen (`/lists/:id`): Finish (active) opens `finish_list_sheet` when leftovers remain, else `finishListWithUndo` then navigates to the store; Restore (archived) via `runWrite(restore)`. Read-only archived body already hides checkbox, handle, add row and edit.
 
 ## Known gaps (from code, not the plan)
 
 - Home body is still a placeholder string.
-- Archive **Lists** segment is `_ArchivedListsPlaceholder`; Past trips / finished browsing is APP-017c.
 - `formatShareText` has no feature caller / share UI.
 - No backup/export/import Dart code.
 - Settings / About are placeholders (entry from Home settings icon exists).
