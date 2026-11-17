@@ -221,6 +221,19 @@ ORDER BY sl.created_at ASC, sl.id ASC
                 ]))
               .get();
 
+      final willCarry = carryForward && left.isNotEmpty;
+      if (willCarry) {
+        final store = await (_db.select(
+          _db.stores,
+        )..where((t) => t.id.equals(list.storeId))).getSingleOrNull();
+        if (store == null) {
+          throw StateError('Store ${list.storeId} not found');
+        }
+        if (store.archivedAt != null) {
+          throw StoreArchivedException(list.storeId);
+        }
+      }
+
       final now = _clock();
       await (_db.update(
         _db.shoppingLists,
@@ -234,17 +247,7 @@ ORDER BY sl.created_at ASC, sl.id ASC
 
       String? newListId;
       var carried = 0;
-      if (carryForward && left.isNotEmpty) {
-        final store = await (_db.select(
-          _db.stores,
-        )..where((t) => t.id.equals(list.storeId))).getSingleOrNull();
-        if (store == null) {
-          throw StateError('Store ${list.storeId} not found');
-        }
-        if (store.archivedAt != null) {
-          throw StoreArchivedException(list.storeId);
-        }
-
+      if (willCarry) {
         final created = await _insertNewList(list.storeId, newName ?? '');
         newListId = created.id;
         var pos = 1;
