@@ -505,7 +505,7 @@ ORDER BY sl.created_at ASC, sl.id ASC
         throw StoreArchivedException(storeId);
       }
 
-      final list = await _resolveAssignList(storeId, target);
+      final list = await _resolveCopyWishlistList(storeId, target);
 
       final maxRow = await _db
           .customSelect(
@@ -613,6 +613,32 @@ ORDER BY sl.created_at ASC, sl.id ASC
         final list = await (_db.select(
           _db.shoppingLists,
         )..where((t) => t.id.equals(listId))).getSingleOrNull();
+        if (list == null) {
+          throw StateError('List $listId not found');
+        }
+        if (list.archivedAt != null) {
+          throw ListArchivedException(listId);
+        }
+        if (list.storeId != storeId) {
+          throw StateError('List $listId does not belong to store $storeId');
+        }
+        return list;
+      case NewList(:final name):
+        return _insertNewList(storeId, name);
+    }
+  }
+
+  /// Resolves the copy target; invalid existing lists map to
+  /// [InvalidWishlistCopyException] (generic UI message for F13).
+  Future<ShoppingList> _resolveCopyWishlistList(
+    String storeId,
+    CopyWishlistTarget target,
+  ) async {
+    switch (target) {
+      case ExistingList(:final listId):
+        final list = await (_db.select(
+          _db.shoppingLists,
+        )..where((t) => t.id.equals(listId))).getSingleOrNull();
         // Must be an active list in the wishlist's store (op 7).
         if (list == null ||
             list.archivedAt != null ||
@@ -621,33 +647,37 @@ ORDER BY sl.created_at ASC, sl.id ASC
         }
         return list;
       case NewList(:final name):
-        final normalizedName = normalizeListName(name);
-        if (normalizedName.isEmpty) {
-          throw ArgumentError.value(name, 'name', 'must not be empty');
-        }
-        final now = _clock();
-        final id = _idGenerator();
-        await _db
-            .into(_db.shoppingLists)
-            .insert(
-              ShoppingListsCompanion.insert(
-                id: id,
-                storeId: storeId,
-                name: normalizedName,
-                createdAt: now,
-                updatedAt: now,
-              ),
-            );
-        return ShoppingList(
-          id: id,
-          storeId: storeId,
-          name: normalizedName,
-          archivedAt: null,
-          archiveReason: null,
-          createdAt: now,
-          updatedAt: now,
-        );
+        return _insertNewList(storeId, name);
     }
+  }
+
+  Future<ShoppingList> _insertNewList(String storeId, String name) async {
+    final normalizedName = normalizeListName(name);
+    if (normalizedName.isEmpty) {
+      throw ArgumentError.value(name, 'name', 'must not be empty');
+    }
+    final now = _clock();
+    final id = _idGenerator();
+    await _db
+        .into(_db.shoppingLists)
+        .insert(
+          ShoppingListsCompanion.insert(
+            id: id,
+            storeId: storeId,
+            name: normalizedName,
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+    return ShoppingList(
+      id: id,
+      storeId: storeId,
+      name: normalizedName,
+      archivedAt: null,
+      archiveReason: null,
+      createdAt: now,
+      updatedAt: now,
+    );
   }
 
   /// Inserts a store inside the assign transaction (same rules as StoresRepository).
