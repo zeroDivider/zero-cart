@@ -917,44 +917,58 @@ void main() {
       expect(await wishlist.watch(store.id).first, hasLength(1));
     });
 
-    test('copies and wishlist stay independent after edits', () async {
-      final store = await stores.create(name: 'DM', colorKey: 'sky');
-      final list = await lists.create(storeId: store.id, name: 'Run');
-      final wish = await wishlist.add(
-        storeId: store.id,
-        title: 'Heads',
-        description: 'soft',
-      );
+    test(
+      'editing a wishlist row leaves an existing list copy unchanged',
+      () async {
+        final store = await stores.create(name: 'DM', colorKey: 'sky');
+        final list = await lists.create(storeId: store.id, name: 'Run');
+        final wish = await wishlist.add(
+          storeId: store.id,
+          title: 'Heads',
+          description: 'soft',
+        );
 
-      await lists.copyWishlistItems([wish.id], ExistingList(list.id));
-      final copy = (await lists.watchItems(list.id).first).single;
+        await lists.copyWishlistItems([wish.id], ExistingList(list.id));
+        final copy = (await lists.watchItems(list.id).first).single;
 
-      await lists.updateItem(
-        id: copy.id,
-        title: 'Copy edited',
-        description: 'changed',
-      );
-      final afterListEdit = await wishlist.watch(store.id).first;
-      expect(afterListEdit.single.title, 'Heads');
-      expect(afterListEdit.single.description, 'soft');
+        await wishlist.update(
+          id: wish.id,
+          title: 'Wish edited',
+          description: 'new',
+        );
 
-      await wishlist.update(
-        id: wish.id,
-        title: 'Wish edited',
-        description: 'new',
-      );
-      final afterWishEdit = await lists.watchItems(list.id).first;
-      expect(afterWishEdit.single.id, copy.id);
-      expect(afterWishEdit.single.title, 'Copy edited');
-      expect(afterWishEdit.single.description, 'changed');
+        final afterWishEdit = await lists.watchItems(list.id).first;
+        expect(afterWishEdit, hasLength(1));
+        expect(afterWishEdit.single.id, copy.id);
+        expect(afterWishEdit.single.title, 'Heads');
+        expect(afterWishEdit.single.description, 'soft');
+      },
+    );
 
-      await wishlist.remove(wish.id);
-      expect(await wishlist.watch(store.id).first, isEmpty);
-      expect((await lists.watchItems(list.id).first).single.id, copy.id);
+    test(
+      'removing a wishlist row leaves an existing list copy unchanged',
+      () async {
+        final store = await stores.create(name: 'DM', colorKey: 'sky');
+        final list = await lists.create(storeId: store.id, name: 'Run');
+        final wish = await wishlist.add(
+          storeId: store.id,
+          title: 'Heads',
+          description: 'soft',
+        );
 
-      await lists.removeItem(copy.id);
-      expect(await lists.watchItems(list.id).first, isEmpty);
-    });
+        await lists.copyWishlistItems([wish.id], ExistingList(list.id));
+        final copy = (await lists.watchItems(list.id).first).single;
+
+        await wishlist.remove(wish.id);
+        expect(await wishlist.watch(store.id).first, isEmpty);
+
+        final afterRemove = await lists.watchItems(list.id).first;
+        expect(afterRemove, hasLength(1));
+        expect(afterRemove.single.id, copy.id);
+        expect(afterRemove.single.title, 'Heads');
+        expect(afterRemove.single.description, 'soft');
+      },
+    );
 
     test(
       'rollback leaves no list or items when NewList name is blank',
@@ -975,7 +989,10 @@ void main() {
 
     test('mid-transaction id failure rolls back new list and items', () async {
       final store = await stores.create(name: 'DM', colorKey: 'sky');
-      final wish = await wishlist.add(storeId: store.id, title: 'Heads');
+      final unrelated = await lists.create(storeId: store.id, name: 'Keep');
+      final unrelatedUpdatedAt = unrelated.updatedAt;
+      final first = await wishlist.add(storeId: store.id, title: 'Heads');
+      final second = await wishlist.add(storeId: store.id, title: 'Cream');
 
       var idsIssued = 0;
       final flakyLists = ListsRepository(
@@ -988,8 +1005,8 @@ void main() {
         },
         newId: () {
           idsIssued += 1;
-          // NewList consumes id 1; first list item would be id 2.
-          if (idsIssued == 2) {
+          // NewList id 1, first copy id 2, second copy would be id 3.
+          if (idsIssued == 3) {
             throw StateError('forced id failure');
           }
           return 'flaky-$idsIssued';
@@ -997,13 +1014,22 @@ void main() {
       );
 
       await expectLater(
-        flakyLists.copyWishlistItems([wish.id], const NewList('Someday')),
+        flakyLists.copyWishlistItems([
+          first.id,
+          second.id,
+        ], const NewList('Someday')),
         throwsA(isA<StateError>()),
       );
 
-      expect(await lists.watchActiveForStore(store.id).first, isEmpty);
+      final activeLists = await lists.watchActiveForStore(store.id).first;
+      expect(activeLists, hasLength(1));
+      expect(activeLists.single.list.id, unrelated.id);
+      expect(activeLists.single.list.updatedAt, unrelatedUpdatedAt);
       expect(await db.select(db.listItems).get(), isEmpty);
-      expect(await wishlist.watch(store.id).first, hasLength(1));
+      expect(await db.select(db.shoppingLists).get(), hasLength(1));
+      final wishes = await wishlist.watch(store.id).first;
+      expect(wishes.map((w) => w.id), [first.id, second.id]);
+      expect(wishes.map((w) => w.title), ['Heads', 'Cream']);
     });
 
     test(
