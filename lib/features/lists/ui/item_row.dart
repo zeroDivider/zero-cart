@@ -83,7 +83,7 @@ class ItemRow extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              if (!readOnly)
+              if (!readOnly) ...[
                 SizedBox(
                   width: tokens.spacing48,
                   height: tokens.spacing48,
@@ -103,10 +103,9 @@ class ItemRow extends StatelessWidget {
                             },
                     ),
                   ),
-                )
-              else
-                SizedBox(width: tokens.spacing48),
-              SizedBox(width: tokens.spacing12),
+                ),
+                SizedBox(width: tokens.spacing12),
+              ],
               Expanded(
                 child: Material(
                   type: MaterialType.transparency,

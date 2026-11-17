@@ -22,6 +22,7 @@ import 'package:zero_cart/features/lists/ui/sheets/item_edit_sheet.dart';
 import 'package:zero_cart/features/lists/ui/item_row.dart';
 import 'package:zero_cart/features/lists/ui/purchased_header.dart';
 import 'package:zero_cart/features/lists/ui/sheets/list_form_sheet.dart';
+import 'package:zero_cart/features/stores/stores_providers.dart';
 import 'package:zero_cart/l10n/generated/app_localizations.dart';
 
 /// Shopping list details: active items, inline add, purchased section (APP-012).
@@ -35,21 +36,46 @@ class ListScreen extends ConsumerWidget {
     final l10n = AppLocalizations.of(context);
     final asyncList = ref.watch(listByIdProvider(listId));
     final list = asyncList.asData?.value;
+    final store = list == null
+        ? null
+        : ref.watch(storeByIdProvider(list.storeId)).asData?.value;
+    final listArchived = list?.archivedAt != null;
+    final storeArchived = store?.archivedAt != null;
+    // LI-5: Restore only when the store is known and active.
+    final canRestoreList = listArchived && store != null && !storeArchived;
 
     return Scaffold(
       appBar: AppBar(
         title: Text(list?.name ?? l10n.listDetailsPlaceholder),
         actions: [
-          if (list != null && list.archivedAt == null) ...[
+          if (list != null && !listArchived && !storeArchived) ...[
             _FinishAction(list: list),
             _ListMenu(list: list),
           ],
-          if (list != null && list.archivedAt != null)
+          if (listArchived) ...[
+            if (storeArchived)
+              Padding(
+                padding: EdgeInsets.only(
+                  right: Theme.of(context).extension<AppTokens>()!.spacing8,
+                ),
+                child: Center(
+                  child: Text(
+                    key: const Key('list_details_restore_hint'),
+                    l10n.restoreStoreFirstHint,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+              ),
             TextButton(
               key: const Key('list_details_restore'),
-              onPressed: () => _restoreList(context, ref, list),
+              onPressed: canRestoreList
+                  ? () => _restoreList(context, ref, list!)
+                  : null,
               child: Text(l10n.restore),
             ),
+          ],
         ],
       ),
       body: AsyncBody(
@@ -223,7 +249,14 @@ class _ListScreenBodyState extends ConsumerState<_ListScreenBody> {
   List<String>? _optimisticActiveIds;
 
   ShoppingList get list => widget.list;
-  bool get _readOnly => list.archivedAt != null;
+
+  /// Archived list, or any list whose store is archived (prototype / D-14).
+  bool _isReadOnly(Store? store) {
+    if (list.archivedAt != null) {
+      return true;
+    }
+    return store?.archivedAt != null;
+  }
 
   @override
   void dispose() {
@@ -333,8 +366,8 @@ class _ListScreenBodyState extends ConsumerState<_ListScreenBody> {
     );
   }
 
-  Widget _wrapRemovable(ListItem item, Widget child) {
-    if (_readOnly) {
+  Widget _wrapRemovable(ListItem item, Widget child, {required bool readOnly}) {
+    if (readOnly) {
       return child;
     }
     final l10n = AppLocalizations.of(context);
@@ -346,25 +379,64 @@ class _ListScreenBodyState extends ConsumerState<_ListScreenBody> {
     );
   }
 
-  Widget _activeRow(ListItem item, List<ListItem> active, int index) {
+  Widget _activeRow(
+    ListItem item,
+    List<ListItem> active,
+    int index, {
+    required bool readOnly,
+  }) {
     return KeyedSubtree(
       key: _keyFor(item.id),
       child: _wrapRemovable(
         item,
         ItemRow(
           item: item,
-          readOnly: _readOnly,
-          reorderIndex: _readOnly ? null : index,
-          onPurchasedChanged: _readOnly
+          readOnly: readOnly,
+          reorderIndex: readOnly ? null : index,
+          onPurchasedChanged: readOnly
               ? null
               : (value) => _setPurchased(item, value),
-          onOpenEdit: _readOnly ? null : () => showItemEditSheet(context, item),
-          onMoveUp: !_readOnly && index > 0
+          onOpenEdit: readOnly ? null : () => showItemEditSheet(context, item),
+          onMoveUp: !readOnly && index > 0
               ? () => _moveActive(active, index, -1)
               : null,
-          onMoveDown: !_readOnly && index < active.length - 1
+          onMoveDown: !readOnly && index < active.length - 1
               ? () => _moveActive(active, index, 1)
               : null,
+        ),
+        readOnly: readOnly,
+      ),
+    );
+  }
+
+  Widget _statusTag(BuildContext context, AppLocalizations l10n) {
+    final tokens = Theme.of(context).extension<AppTokens>()!;
+    final finished =
+        list.archiveReason == ListsRepository.archiveReasonFinished;
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        tokens.spacing16,
+        tokens.spacing8,
+        tokens.spacing16,
+        tokens.spacing4,
+      ),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: Container(
+          key: const Key('list_status_tag'),
+          padding: EdgeInsets.symmetric(
+            horizontal: tokens.spacing8,
+            vertical: tokens.spacing4,
+          ),
+          decoration: BoxDecoration(
+            color: tokens.success,
+            borderRadius: BorderRadius.circular(tokens.radiusPill),
+          ),
+          child: Text(
+            finished ? l10n.listStatusFinished : l10n.listStatusArchived,
+            style: Theme.of(context).textTheme.labelMedium
+                ?.copyWith(color: tokens.onSuccess),
+          ),
         ),
       ),
     );
@@ -375,6 +447,8 @@ class _ListScreenBodyState extends ConsumerState<_ListScreenBody> {
     final l10n = AppLocalizations.of(context);
     final tokens = Theme.of(context).extension<AppTokens>()!;
     final asyncItems = ref.watch(listItemsProvider(list.id));
+    final store = ref.watch(storeByIdProvider(list.storeId)).asData?.value;
+    final readOnly = _isReadOnly(store);
     final purchasedExpanded = ref.watch(purchasedExpandedProvider(list.id));
     final pendingScrollId = ref.watch(addItemNotifierProvider(list.id));
 
@@ -397,13 +471,15 @@ class _ListScreenBodyState extends ConsumerState<_ListScreenBody> {
           key: const Key('list_items_scroll'),
           controller: _scrollController,
           slivers: [
-            if (_readOnly)
+            if (list.archivedAt != null)
+              SliverToBoxAdapter(child: _statusTag(context, l10n)),
+            if (readOnly)
               SliverList(
                 delegate: SliverChildBuilderDelegate((context, index) {
                   final item = active[index];
                   return KeyedSubtree(
                     key: ValueKey(item.id),
-                    child: _activeRow(item, active, index),
+                    child: _activeRow(item, active, index, readOnly: readOnly),
                   );
                 }, childCount: active.length),
               )
@@ -421,13 +497,13 @@ class _ListScreenBodyState extends ConsumerState<_ListScreenBody> {
                   final item = active[index];
                   return KeyedSubtree(
                     key: ValueKey(item.id),
-                    child: _activeRow(item, active, index),
+                    child: _activeRow(item, active, index, readOnly: readOnly),
                   );
                 },
               ),
-            if (!_readOnly)
+            if (!readOnly)
               SliverToBoxAdapter(child: AddItemRow(listId: list.id)),
-            if (items.isEmpty && !_readOnly)
+            if (items.isEmpty && !readOnly)
               SliverToBoxAdapter(
                 child: Padding(
                   padding: EdgeInsets.all(tokens.spacing24),
@@ -468,14 +544,15 @@ class _ListScreenBodyState extends ConsumerState<_ListScreenBody> {
                         item,
                         ItemRow(
                           item: item,
-                          readOnly: _readOnly,
-                          onPurchasedChanged: _readOnly
+                          readOnly: readOnly,
+                          onPurchasedChanged: readOnly
                               ? null
                               : (value) => _setPurchased(item, value),
-                          onOpenEdit: _readOnly
+                          onOpenEdit: readOnly
                               ? null
                               : () => showItemEditSheet(context, item),
                         ),
+                        readOnly: readOnly,
                       ),
                     );
                   }, childCount: purchased.length),

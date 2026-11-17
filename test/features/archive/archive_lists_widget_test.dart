@@ -84,7 +84,7 @@ void main() {
 
       expect(find.text('Manual trip'), findsOneWidget);
       expect(find.text('Finished trip'), findsNothing);
-      expect(find.text('Lidl'), findsOneWidget);
+      expect(find.text('Lidl · manual'), findsOneWidget);
 
       await tester.tap(find.byKey(Key('archived_list_row_${manual.id}')));
       await pumpApp(tester, harness);
@@ -132,7 +132,10 @@ void main() {
     await _selectListsSegment(tester, harness);
 
     expect(find.text('Parked'), findsOneWidget);
-    expect(find.text('Restore the store first'), findsOneWidget);
+    expect(
+      find.text('Lidl · manual · Restore the store first'),
+      findsOneWidget,
+    );
     final restore = tester.widget<TextButton>(
       find.byKey(Key('archived_list_restore_${manual.id}')),
     );
