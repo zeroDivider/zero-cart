@@ -402,28 +402,32 @@
   "@restoreStoreFirstHint": {
     "description": "Disabled Restore hint when the list's store is archived (LI-5)"
   },
-  "archiveReasonManualLabel": "manual",
-  "@archiveReasonManualLabel": {
-    "description": "Archive Lists subtitle label for archive_reason = manual"
-  },
   "archiveReasonFinishedLabel": "finished",
   "@archiveReasonFinishedLabel": {
-    "description": "Archive Lists subtitle label for archive_reason = finished"
+    "description": "Archive Lists subtitle marker when archive_reason = finished"
   },
-  "archivedListSubtitle": "{store} · {reason}",
-  "@archivedListSubtitle": {
-    "description": "Archive Lists row subtitle: store name and archive reason",
+  "archivedListSubtitleFinished": "{store} · {reason}",
+  "@archivedListSubtitleFinished": {
+    "description": "Archive Lists row subtitle for a finished list",
     "placeholders": {
       "store": { "type": "String" },
       "reason": { "type": "String" }
     }
   },
-  "archivedListSubtitleStoreArchived": "{store} · {reason} · {hint}",
-  "@archivedListSubtitleStoreArchived": {
-    "description": "Archive Lists row subtitle when the store is archived (LI-5)",
+  "archivedListSubtitleFinishedStoreArchived": "{store} · {reason} · {hint}",
+  "@archivedListSubtitleFinishedStoreArchived": {
+    "description": "Finished-list Archive subtitle when the store is archived (LI-5)",
     "placeholders": {
       "store": { "type": "String" },
       "reason": { "type": "String" },
+      "hint": { "type": "String" }
+    }
+  },
+  "archivedListSubtitleStoreArchived": "{store} · {hint}",
+  "@archivedListSubtitleStoreArchived": {
+    "description": "Manual Archive Lists subtitle when the store is archived (LI-5)",
+    "placeholders": {
+      "store": { "type": "String" },
       "hint": { "type": "String" }
     }
   },
