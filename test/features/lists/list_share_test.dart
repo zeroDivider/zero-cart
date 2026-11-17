@@ -11,7 +11,8 @@ import '../../support/fake_share_service.dart';
 import '../../support/test_app.dart';
 
 const _genericError = 'Something went wrong. Try again.';
-const _expectedShareText = 'Weekend groceries\nMilk - 2L, lactose-free\nBread';
+const _expectedShareText =
+    'Weekend groceries\n---\nMilk - 2L, lactose-free\nBread';
 
 StoresRepository _stores(TestAppHarness harness) {
   return StoresRepository(
