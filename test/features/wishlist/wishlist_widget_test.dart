@@ -173,8 +173,10 @@ void main() {
     expect(find.text('Heads soft'), findsNothing);
     expect(find.text('Removed Heads soft'), findsOneWidget);
 
-    final snackBar = tester.widget<SnackBar>(find.byType(SnackBar));
-    snackBar.action!.onPressed();
+    final undoAction = tester.widget<SnackBarAction>(
+      find.byType(SnackBarAction),
+    );
+    undoAction.onPressed();
     await tester.runAsync(() async {
       await Future<void>.delayed(const Duration(milliseconds: 50));
     });
@@ -244,8 +246,10 @@ void main() {
     expect(find.text('Added to Drugstore'), findsOneWidget);
     expect(find.text('Heads'), findsOneWidget);
 
-    final snackBar = tester.widget<SnackBar>(find.byType(SnackBar));
-    snackBar.action!.onPressed();
+    final openAction = tester.widget<SnackBarAction>(
+      find.byType(SnackBarAction),
+    );
+    openAction.onPressed();
     await pumpApp(tester, harness);
     expect(find.byType(ListScreen), findsOneWidget);
     await harness.dispose(tester);
