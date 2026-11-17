@@ -49,3 +49,14 @@ final class StaleOrderException extends RepositoryException {
   @override
   String toString() => 'StaleOrderException';
 }
+
+/// Defensive failure for an invalid wishlist copy (missing ids, mixed stores,
+/// or a target that is not an active list in the wishlist's store).
+///
+/// Mapped to the generic user string; the UI cannot produce this case.
+final class InvalidWishlistCopyException extends RepositoryException {
+  const InvalidWishlistCopyException();
+
+  @override
+  String toString() => 'InvalidWishlistCopyException';
+}

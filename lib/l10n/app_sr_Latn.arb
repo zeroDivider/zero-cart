@@ -46,7 +46,7 @@
   },
   "clearSelection": "Poništi izbor",
   "selectItem": "Izaberi",
-  "wishlistItemsForSomeday": "{count, plural, one{{count} stavka za jednog dana} few{{count} stavke za jednog dana} other{{count} stavki za jednog dana}}",
+  "wishlistItemsForSomeday": "{count, plural, =0{Još ništa sačuvano} =1{1 stavka za jednog dana} few{{count} stavke za jednog dana} other{{count} stavki za jednog dana}}",
   "@wishlistItemsForSomeday": {
     "placeholders": {
       "count": {

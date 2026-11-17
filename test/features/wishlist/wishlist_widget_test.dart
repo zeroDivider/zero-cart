@@ -72,6 +72,13 @@ void main() {
       router: AppRouter.create(initialLocation: AppRoutes.stores),
     );
     final storeId = await _seedStore(tester, harness);
+
+    await tester.tap(find.byKey(Key('store_row_$storeId')));
+    await pumpApp(tester, harness);
+    expect(find.text('Nothing saved yet'), findsOneWidget);
+    await tester.pageBack();
+    await pumpApp(tester, harness);
+
     await tester.runAsync(
       () => _wishlist(harness).add(storeId: storeId, title: 'Heads'),
     );

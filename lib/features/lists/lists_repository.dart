@@ -483,14 +483,15 @@ ORDER BY sl.created_at ASC, sl.id ASC
                   (t) => OrderingTerm.asc(t.id),
                 ]))
               .get();
-      if (wishlistRows.length != wishlistIds.toSet().length) {
-        throw StateError('One or more wishlist items were not found');
+      if (wishlistRows.isEmpty ||
+          wishlistRows.length != wishlistIds.toSet().length) {
+        throw const InvalidWishlistCopyException();
       }
 
       final storeId = wishlistRows.first.storeId;
       for (final row in wishlistRows) {
         if (row.storeId != storeId) {
-          throw StateError('Wishlist items must belong to one store');
+          throw const InvalidWishlistCopyException();
         }
       }
 
@@ -498,7 +499,7 @@ ORDER BY sl.created_at ASC, sl.id ASC
         _db.stores,
       )..where((t) => t.id.equals(storeId))).getSingleOrNull();
       if (store == null) {
-        throw StateError('Store $storeId not found');
+        throw const InvalidWishlistCopyException();
       }
       if (store.archivedAt != null) {
         throw StoreArchivedException(storeId);
@@ -612,14 +613,11 @@ ORDER BY sl.created_at ASC, sl.id ASC
         final list = await (_db.select(
           _db.shoppingLists,
         )..where((t) => t.id.equals(listId))).getSingleOrNull();
-        if (list == null) {
-          throw StateError('List $listId not found');
-        }
-        if (list.archivedAt != null) {
-          throw ListArchivedException(listId);
-        }
-        if (list.storeId != storeId) {
-          throw StateError('List $listId does not belong to store $storeId');
+        // Must be an active list in the wishlist's store (op 7).
+        if (list == null ||
+            list.archivedAt != null ||
+            list.storeId != storeId) {
+          throw const InvalidWishlistCopyException();
         }
         return list;
       case NewList(:final name):
