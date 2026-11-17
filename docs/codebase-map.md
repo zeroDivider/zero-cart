@@ -1,6 +1,6 @@
 # Codebase map
 
-Facts verified against the tree as of APP-017c. Prefer this over recreating shared code.
+Facts verified against the tree as of APP-018. Prefer this over recreating shared code.
 
 ## Shared primitives
 
@@ -19,7 +19,8 @@ Facts verified against the tree as of APP-017c. Prefer this over recreating shar
 - `clock.dart` / `ids.dart` — injectable `Clock` / `IdGenerator` (`systemClock`, `generateUuidV4`).
 - `limits.dart` / `text_normalize.dart` — D-08 lengths; `normalizeTitle` / name / description helpers.
 - `ordering.dart` — `computeDenseReorder` (+ `StaleOrderException`).
-- `share_text.dart` — `formatShareText` (no UI caller yet).
+- `share_text.dart` — `formatShareText` (D-20 plain text; unpurchased only).
+- `share_service.dart` — `ShareService` / `PlatformShareService` / `shareServiceProvider` (wraps `share_plus`; fake in tests).
 - `repository_exceptions.dart` — sealed typed failures for `messageFor`.
 
 ## Repositories (public ops)
@@ -48,6 +49,7 @@ Facts verified against the tree as of APP-017c. Prefer this over recreating shar
 ## Providers worth reusing
 
 - `lib/data/providers.dart` — `appDatabaseProvider` (must override), `nowProvider`, `idGeneratorProvider`
+- `lib/core/share_service.dart` — `shareServiceProvider` (override with `FakeShareService` in tests)
 - Feature `*RepositoryProvider`s — app-lifetime; wire clock/ids from above
 - Streams: `inboxItemsProvider`; `activeStoresProvider`, `activeStoreSummariesProvider`, `archivedStoresProvider`, `storeByIdProvider`; `activeListsForStoreProvider`, `listByIdProvider`, `activeListsByRecencyProvider`, `finishedListsForStoreProvider`, `finishedCountForStoreProvider`, `manualArchivedListsProvider`, `listItemsProvider`; `wishlistItemsProvider`, `wishlistCountProvider`
 - UI Notifiers: `inboxSelectionProvider`; `wishlistSelectionProvider` (autoDispose); `purchasedExpandedProvider` / `addItemNotifierProvider` (autoDispose family)
@@ -65,7 +67,8 @@ Facts verified against the tree as of APP-017c. Prefer this over recreating shar
 ## Test helpers and fakes
 
 - `test/support/test_app.dart` — `pumpTestApp` / `TestAppHarness`: in-memory Drift, fixed clock/ids, bridged stream providers (FakeAsync caveat on Windows); `refresh*` after writes.
-- No Fake repository classes; repository tests use real memory DB. Platform edges: override clock/ids.
+- `test/support/fake_share_service.dart` — records `shareText` calls; optional throw for failure paths.
+- No Fake repository classes; repository tests use real memory DB. Platform edges: override clock/ids/share.
 - `test/guards/adr0007_scanner.dart` — static ADR-0007 source guards.
 
 ## Screens and routes done
@@ -80,11 +83,10 @@ Sheets: store form; list form; item edit; finish list; inbox quick-add / edit / 
 
 Store details: `StoreWishlistCard` then `StorePastTripsCard` (live counts; open child routes). Past trips / Archive Lists use lists providers only (never list screens); Restore via `runWrite`; LI-5 disables Restore when the store is archived.
 
-List screen (`/lists/:id`): Finish (active) opens `finish_list_sheet` when leftovers remain, else `finishListWithUndo` then navigates to the store; Restore (archived) via `runWrite(restore)`. Read-only archived body already hides checkbox, handle, add row and edit.
+List screen (`/lists/:id`): Share (active) builds D-20 text via `formatShareText`, gates empty with `AppMessenger.info`, else `ShareService` with button origin; Finish opens `finish_list_sheet` when leftovers remain, else `finishListWithUndo` then navigates to the store; Restore (archived) via `runWrite(restore)`. Read-only archived body already hides checkbox, handle, add row and edit.
 
 ## Known gaps (from code, not the plan)
 
 - Home body is still a placeholder string.
-- `formatShareText` has no feature caller / share UI.
-- No backup/export/import Dart code.
+- No backup/export/import Dart code (`ShareService` is ready for APP-021 file share).
 - Settings / About are placeholders (entry from Home settings icon exists).
