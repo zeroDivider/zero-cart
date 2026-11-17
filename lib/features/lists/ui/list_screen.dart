@@ -6,6 +6,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:zero_cart/app/router.dart';
 import 'package:zero_cart/app/theme/app_tokens.dart';
+import 'package:zero_cart/core/share_service.dart';
+import 'package:zero_cart/core/share_text.dart';
 import 'package:zero_cart/core/ui/app_messenger.dart';
 import 'package:zero_cart/core/ui/write_runner.dart';
 import 'package:zero_cart/core/widgets/async_body.dart';
@@ -49,6 +51,7 @@ class ListScreen extends ConsumerWidget {
         title: Text(list?.name ?? l10n.listDetailsPlaceholder),
         actions: [
           if (list != null && !listArchived && !storeArchived) ...[
+            _ShareAction(list: list),
             _FinishAction(list: list),
             _ListMenu(list: list),
           ],
@@ -99,6 +102,60 @@ class ListScreen extends ConsumerWidget {
     final l10n = AppLocalizations.of(context);
     await runWrite(
       () => ref.read(listsRepositoryProvider).restore(list.id),
+      l10n: l10n,
+    );
+  }
+}
+
+/// App-bar Share: unpurchased items as plain text via [ShareService] (SH-1).
+class _ShareAction extends ConsumerWidget {
+  const _ShareAction({required this.list});
+
+  final ShoppingList list;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
+    return IconButton(
+      key: const Key('list_share'),
+      tooltip: l10n.shareList,
+      onPressed: () => _share(context, ref),
+      icon: const Icon(Icons.ios_share),
+    );
+  }
+
+  Future<void> _share(BuildContext context, WidgetRef ref) async {
+    final l10n = AppLocalizations.of(context);
+    final items = ref.read(listItemsProvider(list.id)).asData?.value;
+    if (items == null) {
+      return;
+    }
+
+    // D-20: name-only formatter output must not open the share sheet.
+    if (!items.any((item) => !item.isPurchased)) {
+      AppMessenger.info(l10n.nothingLeftToShare);
+      return;
+    }
+
+    final box = context.findRenderObject() as RenderBox?;
+    if (box == null || !box.hasSize) {
+      return;
+    }
+    final origin = box.localToGlobal(Offset.zero) & box.size;
+
+    final text = formatShareText(list.name, [
+      for (final item in items)
+        ShareableItem(
+          title: item.title,
+          description: item.description,
+          isPurchased: item.isPurchased,
+        ),
+    ]);
+
+    await runWrite(
+      () => ref
+          .read(shareServiceProvider)
+          .shareText(text, sharePositionOrigin: origin),
       l10n: l10n,
     );
   }
