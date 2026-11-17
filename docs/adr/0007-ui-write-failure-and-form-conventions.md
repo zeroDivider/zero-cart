@@ -18,7 +18,7 @@ One mental model for agents and for users; every failure path visible and testab
 
 ## Decision
 
-1. **Messages.** All snackbars go through `AppMessenger` (`lib/core/ui/app_messenger.dart`), backed by the root messenger key. Feature code never calls `ScaffoldMessenger.of(context)`. One snackbar at a time: a new one replaces the current. Kinds: info, error, undo.
+1. **Messages.** All snackbars go through `AppMessenger` (`lib/core/ui/app_messenger.dart`), backed by the root messenger key. Feature code never calls `ScaffoldMessenger.of(context)`. One snackbar at a time: a new one replaces the current. Kinds: info, error, undo, and action (an info snackbar with one named action such as Open, used by F13 and the assign flow).
 2. **Writes.** Three surfaces, one helper `runWrite` that never swallows an error and never shows raw exception text:
    - *Form submit:* the sheet stays open with an inline, localised error.
    - *Direct action* (checkbox, archive, restore, reorder, remove): an error snackbar; the UI reverts (an optimistic reorder is dropped).
