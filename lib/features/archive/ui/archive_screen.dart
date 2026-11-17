@@ -6,12 +6,14 @@ import 'package:zero_cart/app/theme/app_tokens.dart';
 import 'package:zero_cart/core/ui/write_runner.dart';
 import 'package:zero_cart/core/widgets/async_body.dart';
 import 'package:zero_cart/data/database.dart';
+import 'package:zero_cart/features/lists/archived_list_with_store.dart';
+import 'package:zero_cart/features/lists/lists_providers.dart';
 import 'package:zero_cart/features/stores/stores_providers.dart';
 import 'package:zero_cart/l10n/generated/app_localizations.dart';
 
 enum _ArchiveSegment { stores, lists }
 
-/// Archive screen with Stores / Lists segments (ST-4, F12; Lists in APP-017).
+/// Archive screen with Stores / Lists segments (ST-4, F12; Lists = manual only).
 class ArchiveScreen extends ConsumerStatefulWidget {
   const ArchiveScreen({super.key});
 
@@ -58,7 +60,7 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
           Expanded(
             child: _segment == _ArchiveSegment.stores
                 ? const _ArchivedStoresPane()
-                : const _ArchivedListsPlaceholder(),
+                : const _ArchivedListsPane(),
           ),
         ],
       ),
@@ -177,22 +179,199 @@ class _ArchivedStoreRow extends ConsumerWidget {
   }
 }
 
-class _ArchivedListsPlaceholder extends StatelessWidget {
-  const _ArchivedListsPlaceholder();
+class _ArchivedListsPane extends ConsumerWidget {
+  const _ArchivedListsPane();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
+    final asyncLists = ref.watch(manualArchivedListsProvider);
+    final colorScheme = Theme.of(context).colorScheme;
+    final tokens = Theme.of(context).extension<AppTokens>()!;
+
+    return AsyncBody(
+      value: asyncLists,
+      onRetry: () => ref.invalidate(manualArchivedListsProvider),
+      builder: (context, rows) {
+        if (rows.isEmpty) {
+          return Center(
+            child: Padding(
+              padding: EdgeInsets.all(tokens.spacing24),
+              child: Text(
+                l10n.archiveListsEmpty,
+                style: Theme.of(context).textTheme.bodyLarge
+                    ?.copyWith(color: colorScheme.onSurfaceVariant),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          );
+        }
+
+        final entries = _buildGroupedEntries(rows);
+        return ListView.builder(
+          itemCount: entries.length,
+          itemBuilder: (context, index) {
+            final entry = entries[index];
+            return switch (entry) {
+              _StoreGroupHeader(:final storeName, :final colorKey) =>
+                _ArchivedListStoreHeader(
+                  storeName: storeName,
+                  colorKey: colorKey,
+                ),
+              _ListEntry(:final row) => _ArchivedListRow(row: row),
+            };
+          },
+        );
+      },
+    );
+  }
+}
+
+sealed class _ArchiveListEntry {
+  const _ArchiveListEntry();
+}
+
+class _StoreGroupHeader extends _ArchiveListEntry {
+  const _StoreGroupHeader({required this.storeName, required this.colorKey});
+
+  final String storeName;
+  final String colorKey;
+}
+
+class _ListEntry extends _ArchiveListEntry {
+  const _ListEntry(this.row);
+
+  final ArchivedListWithStore row;
+}
+
+List<_ArchiveListEntry> _buildGroupedEntries(List<ArchivedListWithStore> rows) {
+  final entries = <_ArchiveListEntry>[];
+  String? lastStoreId;
+  for (final row in rows) {
+    if (row.list.storeId != lastStoreId) {
+      entries.add(
+        _StoreGroupHeader(
+          storeName: row.storeName,
+          colorKey: row.storeColorKey,
+        ),
+      );
+      lastStoreId = row.list.storeId;
+    }
+    entries.add(_ListEntry(row));
+  }
+  return entries;
+}
+
+class _ArchivedListStoreHeader extends StatelessWidget {
+  const _ArchivedListStoreHeader({
+    required this.storeName,
+    required this.colorKey,
+  });
+
+  final String storeName;
+  final String colorKey;
 
   @override
   Widget build(BuildContext context) {
+    final tokens = Theme.of(context).extension<AppTokens>()!;
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        tokens.spacing16,
+        tokens.spacing16,
+        tokens.spacing16,
+        tokens.spacing4,
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: tokens.spacing16,
+            height: tokens.spacing16,
+            decoration: BoxDecoration(
+              color: tokens.storeColor(colorKey),
+              shape: BoxShape.circle,
+            ),
+          ),
+          SizedBox(width: tokens.spacing12),
+          Expanded(
+            child: Text(
+              storeName,
+              style: Theme.of(context).textTheme.titleSmall
+                  ?.copyWith(color: colorScheme.onSurfaceVariant),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ArchivedListRow extends ConsumerWidget {
+  const _ArchivedListRow({required this.row});
+
+  final ArchivedListWithStore row;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final tokens = Theme.of(context).extension<AppTokens>()!;
     final colorScheme = Theme.of(context).colorScheme;
-    return Center(
+    final list = row.list;
+    final storeArchived = row.isStoreArchived;
+
+    return ConstrainedBox(
+      constraints: BoxConstraints(minHeight: tokens.spacing48 + 8),
       child: Padding(
-        padding: EdgeInsets.all(tokens.spacing24),
-        child: Text(
-          l10n.archiveListsPlaceholder,
-          style: Theme.of(context).textTheme.bodyLarge
-              ?.copyWith(color: colorScheme.onSurfaceVariant),
-          textAlign: TextAlign.center,
+        padding: EdgeInsets.symmetric(
+          horizontal: tokens.spacing16,
+          vertical: tokens.spacing8,
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Semantics(
+                button: true,
+                label: list.name,
+                child: InkWell(
+                  key: Key('archived_list_row_${list.id}'),
+                  onTap: () =>
+                      context.push(AppRoutes.listDetailsLocation(list.id)),
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(vertical: tokens.spacing8),
+                    child: Text(
+                      list.name,
+                      style: Theme.of(context).textTheme.bodyLarge,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            if (storeArchived)
+              Padding(
+                padding: EdgeInsets.only(left: tokens.spacing8),
+                child: Text(
+                  key: Key('archived_list_restore_hint_${list.id}'),
+                  l10n.restoreStoreFirstHint,
+                  style: Theme.of(context).textTheme.bodySmall
+                      ?.copyWith(color: colorScheme.onSurfaceVariant),
+                ),
+              ),
+            TextButton(
+              key: Key('archived_list_restore_${list.id}'),
+              onPressed: storeArchived
+                  ? null
+                  : () {
+                      final captured = AppLocalizations.of(context);
+                      runWrite(
+                        () =>
+                            ref.read(listsRepositoryProvider).restore(list.id),
+                        l10n: captured,
+                      );
+                    },
+              child: Text(l10n.restore),
+            ),
+          ],
         ),
       ),
     );

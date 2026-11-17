@@ -394,9 +394,43 @@
   "@archiveStoresEmpty": {
     "description": "Empty state when no archived stores exist"
   },
-  "archiveListsPlaceholder": "Archived lists will show here.",
-  "@archiveListsPlaceholder": {
-    "description": "Lists segment placeholder until APP-017"
+  "archiveListsEmpty": "No archived lists.",
+  "@archiveListsEmpty": {
+    "description": "Empty state when Archive Lists has no manual archives"
+  },
+  "restoreStoreFirstHint": "Restore the store first",
+  "@restoreStoreFirstHint": {
+    "description": "Disabled Restore hint when the list's store is archived (LI-5)"
+  },
+  "storePastTripsSection": "Past trips",
+  "@storePastTripsSection": {
+    "description": "Section header for Past trips on store details"
+  },
+  "pastTripsCount": "{count, plural, =0{No past trips yet} =1{1 past trip} other{{count} past trips}}",
+  "@pastTripsCount": {
+    "description": "Subtitle on the store-details Past trips card",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "pastTripsCardSemantics": "Past trips, {count, plural, one{{count} trip} other{{count} trips}}",
+  "@pastTripsCardSemantics": {
+    "description": "Accessibility label for the store-details Past trips card",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "pastTripsScreenTitle": "Past trips",
+  "@pastTripsScreenTitle": {
+    "description": "App-bar title for the store Past trips screen"
+  },
+  "pastTripsEmpty": "No finished trips yet.",
+  "@pastTripsEmpty": {
+    "description": "Empty state on the Past trips screen"
   },
   "storeNotFound": "Store not found",
   "@storeNotFound": {
