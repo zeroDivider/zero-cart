@@ -255,23 +255,95 @@ Instruction to give Cursor for each task: 'Implement task APP-0NN according to t
 
 **Objective:** finish a trip, keep history, share a list. **Depends on:** phases 3 and 4. **ADRs:** 0004. **Files:** `lib/features/lists/`, `lib/features/archive/`, `lib/core/`. **Tests:** transaction tests, widget tests. **Phase done when:** LI-3 to LI-5, SH-1 and flows F10, F11, F14 pass.
 
-### APP-017 Finish shopping, archived lists, restore
+> **APP-017 split (Option 2, owner-approved 2026-11-17).** The former single APP-017 is split into APP-017a (repository), APP-017b (finish UI + read-only restore) and APP-017c (archive browsing + Past trips). Option 2 relocates finished lists from the Archive screen to a read-only **Past trips** section on store details; the Archive **Lists** segment then holds only **manual** archives. The schema, the `finishList` transaction (data model operations 8 and 9) and list `restore` (LI-5) are unchanged — this is a UI relocation plus doc wording. Implement the three tasks one at a time, each in its own chat and branch.
 
-- **Context:** the list lifecycle (D-10 to D-13, data model operations 8 and 9).
-- **Requirements:** `ListsRepository.finishList(listId, carryForward, newName)` in one transaction: require an active list, collect unpurchased items in order, archive with reason `finished`, and when requested and non-empty create the new list in the same store with copies (new ids, unpurchased, positions 1..n); return the ids and the carried count. List screen app bar: Finish — when nothing is left, `runWrite(finishList…)` then `AppMessenger.undo` (capture the repository before any navigation; failed Undo replaces the snackbar with `messageFor`); otherwise open `lists/ui/sheets/` finish sheet via `FormSheetScaffold` with the count (ICU plural), a name field prefilled with the localised 'Leftovers: \<name>' (truncated to 60), and primary/secondary actions 'Carry forward' / 'Archive without carrying' (`FormSheetSecondaryAction`; inline `messageFor` on failure). Manual 'Archive list' already uses a confirm dialog then `runWrite(archive)` and navigates to the parent store (no Undo snackbar; `archive-confirm-navigate`) — do not rebuild that path. Archived list view is read-only (no checkbox, handle, add row or edit) with Restore via `runWrite`. Archive screen Lists segment: archived lists grouped by store with a Finished or Archived label; Restore disabled with the hint 'Restore the store first' when the store is archived. Store details shows the archived-lists count and a link to the Archive screen. Screens that load streams use `AsyncBody`.
-- **Components:** `features/lists/` (repository, `ui/sheets/` finish sheet + `show…Sheet`, list screen), `features/archive/`.
+### APP-017a Finish and carry-forward repository (no UI)
+
+- **Context:** the finish transaction only (D-10 to D-13, data model operations 8 and 9). The schema already allows `archive_reason = 'finished'` but no writer uses it yet.
+- **Requirements:** add `static const String archiveReasonFinished = 'finished';` and `finishList(listId, {required bool carryForward, String? newName})` to `ListsRepository`, all in one transaction: require an active list (else `ListArchivedException`, or `StateError` when missing); collect unpurchased items ordered by `(position, created_at, id)`; set `archived_at = now`, `archive_reason = 'finished'`, touch `updated_at`; when `carryForward` and the leftovers are non-empty, create the new list in the same store via `_insertNewList` and insert copies with new ids, `is_purchased = false`, positions 1..n in the original relative order; return `{archivedListId, newListId?, carriedCount}`. The default name 'Leftovers: \<name>' is built by the UI (APP-017b); the repository just normalises whatever `newName` it is given. No watch methods here (they are added in APP-017c). Sketch:
+
+```dart
+Future<FinishListResult> finishList(String listId,
+    {required bool carryForward, String? newName}) {
+  return _db.transaction(() async {
+    final list = await (_db.select(_db.shoppingLists)
+          ..where((t) => t.id.equals(listId))).getSingleOrNull();
+    if (list == null) throw StateError('List $listId not found');
+    if (list.archivedAt != null) throw ListArchivedException(listId);
+    final left = await (_db.select(_db.listItems)
+          ..where((t) => t.listId.equals(listId) & t.isPurchased.equals(false))
+          ..orderBy([(t) => OrderingTerm.asc(t.position),
+                     (t) => OrderingTerm.asc(t.createdAt),
+                     (t) => OrderingTerm.asc(t.id)])).get();
+    final now = _clock();
+    await (_db.update(_db.shoppingLists)..where((t) => t.id.equals(listId)))
+        .write(ShoppingListsCompanion(
+          archivedAt: Value(now),
+          archiveReason: const Value(archiveReasonFinished),
+          updatedAt: Value(now)));
+    String? newListId; var carried = 0;
+    if (carryForward && left.isNotEmpty) {
+      final created = await _insertNewList(list.storeId, newName ?? '');
+      newListId = created.id; var pos = 1;
+      for (final item in left) {
+        await _db.into(_db.listItems).insert(ListItemsCompanion.insert(
+          id: _idGenerator(), listId: created.id, title: item.title,
+          description: Value(item.description), isPurchased: const Value(false),
+          position: pos++, createdAt: now, updatedAt: now));
+        carried++;
+      }
+    }
+    return FinishListResult(
+      archivedListId: listId, newListId: newListId, carriedCount: carried);
+  });
+}
+```
+
+- **Components:** `lib/features/lists/finish_list_result.dart` (new `{String archivedListId; String? newListId; int carriedCount}`), `lib/features/lists/lists_repository.dart`, `test/features/lists/finish_list_test.dart`.
 - **Depends on:** APP-014, APP-010.
-- **Reuse:** `lib/core/ui/app_messenger.dart`, `lib/core/ui/write_runner.dart` (`runWrite` / `messageFor`); `lib/core/widgets/form_sheet.dart` (`FormSheetScaffold`, `FormSheetSecondaryAction`); `lib/core/widgets/async_body.dart`; `lib/core/limits.dart`; `ListsRepository.archive` / `restore` and list providers; `lib/features/lists/ui/list_screen.dart` (confirm archive + navigate, partial read-only); `lib/features/lists/ui/sheets/list_form_sheet.dart` (sheet placement pattern); `lib/features/lists/remove_item_undo.dart` (Undo capture pattern for finish-no-leftovers); `lib/features/archive/ui/archive_screen.dart` (Lists placeholder + store restore/`runWrite` pattern).
-- **Acceptance:** LI-3, LI-4, LI-5; carry-forward keeps the original relative order and resets purchased state; the original stays archived with its items exactly as they were; a failure leaves the list active and creates no new list; an empty list can be finished; restoring a finished list works.
-- **Verify:** database tests for every case above including forced rollback; widget tests for the sheet, no-leftover path, read-only view and the restore guard; manual F10 and F11.
-- **Docs:** none.
+- **Reuse:** `ListsRepository._insertNewList` / `_assertListActive` / injected clock and ids; `lib/core/repository_exceptions.dart` (`ListArchivedException`); the existing `archiveReasonManual` constant pattern.
+- **Acceptance:** carry-forward copies the unpurchased items in the original relative order with positions 1..n and new ids; the original stays archived with reason `finished` and its items untouched; archive-without-carrying creates no new list; an empty list finishes with `carriedCount = 0`; finishing an already-archived list throws; forced rollback (injected failing insert or over-length name) leaves the list active and creates no new list; `restore(archivedListId)` returns a finished list to active.
+- **Verify:** in-memory Drift tests for every case above including forced rollback.
+- **Docs:** last commit updates `docs/codebase-map.md` (add `finishList` + `archiveReasonFinished`; clear the "no writer uses `finished`" gap).
+
+### APP-017b Finish flow UI and read-only restore
+
+- **Context:** the Finish action and sheet, plus Restore on the read-only archived list view (LI-3, LI-4; F10). Manual 'Archive list' already uses confirm + navigate with no Undo (`archive-confirm-navigate`) — do not rebuild that path.
+- **Requirements:**
+  - `lists/ui/sheets/finish_list_sheet.dart`: `showFinishListSheet(context, {required list, required leftCount})` using `FormSheetScaffold`. Body: an ICU-plural count line; a name field prefilled with the localised 'Leftovers: \<name>' truncated to 60 (`kListNameMaxLength` from `lib/core/limits.dart`); primary 'Carry forward' submits `finishList(carryForward: true, newName: field)`; secondary 'Archive without carrying' (`FormSheetSecondaryAction`) submits `finishList(carryForward: false)`; inline `messageFor` on failure (sheet stays open); returns the `FinishListResult`.
+  - List screen app bar Finish action (shown only when `archived_at == null`): read the unpurchased count from `listItemsProvider`. 0 left -> `runWrite(() => repo.finishList(id, carryForward: false))` then `AppMessenger.undo` with the repository captured before navigation (mirror `remove_item_undo.dart`), `onUndo: () => repo.restore(archivedListId)`, failed Undo shows `messageFor`. >0 left -> open the finish sheet. On success navigate to the parent store.
+  - Archived list view: add a Restore app-bar action for `archived_at != null` via `runWrite(restore)` (mirror `store_details_restore`). Confirm the existing read-only view hides checkbox, handle, add row and edit (LI-3).
+  - l10n (`app_en.arb`): `finishAction`, `finishSheetTitle`, `finishSheetLeftCount` (ICU plural), `finishCarryForward`, `finishArchiveWithout`, `leftoversName` (`"Leftovers: {name}"`).
+- **Components:** `features/lists/ui/sheets/finish_list_sheet.dart` (new), `features/lists/ui/list_screen.dart`, optional `features/lists/finish_list_undo.dart`, `lib/l10n/app_en.arb`.
+- **Depends on:** APP-017a.
+- **Reuse:** `lib/core/widgets/form_sheet.dart` (`FormSheetScaffold`, `FormSheetSecondaryAction`); `lib/core/ui/app_messenger.dart`, `lib/core/ui/write_runner.dart`; `lib/core/limits.dart`; `lib/features/lists/remove_item_undo.dart` (capture-before-navigate Undo); `lib/features/lists/ui/sheets/list_form_sheet.dart` (sheet placement); the existing `_ListMenu` manual-archive confirm+navigate path (do not change it); `listItemsProvider` / `listByIdProvider`.
+- **Acceptance:** LI-4; with leftovers the sheet shows the count and the two actions, and carry-forward creates the new list with unpurchased copies in order; with none the list archives at once and a snackbar offers Undo that restores it; the archived view is read-only with only Restore (LI-3); a sheet failure keeps it open with an inline message and leaves the list active.
+- **Verify:** widget tests for both Finish paths, the sheet carry/archive branches with a throwing repository (inline error), the no-leftover Undo, and Restore on the archived view; manual F10. Reuse `test/support/test_app.dart`.
+- **Docs:** last commit updates `docs/codebase-map.md` (finish sheet + Finish/Restore on the list screen).
+
+### APP-017c Archive browsing and Past trips
+
+- **Context:** Option 2 relocation — finished lists are browsed from a read-only 'Past trips' section on store details; the Archive screen **Lists** segment holds only **manual** archives (LI-3, LI-5; F11). UI-only; no schema or transaction change.
+- **Requirements:**
+  - Repository + providers: `watchFinishedListsForStore(storeId)` (reason `finished`, order by `updated_at` desc) and `watchFinishedCountForStore(storeId)`; `watchManualArchivedLists()` joining manual-archived lists with their store (expose store name, colour and `store.archivedAt` for the LI-5 guard), grouped by store name then list `updated_at`. Add a small `ArchivedListWithStore` type. Providers in `lists_providers.dart`: `finishedListsForStoreProvider`, `finishedCountForStoreProvider`, `manualArchivedListsProvider`.
+  - Route: add `pastTrips = '/stores/:id/past-trips'` and `pastTripsLocation(id)` to `lib/app/router.dart` and register it like `wishlist`.
+  - Store details: `StorePastTripsCard` in `stores/ui/` mirroring `wishlist_card.dart` (title + count from `finishedCountForStoreProvider`, taps to the route); add it to `_StoreDetailsBody` after the wishlist card (read-only for active and archived stores).
+  - `features/stores/ui/past_trips_screen.dart`: `AsyncBody` over `finishedListsForStoreProvider`; empty state; rows show the list name, tap opens `/lists/:id` (the read-only view from APP-017b), Restore via `runWrite(restore)`; imports lists providers only, never list screens.
+  - Archive screen: replace `_ArchivedListsPlaceholder` with a pane over `manualArchivedListsProvider`: empty state, rows grouped by store (colour dot + name), Restore via `runWrite`, disabled with the hint 'Restore the store first' when the store is archived (LI-5); tapping a row opens the read-only `/lists/:id`.
+  - l10n (`app_en.arb`): `storePastTripsSection` ("Past trips"), `pastTripsCount` (ICU plural), `pastTripsScreenTitle`, `pastTripsEmpty`, `archiveListsEmpty` (replaces `archiveListsPlaceholder`), `restoreStoreFirstHint` ("Restore the store first").
+- **Components:** `features/lists/` (repository additions, `lists_providers.dart`, `archived_list_with_store.dart`), `lib/app/router.dart`, `features/stores/ui/store_past_trips_card.dart` (new), `features/stores/ui/past_trips_screen.dart` (new), `features/stores/ui/store_details_screen.dart`, `features/archive/ui/archive_screen.dart`, `lib/l10n/app_en.arb`.
+- **Depends on:** APP-017a (finished data exists), APP-017b (read-only view + Restore on `/lists/:id`).
+- **Reuse:** `lib/features/stores/ui/wishlist_card.dart` (card pattern); `lib/features/stores/ui/store_active_lists_section.dart` (cross-feature provider-import pattern); `lib/features/archive/ui/archive_screen.dart` (store Restore / `runWrite` + segment); `lib/core/widgets/async_body.dart`; the `AppRoutes.wishlist` registration pattern.
+- **Acceptance:** finished lists appear only under store Past trips, never in the Archive Lists segment; the Archive Lists segment lists only manual archives; Restore in either place returns a list to active (it then leaves Past trips / Archive); LI-5 disables Restore with the hint when the store is archived; counts update live.
+- **Verify:** repository tests (finished vs manual separation, count, store join + archived flag); widget tests for the Past trips card/screen (navigation + Restore) and the Archive Lists pane (manual-only, LI-5 disabled Restore).
+- **Docs:** update `docs/decisions-and-assumptions.md` (D-10 / D-13: finished lists browsed under store Past trips; Archive Lists = manual only), `docs/product-requirements.md` (LI-3 / LI-4 surface note), `docs/user-flows.md` (F10 / F11 + screen table + the `/stores/:id/past-trips` route), `docs/design-system.md` (Past trips store-details card mirrors the Wishlist card). Add a `docs/deviations.md` row (2026-11-17, "APP-017 split; finished lists relocated to a read-only Past trips section on store details; Archive Lists = manual only; Option 2, UI-only", owner-approved). Last commit updates `docs/codebase-map.md`.
 
 ### APP-018 Share a list
 
 - **Context:** plain-text sharing (D-20, PRD SH-1).
 - **Requirements:** add share\_plus. A thin `ShareService` wraps the platform call so tests can fake it. List screen share icon builds the text with `formatShareText` (list name first line, then unpurchased items in position order as `Title` or `Title - Description`). With nothing to share, show `AppMessenger.info` 'Nothing left to share' and do not open the share sheet. Always pass the button's rectangle as the share origin (required on iPad, harmless elsewhere). Platform share failures use `AppMessenger.error` / `messageFor` (no `ScaffoldMessenger.of`).
 - **Components:** `core/share_service.dart`, `features/lists/ui/list_screen.dart`.
-- **Depends on:** APP-017, APP-007.
+- **Depends on:** APP-017b, APP-007.
 - **Reuse:** `lib/core/share_text.dart` (`formatShareText`); `lib/core/ui/app_messenger.dart`; `lib/features/lists/ui/list_screen.dart`; `listItemsProvider` / `ListsRepository.watchItems`.
 - **Acceptance:** SH-1; purchased items and store metadata are never included; the text matches the data model example exactly.
 - **Verify:** widget test with a fake `ShareService` asserting the exact text and the empty case; manual share to a notes app on a device or simulator.
@@ -288,7 +360,7 @@ Instruction to give Cursor for each task: 'Implement task APP-0NN according to t
 - **Context:** Home is a board of large store cards, with no list shortcuts (D-01, design system 3.12).
 - **Requirements:** a `StoreSummary` query (new; do not treat `ActiveStoreSummary` list-count-only as sufficient): per active store the number of active lists, unpurchased and total item counts across active lists, and last activity (the latest active-list `updated_at`, falling back to the store's own). Order by last activity, newest first. Home body streams wrap in `AsyncBody` with Retry: an Inbox pill when the Inbox has items (opens the Inbox tab), then the two-column staggered board per 3.12 (right column offset 26dp, every third card taller, alternating tilt of about 1 degree, fill from mixing the store colour 38% into the background with `Color.lerp`, a solid corner circle, large count, name, thin progress bar, list count, states 'left to buy', 'cart is empty', 'no lists yet'). Above 1.3x text scale use one column and no tilt. Tapping a card opens store details. Empty state 'Create a store' opens the existing `stores/ui/sheets/store_form_sheet.dart` (`FormSheetScaffold`, not a bespoke form). Semantic label: store name, items left, list count.
 - **Components:** `features/home/` (`store_summary.dart`, providers, `ui/home_screen.dart`, `store_card.dart`).
-- **Depends on:** APP-017, APP-003.
+- **Depends on:** APP-017c, APP-003.
 - **Reuse:** `lib/core/widgets/async_body.dart`; `lib/app/theme/` (`AppTokens`); `lib/features/home/ui/home_screen.dart` (route placeholder); `lib/features/stores/ui/sheets/store_form_sheet.dart`; `activeStoresProvider` / `StoresRepository` patterns; `inboxItemsProvider` for the Inbox pill.
 - **Acceptance:** counts and order update live; layouts survive 200% text without clipping; no list shortcuts on Home; contrast of text on every palette fill is checked in both themes and fixed in the theme if needed.
 - **Verify:** repository query tests; widget tests; golden images for Home in light and dark with fixture data (generated and compared on the CI platform only); compare against the prototype.
@@ -375,10 +447,10 @@ Instruction to give Cursor for each task: 'Implement task APP-0NN according to t
 ### APP-026 Golden and integration tests
 
 - **Context:** regression safety for the most visual and the most important flows (testing strategy).
-- **Requirements:** goldens (light and dark) for the item row states, Home board, store form sheet (`stores/ui/sheets/`) and the finish sheet (`lists/ui/sheets/` from APP-017), tagged so they run only on the CI platform. Integration tests (`integration_test`) for: capture, assign to a new store and list, shop, reorder, finish with carry-forward; and backup export then restore. Use `test/support/test_app.dart` where widget/golden harness helps. Document how to run them locally.
+- **Requirements:** goldens (light and dark) for the item row states, Home board, store form sheet (`stores/ui/sheets/`) and the finish sheet (`lists/ui/sheets/` from APP-017b), tagged so they run only on the CI platform. Integration tests (`integration_test`) for: capture, assign to a new store and list, shop, reorder, finish with carry-forward; and backup export then restore. Use `test/support/test_app.dart` where widget/golden harness helps. Document how to run them locally.
 - **Components:** `test/goldens/`, `integration_test/`.
 - **Depends on:** APP-025.
-- **Reuse:** `test/support/test_app.dart` (`pumpTestApp` / `TestAppHarness`); shipped screens and `ui/sheets/` from the map; finish sheet, Home board and backup UI only after APP-017 / 019 / 023 (not in the map yet).
+- **Reuse:** `test/support/test_app.dart` (`pumpTestApp` / `TestAppHarness`); shipped screens and `ui/sheets/` from the map; finish sheet, Home board and backup UI only after APP-017b / 019 / 023 (not in the map yet).
 - **Acceptance:** goldens are stable across runs; integration tests pass on an Android emulator or simulator.
 - **Verify:** run both suites; CI runs the unit, widget and golden tests; integration tests are run locally unless a stable CI setup is added.
 - **Docs:** `docs/testing-strategy.md` run instructions.
@@ -403,8 +475,8 @@ Instruction to give Cursor for each task: 'Implement task APP-0NN according to t
 005 -> 006 ; 004 -> 007 ; (006, 007) -> 008 [gate]
 008 -> 009 -> 010 -> 011 -> 012 -> 013 -> 014 [gate]
 014 -> 014a -> 014b -> 014c -> (015, 016)
-(014, 010) -> 017 -> 018
-(017, 003) -> 019 ; (006, 004) -> 020
+(014, 010) -> 017a -> 017b -> 017c ; 017c -> 018
+(017c, 003) -> 019 ; (006, 004) -> 020
 (020, 018) -> 021 -> 022 [gate] -> 023
 023 -> 024 -> 025 -> 026 -> 027 [gate]
 ```

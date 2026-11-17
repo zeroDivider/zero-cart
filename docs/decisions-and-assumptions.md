@@ -21,10 +21,10 @@ Binding unless you override. Items marked \[REVIEW\] are the ones I most want yo
 
 **Lifecycle**
 
-- **D-10** List states: Active, Archived (reason `manual` or `finished`). Archived returns to Active via Restore for both reasons. No permanent deletion of lists or stores in v1. \[REVIEW\]
+- **D-10** List states: Active, Archived (reason `manual` or `finished`). Archived returns to Active via Restore for both reasons. No permanent deletion of lists or stores in v1. Finished lists are browsed from a read-only 'Past trips' section on store details; the Archive screen's Lists segment holds only `manual` archives (the Stores segment holds archived stores). Where a list is browsed is UI placement only; its stored state and Restore behaviour are identical for both reasons. \[REVIEW\]
 - **D-11** Finish shopping with no unpurchased items archives immediately with a snackbar (Undo = restore). With unpurchased items a bottom sheet shows the count and offers: carry forward into a new list (name field prefilled) or archive without carrying. An empty list can also be finished.
 - **D-12** Carry-forward creates a new active list in the same store, default name `Leftovers: <original name>` (truncated to the limit), editable in the sheet. Items are copied with new ids, unpurchased, positions renumbered 1..n in the original relative order. The original is archived untouched, so unpurchased items stay unpurchased in the snapshot.
-- **D-13** Archived lists are read-only except Restore. Restoring a finished list that was already carried forward may duplicate leftovers; accepted, no linkage tracking.
+- **D-13** Archived lists are read-only except Restore. Restoring a finished list that was already carried forward may duplicate leftovers; accepted, no linkage tracking. Finished lists are reached from store details > Past trips; manually archived lists from Archive > Lists. Both open the same read-only `/lists/:id` view.
 - **D-14** Archiving a store does not change its lists' own state. Its active lists stay active but disappear everywhere until restore. A dialog states the number of active lists. Archived stores are viewable read-only from Archives; restore to edit.
 - **D-15** Home and all assignment pickers exclude archived stores and archived lists.
 

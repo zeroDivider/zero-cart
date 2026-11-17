@@ -25,8 +25,8 @@ Each requirement has acceptance criteria (AC) that become tests in `docs/testing
 
 - **LI-1 Create** from store details, the assignment sheet, the wishlist copy sheet or carry-forward. Name required, max 60, not unique (D-09). AC: a new list is empty and active.
 - **LI-2 Rename** from the list screen menu.
-- **LI-3 Lifecycle.** Active, then Archived (manual or finished), then Active again via Restore (D-10, D-13). Manual 'Archive list' needs no dialog; a snackbar offers Undo. AC: an archived list is read-only (no checkbox, reorder, add row or edit); only Restore is available.
-- **LI-4 Finish shopping** per D-11 and D-12. AC: with leftovers, a sheet shows their count and two actions (carry forward, archive without carrying); carry-forward creates the new list with unpurchased copies in the original relative order; with no leftovers the list archives at once and a snackbar offers Undo.
+- **LI-3 Lifecycle.** Active, then Archived (manual or finished), then Active again via Restore (D-10, D-13). Manual 'Archive list' needs no dialog; a snackbar offers Undo. AC: an archived list is read-only (no checkbox, reorder, add row or edit); only Restore is available. Finished lists are browsed from a store's 'Past trips' section; manually archived lists from the Archive screen's Lists segment (manual only). Both open the same read-only view.
+- **LI-4 Finish shopping** per D-11 and D-12. AC: with leftovers, a sheet shows their count and two actions (carry forward, archive without carrying); carry-forward creates the new list with unpurchased copies in the original relative order; with no leftovers the list archives at once and a snackbar offers Undo. After finishing, the list appears under the store's 'Past trips' section (read-only), not in the Archive screen.
 - **LI-5 Restore guard.** A list whose store is archived cannot be restored; Restore is disabled with the hint 'Restore the store first'. This closes a gap in the brief.
 
 **Items (IT)**
