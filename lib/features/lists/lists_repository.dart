@@ -8,6 +8,7 @@ import 'package:zero_cart/data/database.dart';
 import 'package:zero_cart/features/lists/active_list_progress.dart';
 import 'package:zero_cart/features/lists/assign_inbox_target.dart';
 import 'package:zero_cart/features/lists/copy_wishlist_target.dart';
+import 'package:zero_cart/features/lists/finish_list_result.dart';
 import 'package:zero_cart/features/lists/list_exceptions.dart';
 import 'package:zero_cart/features/stores/store_draft.dart';
 
@@ -26,6 +27,7 @@ class ListsRepository {
   final IdGenerator _idGenerator;
 
   static const String archiveReasonManual = 'manual';
+  static const String archiveReasonFinished = 'finished';
 
   /// Active lists for [storeId] with left/total item counts (live).
   ///
@@ -182,6 +184,96 @@ ORDER BY sl.created_at ASC, sl.id ASC
         updatedAt: Value(now),
       ),
     );
+  }
+
+  /// Finishes an active list (ops 8–9, D-10 to D-13).
+  ///
+  /// Archives with reason `finished`. When [carryForward] is true and there are
+  /// unpurchased leftovers, creates a new list in the same store (I3: store must
+  /// not be archived) and copies leftovers with new ids and positions 1..n.
+  /// [newName] is normalised via [_insertNewList]; the UI builds any default
+  /// "Leftovers: …" label. One transaction: failure leaves the list active.
+  Future<FinishListResult> finishList(
+    String listId, {
+    required bool carryForward,
+    String? newName,
+  }) {
+    return _db.transaction(() async {
+      final list = await (_db.select(
+        _db.shoppingLists,
+      )..where((t) => t.id.equals(listId))).getSingleOrNull();
+      if (list == null) {
+        throw StateError('List $listId not found');
+      }
+      if (list.archivedAt != null) {
+        throw ListArchivedException(listId);
+      }
+
+      final left =
+          await (_db.select(_db.listItems)
+                ..where(
+                  (t) => t.listId.equals(listId) & t.isPurchased.equals(false),
+                )
+                ..orderBy([
+                  (t) => OrderingTerm.asc(t.position),
+                  (t) => OrderingTerm.asc(t.createdAt),
+                  (t) => OrderingTerm.asc(t.id),
+                ]))
+              .get();
+
+      final now = _clock();
+      await (_db.update(
+        _db.shoppingLists,
+      )..where((t) => t.id.equals(listId))).write(
+        ShoppingListsCompanion(
+          archivedAt: Value(now),
+          archiveReason: const Value(archiveReasonFinished),
+          updatedAt: Value(now),
+        ),
+      );
+
+      String? newListId;
+      var carried = 0;
+      if (carryForward && left.isNotEmpty) {
+        final store = await (_db.select(
+          _db.stores,
+        )..where((t) => t.id.equals(list.storeId))).getSingleOrNull();
+        if (store == null) {
+          throw StateError('Store ${list.storeId} not found');
+        }
+        if (store.archivedAt != null) {
+          throw StoreArchivedException(list.storeId);
+        }
+
+        final created = await _insertNewList(list.storeId, newName ?? '');
+        newListId = created.id;
+        var pos = 1;
+        for (final item in left) {
+          await _db
+              .into(_db.listItems)
+              .insert(
+                ListItemsCompanion.insert(
+                  id: _idGenerator(),
+                  listId: created.id,
+                  title: item.title,
+                  description: Value(item.description),
+                  isPurchased: const Value(false),
+                  position: pos,
+                  createdAt: now,
+                  updatedAt: now,
+                ),
+              );
+          pos += 1;
+          carried += 1;
+        }
+      }
+
+      return FinishListResult(
+        archivedListId: listId,
+        newListId: newListId,
+        carriedCount: carried,
+      );
+    });
   }
 
   /// Restores an archived list. Fails with [StoreArchivedException] if the
