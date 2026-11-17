@@ -971,6 +971,38 @@ void main() {
     );
 
     test(
+      'editing or removing a list copy leaves the wishlist row unchanged',
+      () async {
+        final store = await stores.create(name: 'DM', colorKey: 'sky');
+        final list = await lists.create(storeId: store.id, name: 'Run');
+        final wish = await wishlist.add(
+          storeId: store.id,
+          title: 'Heads',
+          description: 'soft',
+        );
+
+        await lists.copyWishlistItems([wish.id], ExistingList(list.id));
+        final copy = (await lists.watchItems(list.id).first).single;
+
+        await lists.updateItem(
+          id: copy.id,
+          title: 'Copy edited',
+          description: 'changed',
+        );
+        final afterListEdit = await wishlist.watch(store.id).first;
+        expect(afterListEdit.single.title, 'Heads');
+        expect(afterListEdit.single.description, 'soft');
+
+        await lists.removeItem(copy.id);
+        expect(await lists.watchItems(list.id).first, isEmpty);
+        final afterListRemove = await wishlist.watch(store.id).first;
+        expect(afterListRemove.single.id, wish.id);
+        expect(afterListRemove.single.title, 'Heads');
+        expect(afterListRemove.single.description, 'soft');
+      },
+    );
+
+    test(
       'rollback leaves no list or items when NewList name is blank',
       () async {
         final store = await stores.create(name: 'DM', colorKey: 'sky');
