@@ -6,9 +6,12 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:zero_cart/app/router.dart';
 import 'package:zero_cart/data/database.dart';
 import 'package:zero_cart/data/providers.dart';
+import 'package:zero_cart/features/lists/finish_list_result.dart';
 import 'package:zero_cart/features/lists/lists_providers.dart';
 import 'package:zero_cart/features/lists/lists_repository.dart';
 import 'package:zero_cart/features/lists/ui/item_row.dart';
+import 'package:zero_cart/features/lists/ui/list_screen.dart';
+import 'package:zero_cart/features/lists/ui/sheets/finish_list_sheet.dart';
 import 'package:zero_cart/features/lists/ui/sheets/item_edit_sheet.dart';
 import 'package:zero_cart/features/lists/ui/sheets/list_form_sheet.dart';
 import 'package:zero_cart/features/stores/stores_repository.dart';
@@ -25,6 +28,8 @@ class _ThrowingListsRepository extends ListsRepository {
     this.throwOnCreate = false,
     this.throwOnRename = false,
     this.throwOnArchive = false,
+    this.throwOnFinishList = false,
+    this.throwOnRestore = false,
     this.throwOnSetPurchased = false,
     this.throwOnAddItem = false,
     this.throwOnUpdateItem = false,
@@ -36,6 +41,8 @@ class _ThrowingListsRepository extends ListsRepository {
   final bool throwOnCreate;
   final bool throwOnRename;
   final bool throwOnArchive;
+  final bool throwOnFinishList;
+  final bool throwOnRestore;
   final bool throwOnSetPurchased;
   final bool throwOnAddItem;
   final bool throwOnUpdateItem;
@@ -65,6 +72,30 @@ class _ThrowingListsRepository extends ListsRepository {
       throw Exception('archive failed');
     }
     await super.archive(id);
+  }
+
+  @override
+  Future<FinishListResult> finishList(
+    String listId, {
+    required bool carryForward,
+    String? newName,
+  }) {
+    if (throwOnFinishList) {
+      throw Exception('finish failed');
+    }
+    return super.finishList(
+      listId,
+      carryForward: carryForward,
+      newName: newName,
+    );
+  }
+
+  @override
+  Future<void> restore(String id) async {
+    if (throwOnRestore) {
+      throw Exception('restore failed');
+    }
+    await super.restore(id);
   }
 
   @override
@@ -163,6 +194,8 @@ List<Override> _throwingListsOverrides({
   bool throwOnCreate = false,
   bool throwOnRename = false,
   bool throwOnArchive = false,
+  bool throwOnFinishList = false,
+  bool throwOnRestore = false,
   bool throwOnSetPurchased = false,
   bool throwOnAddItem = false,
   bool throwOnUpdateItem = false,
@@ -179,6 +212,8 @@ List<Override> _throwingListsOverrides({
         throwOnCreate: throwOnCreate,
         throwOnRename: throwOnRename,
         throwOnArchive: throwOnArchive,
+        throwOnFinishList: throwOnFinishList,
+        throwOnRestore: throwOnRestore,
         throwOnSetPurchased: throwOnSetPurchased,
         throwOnAddItem: throwOnAddItem,
         throwOnUpdateItem: throwOnUpdateItem,
@@ -634,4 +669,140 @@ void main() {
       }
     },
   );
+
+  testWidgets('finish carry-forward failure keeps sheet open; list active', (
+    tester,
+  ) async {
+    final harness = await pumpTestApp(
+      tester,
+      router: AppRouter.create(initialLocation: AppRoutes.stores),
+      overrides: _throwingListsOverrides(throwOnFinishList: true),
+    );
+    final store = await tester.runAsync(
+      () => _stores(harness).create(name: 'Lidl', colorKey: 'lime'),
+    );
+    final list = await tester.runAsync(
+      () => _lists(harness).create(storeId: store!.id, name: 'Weekend'),
+    );
+    await tester.runAsync(() async {
+      final now = DateTime.utc(2026, 1, 1, 10);
+      await harness.db
+          .into(harness.db.listItems)
+          .insert(
+            ListItemsCompanion.insert(
+              id: 'milk',
+              listId: list!.id,
+              title: 'Milk',
+              isPurchased: const Value(false),
+              position: 1,
+              createdAt: now,
+              updatedAt: now,
+            ),
+          );
+    });
+    await pumpApp(tester, harness);
+
+    await tester.tap(find.byKey(Key('store_row_${store!.id}')));
+    await pumpApp(tester, harness);
+    await tester.tap(find.byKey(Key('store_list_card_${list!.id}')));
+    await pumpApp(tester, harness);
+
+    await _tapButton(tester, const Key('list_finish'), harness);
+    expect(find.byType(FinishListSheet), findsOneWidget);
+    await _tapButton(tester, const Key('finish_carry_forward'), harness);
+
+    expect(find.byType(FinishListSheet), findsOneWidget);
+    expect(find.text(_genericError), findsOneWidget);
+    expect(find.byType(ListScreen), findsOneWidget);
+
+    final row = await tester.runAsync(
+      () => harness.db.select(harness.db.shoppingLists).getSingle(),
+    );
+    expect(row!.archivedAt, isNull);
+    await harness.dispose(tester);
+  });
+
+  testWidgets('finish archive-without failure keeps sheet open; list active', (
+    tester,
+  ) async {
+    final harness = await pumpTestApp(
+      tester,
+      router: AppRouter.create(initialLocation: AppRoutes.stores),
+      overrides: _throwingListsOverrides(throwOnFinishList: true),
+    );
+    final store = await tester.runAsync(
+      () => _stores(harness).create(name: 'Lidl', colorKey: 'lime'),
+    );
+    final list = await tester.runAsync(
+      () => _lists(harness).create(storeId: store!.id, name: 'Weekend'),
+    );
+    await tester.runAsync(() async {
+      final now = DateTime.utc(2026, 1, 1, 10);
+      await harness.db
+          .into(harness.db.listItems)
+          .insert(
+            ListItemsCompanion.insert(
+              id: 'milk',
+              listId: list!.id,
+              title: 'Milk',
+              isPurchased: const Value(false),
+              position: 1,
+              createdAt: now,
+              updatedAt: now,
+            ),
+          );
+    });
+    await pumpApp(tester, harness);
+
+    await tester.tap(find.byKey(Key('store_row_${store!.id}')));
+    await pumpApp(tester, harness);
+    await tester.tap(find.byKey(Key('store_list_card_${list!.id}')));
+    await pumpApp(tester, harness);
+
+    await _tapButton(tester, const Key('list_finish'), harness);
+    expect(find.byType(FinishListSheet), findsOneWidget);
+    await _tapButton(tester, const Key('finish_archive_without'), harness);
+
+    expect(find.byType(FinishListSheet), findsOneWidget);
+    expect(find.text(_genericError), findsOneWidget);
+
+    final row = await tester.runAsync(
+      () => harness.db.select(harness.db.shoppingLists).getSingle(),
+    );
+    expect(row!.archivedAt, isNull);
+    await harness.dispose(tester);
+  });
+
+  testWidgets('zero-leftover Finish failure shows snackbar; list active', (
+    tester,
+  ) async {
+    final harness = await pumpTestApp(
+      tester,
+      router: AppRouter.create(initialLocation: AppRoutes.stores),
+      overrides: _throwingListsOverrides(throwOnFinishList: true),
+    );
+    final store = await tester.runAsync(
+      () => _stores(harness).create(name: 'Lidl', colorKey: 'lime'),
+    );
+    final list = await tester.runAsync(
+      () => _lists(harness).create(storeId: store!.id, name: 'Weekend'),
+    );
+    await pumpApp(tester, harness);
+
+    await tester.tap(find.byKey(Key('store_row_${store!.id}')));
+    await pumpApp(tester, harness);
+    await tester.tap(find.byKey(Key('store_list_card_${list!.id}')));
+    await pumpApp(tester, harness);
+
+    await _tapButton(tester, const Key('list_finish'), harness);
+    expect(find.byType(FinishListSheet), findsNothing);
+    expect(find.byType(ListScreen), findsOneWidget);
+    expect(find.text(_genericError), findsOneWidget);
+
+    final row = await tester.runAsync(
+      () => harness.db.select(harness.db.shoppingLists).getSingle(),
+    );
+    expect(row!.archivedAt, isNull);
+    await harness.dispose(tester);
+  });
 }

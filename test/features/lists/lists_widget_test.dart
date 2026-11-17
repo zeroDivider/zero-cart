@@ -7,6 +7,7 @@ import 'package:zero_cart/app/router.dart';
 import 'package:zero_cart/core/widgets/swipe_to_remove_row.dart';
 import 'package:zero_cart/data/database.dart';
 import 'package:zero_cart/features/lists/lists_repository.dart';
+import 'package:zero_cart/features/lists/ui/sheets/finish_list_sheet.dart';
 import 'package:zero_cart/features/lists/ui/sheets/item_edit_sheet.dart';
 import 'package:zero_cart/features/lists/ui/item_row.dart';
 import 'package:zero_cart/features/lists/ui/list_screen.dart';
@@ -577,6 +578,8 @@ void main() {
     expect(find.byKey(const Key('list_add_title')), findsNothing);
     expect(find.byKey(const Key('item_checkbox_milk')), findsNothing);
     expect(find.byKey(const Key('list_menu')), findsNothing);
+    expect(find.byKey(const Key('list_finish')), findsNothing);
+    expect(find.byKey(const Key('list_details_restore')), findsOneWidget);
     await harness.dispose(tester);
   });
 
@@ -1024,6 +1027,222 @@ void main() {
       isEmpty,
       reason: 'Undo must not re-insert into an archived list',
     );
+    await harness.dispose(tester);
+  });
+
+  testWidgets('Finish with leftovers opens sheet; carry creates new list', (
+    tester,
+  ) async {
+    final harness = await pumpTestApp(
+      tester,
+      router: AppRouter.create(initialLocation: AppRoutes.stores),
+    );
+    final (store, list) = await _seedList(tester, harness);
+    await tester.runAsync(() async {
+      await _insertItem(
+        harness.db,
+        id: 'milk',
+        listId: list.id,
+        title: 'Milk',
+        purchased: false,
+        position: 1,
+      );
+      await _insertItem(
+        harness.db,
+        id: 'bread',
+        listId: list.id,
+        title: 'Bread',
+        purchased: true,
+        position: 2,
+      );
+      await _insertItem(
+        harness.db,
+        id: 'eggs',
+        listId: list.id,
+        title: 'Eggs',
+        purchased: false,
+        position: 3,
+      );
+    });
+    await pumpApp(tester, harness);
+    await _openList(tester, harness, store, list);
+
+    await _tapButton(tester, const Key('list_finish'), harness);
+    expect(find.byType(FinishListSheet), findsOneWidget);
+    expect(find.byKey(const Key('finish_left_count')), findsOneWidget);
+    expect(find.text('2 items left unpurchased'), findsOneWidget);
+    expect(
+      tester
+          .widget<TextField>(find.byKey(const Key('finish_leftovers_name')))
+          .controller!
+          .text,
+      'Leftovers: Weekend',
+    );
+
+    await _tapButton(tester, const Key('finish_carry_forward'), harness);
+    expect(find.byType(FinishListSheet), findsNothing);
+    expect(find.byType(StoreDetailsScreen), findsOneWidget);
+
+    final lists = await tester.runAsync(
+      () => harness.db.select(harness.db.shoppingLists).get(),
+    );
+    final archived = lists!.singleWhere((row) => row.id == list.id);
+    expect(archived.archivedAt, isNotNull);
+    expect(archived.archiveReason, ListsRepository.archiveReasonFinished);
+    final leftovers = lists.singleWhere((row) => row.id != list.id);
+    expect(leftovers.name, 'Leftovers: Weekend');
+    expect(leftovers.archivedAt, isNull);
+    expect(find.text('Leftovers: Weekend'), findsOneWidget);
+
+    final carried = await _activeTitlesInOrder(tester, harness, leftovers.id);
+    expect(carried, ['Milk', 'Eggs']);
+    await harness.dispose(tester);
+  });
+
+  testWidgets('Finish sheet archive without carrying archives only', (
+    tester,
+  ) async {
+    final harness = await pumpTestApp(
+      tester,
+      router: AppRouter.create(initialLocation: AppRoutes.stores),
+    );
+    final (store, list) = await _seedList(tester, harness);
+    await tester.runAsync(() async {
+      await _insertItem(
+        harness.db,
+        id: 'milk',
+        listId: list.id,
+        title: 'Milk',
+        purchased: false,
+        position: 1,
+      );
+    });
+    await pumpApp(tester, harness);
+    await _openList(tester, harness, store, list);
+
+    await _tapButton(tester, const Key('list_finish'), harness);
+    expect(find.byType(FinishListSheet), findsOneWidget);
+    await _tapButton(tester, const Key('finish_archive_without'), harness);
+
+    expect(find.byType(FinishListSheet), findsNothing);
+    expect(find.byType(StoreDetailsScreen), findsOneWidget);
+    expect(find.text('List finished'), findsNothing);
+
+    final lists = await tester.runAsync(
+      () => harness.db.select(harness.db.shoppingLists).get(),
+    );
+    expect(lists, hasLength(1));
+    expect(lists!.single.archivedAt, isNotNull);
+    expect(lists.single.archiveReason, ListsRepository.archiveReasonFinished);
+    await harness.dispose(tester);
+  });
+
+  testWidgets('Finish with no leftovers archives and Undo restores', (
+    tester,
+  ) async {
+    final harness = await pumpTestApp(
+      tester,
+      router: AppRouter.create(initialLocation: AppRoutes.stores),
+    );
+    final (store, list) = await _seedList(tester, harness);
+    await tester.runAsync(() async {
+      await _insertItem(
+        harness.db,
+        id: 'jam',
+        listId: list.id,
+        title: 'Jam',
+        purchased: true,
+        position: 1,
+      );
+    });
+    await pumpApp(tester, harness);
+    await _openList(tester, harness, store, list);
+
+    await _tapButton(tester, const Key('list_finish'), harness);
+    expect(find.byType(FinishListSheet), findsNothing);
+    expect(find.byType(StoreDetailsScreen), findsOneWidget);
+    expect(find.text('List finished'), findsOneWidget);
+
+    var row = await tester.runAsync(
+      () => (harness.db.select(
+        harness.db.shoppingLists,
+      )..where((t) => t.id.equals(list.id))).getSingle(),
+    );
+    expect(row!.archivedAt, isNotNull);
+
+    await _invokeUndo(tester, harness);
+    row = await tester.runAsync(
+      () => (harness.db.select(
+        harness.db.shoppingLists,
+      )..where((t) => t.id.equals(list.id))).getSingle(),
+    );
+    expect(row!.archivedAt, isNull);
+    await harness.dispose(tester);
+  });
+
+  testWidgets('empty list Finish archives with Undo', (tester) async {
+    final harness = await pumpTestApp(
+      tester,
+      router: AppRouter.create(initialLocation: AppRoutes.stores),
+    );
+    final (store, list) = await _seedList(tester, harness);
+    await pumpApp(tester, harness);
+    await _openList(tester, harness, store, list);
+
+    await _tapButton(tester, const Key('list_finish'), harness);
+    expect(find.byType(FinishListSheet), findsNothing);
+    expect(find.text('List finished'), findsOneWidget);
+    expect(find.byType(StoreDetailsScreen), findsOneWidget);
+
+    final row = await tester.runAsync(
+      () => (harness.db.select(
+        harness.db.shoppingLists,
+      )..where((t) => t.id.equals(list.id))).getSingle(),
+    );
+    expect(row!.archivedAt, isNotNull);
+    await harness.dispose(tester);
+  });
+
+  testWidgets('Restore on archived list returns it to active', (tester) async {
+    const listId = 'archived-restore-list';
+    final harness = await pumpTestApp(
+      tester,
+      router: AppRouter.create(
+        initialLocation: AppRoutes.listDetailsLocation(listId),
+      ),
+    );
+    await tester.runAsync(() async {
+      final store = await _stores(harness)
+          .create(name: 'Lidl', colorKey: 'lime');
+      await harness.db
+          .into(harness.db.shoppingLists)
+          .insert(
+            ShoppingListsCompanion.insert(
+              id: listId,
+              storeId: store.id,
+              name: 'Weekend',
+              archivedAt: Value(DateTime.utc(2026, 1, 1, 14)),
+              archiveReason: const Value('finished'),
+              createdAt: DateTime.utc(2026, 1, 1, 13),
+              updatedAt: DateTime.utc(2026, 1, 1, 14),
+            ),
+          );
+    });
+    await pumpApp(tester, harness);
+
+    expect(find.byKey(const Key('list_details_restore')), findsOneWidget);
+    expect(find.byKey(const Key('list_finish')), findsNothing);
+    await _tapButton(tester, const Key('list_details_restore'), harness);
+
+    final row = await tester.runAsync(
+      () => (harness.db.select(
+        harness.db.shoppingLists,
+      )..where((t) => t.id.equals(listId))).getSingle(),
+    );
+    expect(row!.archivedAt, isNull);
+    expect(find.byKey(const Key('list_details_restore')), findsNothing);
+    expect(find.byKey(const Key('list_finish')), findsOneWidget);
+    expect(find.byKey(const Key('list_add_title')), findsOneWidget);
     await harness.dispose(tester);
   });
 }
