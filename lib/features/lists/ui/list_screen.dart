@@ -12,10 +12,12 @@ import 'package:zero_cart/core/widgets/async_body.dart';
 import 'package:zero_cart/core/widgets/swipe_to_remove_row.dart';
 import 'package:zero_cart/data/database.dart';
 import 'package:zero_cart/features/lists/add_item_notifier.dart';
+import 'package:zero_cart/features/lists/finish_list_undo.dart';
 import 'package:zero_cart/features/lists/lists_providers.dart';
 import 'package:zero_cart/features/lists/lists_repository.dart';
 import 'package:zero_cart/features/lists/remove_item_undo.dart';
 import 'package:zero_cart/features/lists/ui/add_item_row.dart';
+import 'package:zero_cart/features/lists/ui/sheets/finish_list_sheet.dart';
 import 'package:zero_cart/features/lists/ui/sheets/item_edit_sheet.dart';
 import 'package:zero_cart/features/lists/ui/item_row.dart';
 import 'package:zero_cart/features/lists/ui/purchased_header.dart';
@@ -38,7 +40,16 @@ class ListScreen extends ConsumerWidget {
       appBar: AppBar(
         title: Text(list?.name ?? l10n.listDetailsPlaceholder),
         actions: [
-          if (list != null && list.archivedAt == null) _ListMenu(list: list),
+          if (list != null && list.archivedAt == null) ...[
+            _FinishAction(list: list),
+            _ListMenu(list: list),
+          ],
+          if (list != null && list.archivedAt != null)
+            TextButton(
+              key: const Key('list_details_restore'),
+              onPressed: () => _restoreList(context, ref, list),
+              child: Text(l10n.restore),
+            ),
         ],
       ),
       body: AsyncBody(
@@ -52,6 +63,66 @@ class ListScreen extends ConsumerWidget {
         },
       ),
     );
+  }
+
+  Future<void> _restoreList(
+    BuildContext context,
+    WidgetRef ref,
+    ShoppingList list,
+  ) async {
+    final l10n = AppLocalizations.of(context);
+    await runWrite(
+      () => ref.read(listsRepositoryProvider).restore(list.id),
+      l10n: l10n,
+    );
+  }
+}
+
+/// App-bar Finish: immediate archive + Undo when nothing left; else the sheet.
+class _FinishAction extends ConsumerWidget {
+  const _FinishAction({required this.list});
+
+  final ShoppingList list;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
+    return TextButton(
+      key: const Key('list_finish'),
+      onPressed: () => _finish(context, ref),
+      child: Text(l10n.finishAction),
+    );
+  }
+
+  Future<void> _finish(BuildContext context, WidgetRef ref) async {
+    final l10n = AppLocalizations.of(context);
+    final items = ref.read(listItemsProvider(list.id)).asData?.value;
+    if (items == null) {
+      return;
+    }
+    final leftCount = items.where((item) => !item.isPurchased).length;
+    final ListsRepository repository = ref.read(listsRepositoryProvider);
+
+    if (leftCount == 0) {
+      final result = await finishListWithUndo(
+        repository: repository,
+        listId: list.id,
+        l10n: l10n,
+      );
+      if (result != null && context.mounted) {
+        context.go(AppRoutes.storeDetailsLocation(list.storeId));
+      }
+      return;
+    }
+
+    final result = await showFinishListSheet(
+      context,
+      list: list,
+      leftCount: leftCount,
+    );
+    if (result != null && context.mounted) {
+      context.go(AppRoutes.storeDetailsLocation(list.storeId));
+    }
   }
 }
 
