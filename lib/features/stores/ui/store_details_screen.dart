@@ -8,6 +8,7 @@ import 'package:zero_cart/data/database.dart';
 import 'package:zero_cart/features/stores/stores_providers.dart';
 import 'package:zero_cart/features/stores/ui/sheets/store_form_sheet.dart';
 import 'package:zero_cart/features/stores/ui/store_active_lists_section.dart';
+import 'package:zero_cart/features/stores/ui/store_past_trips_card.dart';
 import 'package:zero_cart/features/stores/ui/wishlist_card.dart';
 import 'package:zero_cart/l10n/generated/app_localizations.dart';
 
@@ -158,6 +159,8 @@ class _StoreDetailsBody extends StatelessWidget {
         StoreActiveListsSection(storeId: store.id, readOnly: _isArchived),
         SizedBox(height: tokens.spacing24),
         StoreWishlistCard(storeId: store.id),
+        SizedBox(height: tokens.spacing16),
+        StorePastTripsCard(storeId: store.id),
       ],
     );
   }

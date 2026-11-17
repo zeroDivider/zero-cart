@@ -7,6 +7,7 @@ import 'package:zero_cart/features/inbox/ui/inbox_screen.dart';
 import 'package:zero_cart/features/lists/ui/list_screen.dart';
 import 'package:zero_cart/features/settings/ui/about_placeholder_screen.dart';
 import 'package:zero_cart/features/settings/ui/settings_placeholder_screen.dart';
+import 'package:zero_cart/features/stores/ui/past_trips_screen.dart';
 import 'package:zero_cart/features/stores/ui/store_details_screen.dart';
 import 'package:zero_cart/features/stores/ui/stores_screen.dart';
 import 'package:zero_cart/features/wishlist/ui/wishlist_screen.dart';
@@ -20,6 +21,7 @@ abstract final class AppRoutes {
   static const String stores = '/stores';
   static const String storeDetails = '/stores/:id';
   static const String wishlist = '/stores/:id/wishlist';
+  static const String pastTrips = '/stores/:id/past-trips';
   static const String listDetails = '/lists/:id';
   static const String archive = '/archive';
   static const String settings = '/settings';
@@ -27,6 +29,7 @@ abstract final class AppRoutes {
 
   static String storeDetailsLocation(String id) => '/stores/$id';
   static String wishlistLocation(String id) => '/stores/$id/wishlist';
+  static String pastTripsLocation(String id) => '/stores/$id/past-trips';
   static String listDetailsLocation(String id) => '/lists/$id';
 }
 
@@ -83,6 +86,14 @@ abstract final class AppRouter {
               builder: (context, state) {
                 final id = state.pathParameters['id']!;
                 return WishlistScreen(storeId: id);
+              },
+            ),
+            GoRoute(
+              path: 'past-trips',
+              parentNavigatorKey: rootNavigatorKey,
+              builder: (context, state) {
+                final id = state.pathParameters['id']!;
+                return PastTripsScreen(storeId: id);
               },
             ),
           ],

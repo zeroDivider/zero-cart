@@ -13,7 +13,9 @@ import 'package:zero_cart/data/database.dart';
 import 'package:zero_cart/data/providers.dart';
 import 'package:zero_cart/features/inbox/inbox_providers.dart';
 import 'package:zero_cart/features/lists/active_list_progress.dart';
+import 'package:zero_cart/features/lists/archived_list_with_store.dart';
 import 'package:zero_cart/features/lists/lists_providers.dart';
+import 'package:zero_cart/features/lists/lists_repository.dart';
 import 'package:zero_cart/features/stores/active_store_summary.dart';
 import 'package:zero_cart/features/stores/stores_providers.dart';
 import 'package:zero_cart/features/wishlist/wishlist_providers.dart';
@@ -102,9 +104,10 @@ class TestAppHarness {
 /// [activeStoresProvider], [activeStoreSummariesProvider],
 /// [archivedStoresProvider], [storeByIdProvider],
 /// [activeListsForStoreProvider], [activeListsByRecencyProvider],
-/// [listByIdProvider] and [listItemsProvider] are bridged by broadcast
-/// streams that [pumpApp] refreshes after real writes against
-/// [TestAppHarness.db].
+/// [listByIdProvider], [listItemsProvider], [finishedListsForStoreProvider],
+/// [finishedCountForStoreProvider] and [manualArchivedListsProvider] are
+/// bridged by broadcast streams that [pumpApp] refreshes after real writes
+/// against [TestAppHarness.db].
 /// See `inbox_providers_test.dart` for a live-stream check without FakeAsync.
 Future<TestAppHarness> pumpTestApp(
   WidgetTester tester, {
@@ -146,6 +149,8 @@ Future<TestAppHarness> pumpTestApp(
   var latestArchived = <Store>[];
   var latestAll = <Store>[];
   final latestListsByStore = <String, List<ActiveListProgress>>{};
+  final latestFinishedByStore = <String, List<ShoppingList>>{};
+  var latestManualArchived = <ArchivedListWithStore>[];
   final latestListById = <String, ShoppingList?>{};
   final latestItemsByList = <String, List<ListItem>>{};
   final latestWishlistByStore = <String, List<WishlistItem>>{};
@@ -226,14 +231,75 @@ Future<TestAppHarness> pumpTestApp(
     await publishSummaries();
   }
 
+  Future<List<ShoppingList>> loadFinishedLists(String storeId) async {
+    final lists =
+        await (db.select(db.shoppingLists)
+              ..where(
+                (t) =>
+                    t.storeId.equals(storeId) &
+                    t.archivedAt.isNotNull() &
+                    t.archiveReason.equals(
+                      ListsRepository.archiveReasonFinished,
+                    ),
+              )
+              ..orderBy([
+                (t) => OrderingTerm.desc(t.updatedAt),
+                (t) => OrderingTerm.desc(t.id),
+              ]))
+            .get();
+    return lists;
+  }
+
+  Future<List<ArchivedListWithStore>> loadManualArchived() async {
+    final storesById = {for (final store in latestAll) store.id: store};
+    final lists =
+        await (db.select(db.shoppingLists)..where(
+              (t) =>
+                  t.archivedAt.isNotNull() &
+                  t.archiveReason.equals(ListsRepository.archiveReasonManual),
+            ))
+            .get();
+    lists.sort((a, b) {
+      final storeA = storesById[a.storeId];
+      final storeB = storesById[b.storeId];
+      final nameA = storeA?.name.toLowerCase() ?? '';
+      final nameB = storeB?.name.toLowerCase() ?? '';
+      final byName = nameA.compareTo(nameB);
+      if (byName != 0) {
+        return byName;
+      }
+      final byStoreId = a.storeId.compareTo(b.storeId);
+      if (byStoreId != 0) {
+        return byStoreId;
+      }
+      final byUpdated = b.updatedAt.compareTo(a.updatedAt);
+      if (byUpdated != 0) {
+        return byUpdated;
+      }
+      return b.id.compareTo(a.id);
+    });
+    return [
+      for (final list in lists)
+        ArchivedListWithStore(
+          list: list,
+          storeName: storesById[list.storeId]?.name ?? '',
+          storeColorKey: storesById[list.storeId]?.colorKey ?? 'lime',
+          storeArchivedAt: storesById[list.storeId]?.archivedAt,
+        ),
+    ];
+  }
+
   Future<void> refreshLists() async {
     final storeIds = <String>{
       ...latestAll.map((s) => s.id),
       ...latestListsByStore.keys,
+      ...latestFinishedByStore.keys,
     };
     for (final storeId in storeIds) {
       latestListsByStore[storeId] = await loadActiveLists(storeId);
+      latestFinishedByStore[storeId] = await loadFinishedLists(storeId);
     }
+    latestManualArchived = await loadManualArchived();
     if (!listsTickController.isClosed) {
       listsTickController.add(null);
     }
@@ -243,6 +309,9 @@ Future<TestAppHarness> pumpTestApp(
       ...latestItemsByList.keys,
       for (final lists in latestListsByStore.values)
         for (final row in lists) row.list.id,
+      for (final lists in latestFinishedByStore.values)
+        for (final list in lists) list.id,
+      for (final row in latestManualArchived) row.list.id,
     };
     final allLists = await db.select(db.shoppingLists).get();
     for (final shoppingList in allLists) {
@@ -387,6 +456,27 @@ Future<TestAppHarness> pumpTestApp(
     }
   }
 
+  Stream<List<ShoppingList>> finishedListsBridge(String storeId) async* {
+    yield latestFinishedByStore[storeId] ?? const <ShoppingList>[];
+    await for (final _ in listsTickController.stream) {
+      yield latestFinishedByStore[storeId] ?? const <ShoppingList>[];
+    }
+  }
+
+  Stream<int> finishedCountBridge(String storeId) async* {
+    yield (latestFinishedByStore[storeId] ?? const <ShoppingList>[]).length;
+    await for (final _ in listsTickController.stream) {
+      yield (latestFinishedByStore[storeId] ?? const <ShoppingList>[]).length;
+    }
+  }
+
+  Stream<List<ArchivedListWithStore>> manualArchivedBridge() async* {
+    yield latestManualArchived;
+    await for (final _ in listsTickController.stream) {
+      yield latestManualArchived;
+    }
+  }
+
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
@@ -405,6 +495,15 @@ Future<TestAppHarness> pumpTestApp(
         ),
         activeListsByRecencyProvider.overrideWith(
           (ref) => activeListsByRecencyBridge(),
+        ),
+        finishedListsForStoreProvider.overrideWith(
+          (ref, storeId) => finishedListsBridge(storeId),
+        ),
+        finishedCountForStoreProvider.overrideWith(
+          (ref, storeId) => finishedCountBridge(storeId),
+        ),
+        manualArchivedListsProvider.overrideWith(
+          (ref) => manualArchivedBridge(),
         ),
         listByIdProvider.overrideWith((ref, id) => listByIdBridge(id)),
         listItemsProvider.overrideWith(
