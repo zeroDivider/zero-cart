@@ -314,9 +314,10 @@ Instruction to give Cursor for each task: 'Implement task APP-0NN according to t
 ### APP-021 Backup export
 
 - **Context:** data ownership (data model operation 11).
-- **Requirements:** add path\_provider if not yet present. `BackupService.buildBackup()` reads all six tables in one consistent snapshot and maps them to the JSON structure in `docs/backup-format.md` with hand-written mapping (no serialisation codegen). `exportToFile()` writes `zero-cart-backup-YYYYMMDD-HHmm.json` to the temp directory and hands it to `ShareService`. Includes archived stores and lists, items with order and purchased state, wishlists, the Inbox and the theme setting; never device paths or derived data.
+- **Requirements:** add path\_provider if not yet present. `BackupService.buildBackup()` reads all six tables in one consistent snapshot and maps them to the JSON structure in `docs/backup-format.md` with hand-written mapping (no serialisation codegen). `exportToFile()` writes `zero-cart-backup-YYYYMMDD-HHmm.json` to the temp directory and hands it to `ShareService` (from APP-018). Includes archived stores and lists, items with order and purchased state, wishlists, the Inbox and the theme setting; never device paths or derived data. Export/share failures surface via `runWrite` / `AppMessenger.error` / `messageFor` (no raw `$error`, no `ScaffoldMessenger.of`).
 - **Components:** `features/backup/` (service, mappers).
 - **Depends on:** APP-020, APP-018.
+- **Reuse:** `AppDatabase` / six tables (`lib/data/`); `lib/core/ui/app_messenger.dart`, `lib/core/ui/write_runner.dart`. `ShareService` arrives via APP-018 (not yet in the map).
 - **Acceptance:** output for a fixed sample database equals a committed fixture byte for byte (stable key and row order); timestamps are ISO-8601 UTC.
 - **Verify:** unit tests against the fixture; a manual export to Files on a device.
 - **Docs:** if the implementation forces a format change, update `docs/backup-format.md` and bump nothing silently.
@@ -324,9 +325,10 @@ Instruction to give Cursor for each task: 'Implement task APP-0NN according to t
 ### APP-022 Backup validation and restore engine (review gate)
 
 - **Context:** the riskiest operation in the app (data model operation 12).
-- **Requirements:** a pure `BackupValidator` that checks size cap (20 MB), UTF-8 JSON, format id, schema version (newer is incompatible, older goes through an upgrader chain that is empty for version 1 but present), types, lengths, enums, colour keys, unique ids, all foreign keys, archive consistency, integer positions; it returns a validated model or a typed `BackupError` with a user-readable reason. `BackupService.restore(validated)` in one transaction: delete all rows (children first), insert parents before children, verify row counts against the file, roll back on any exception. The database is untouched on every validation failure.
+- **Requirements:** a pure `BackupValidator` that checks size cap (20 MB), UTF-8 JSON, format id, schema version (newer is incompatible, older goes through an upgrader chain that is empty for version 1 but present), types, lengths, enums, colour keys, unique ids, all foreign keys, archive consistency, integer positions; it returns a validated model or a typed `BackupError` with a user-readable reason (UI mapping stays in APP-023). `BackupService.restore(validated)` in one transaction: delete all rows (children first), insert parents before children, verify row counts against the file, roll back on any exception. The database is untouched on every validation failure. No sheets or snackbars in this task.
 - **Components:** `features/backup/` (validator, errors, restore).
 - **Depends on:** APP-021.
+- **Reuse:** `AppDatabase` and transactional write patterns; typed-error style from `lib/core/repository_exceptions.dart` (pattern only — backup errors stay in `features/backup/`).
 - **Acceptance:** every error class is covered; a restore of an exported backup reproduces the data exactly; a forced failure mid-insert leaves the previous data intact.
 - **Verify:** fixtures for corrupted JSON, truncated file, wrong format id, newer version, missing foreign key, duplicate id, bad enum, over-length text, unknown colour key, inconsistent archive fields, oversized file; round trip equality test; rollback test with an injected failing insert.
 - **Docs:** `docs/backup-format.md` error table if anything was refined. **Stop and report for owner review.**
@@ -334,9 +336,10 @@ Instruction to give Cursor for each task: 'Implement task APP-0NN according to t
 ### APP-023 Backup UI
 
 - **Context:** exposing export and import safely (F15, F16, D-17 spirit: no data loss).
-- **Requirements:** add file\_picker (check the current API and iOS JSON handling; fall back to any file type with content validation). Settings: 'Export backup' and 'Import backup'. Import flow: pick file, validate (show a clear message per `BackupError`), confirmation dialog stating that all current data is replaced with an 'Export current data first' option that runs the export then returns to the dialog, progress indicator, then on success go to Home with a snackbar. Cancelling anywhere changes nothing.
+- **Requirements:** add file\_picker (check the current API and iOS JSON handling; fall back to any file type with content validation). Settings: 'Export backup' and 'Import backup'. Import flow: pick file, validate (localised message per `BackupError` via `AppMessenger.error` / `messageFor`-style mapping, no raw exception text), confirmation dialog stating that all current data is replaced (ADR-0007 replace-all restore) with an 'Export current data first' option that runs the export then returns to the dialog, progress indicator, then on success go to Home with `AppMessenger.info`. Export and restore are direct actions (`runWrite` where applicable). Cancelling anywhere changes nothing.
 - **Components:** `features/settings/ui/`, `features/backup/`.
 - **Depends on:** APP-022.
+- **Reuse:** `lib/core/ui/app_messenger.dart`, `lib/core/ui/write_runner.dart`; Settings screen/route from APP-020 (map today: placeholders only); BackupService / validator from APP-021–022 (not yet in the map).
 - **Acceptance:** F15 and F16; every error path shows a readable message; a backup made on one platform restores on the other where both are available.
 - **Verify:** widget tests with fake picker and service; manual export and import on Android and iOS, including a corrupted file.
 - **Docs:** README 'Backups' section.
