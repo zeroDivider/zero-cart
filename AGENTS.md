@@ -14,6 +14,13 @@ ZeroCart (repository `zero-cart`, Dart package `zero_cart`) is an offline-first 
 
 These are authoritative but not immutable. If a change is needed, stop, explain it, and record it in `docs/deviations.md`. Never change a business rule silently.
 
+## Precedence and prior work
+
+- When sources disagree the order is: business rules (PRD, D-xx, data model, backup format), then ADRs, then `docs/codebase-map.md`, then task text in `docs/implementation-plan.md`, then your own assumptions.
+- A task text that contradicts an ADR or the map is stale: follow the ADR or map, add one line to `docs/deviations.md`, and continue. Stop only for business-rule conflicts or the other hard stops.
+- Read `docs/codebase-map.md` before writing code. Reuse what it lists. Do not recreate it or ask whether it exists.
+- The last commit of every task updates `docs/codebase-map.md` (at most about 10 lines: what was added, where, how to use it, any pattern established).
+
 ## Workflow: Analyze, Plan, Implement, Verify, Document
 
 1. Start clean: `git status` must be empty. Then `git switch main && git switch -c task/APP-0NN-short-slug`.
