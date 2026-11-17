@@ -1,6 +1,6 @@
 # Codebase map
 
-Facts verified against the tree as of APP-016. Prefer this over recreating shared code.
+Facts verified against the tree as of APP-017a. Prefer this over recreating shared code.
 
 ## Shared primitives
 
@@ -33,6 +33,7 @@ Facts verified against the tree as of APP-016. Prefer this over recreating share
 ### `ListsRepository` — `lib/features/lists/lists_repository.dart`
 - `watchActiveForStore` / `watchById` / `watchActiveByRecency` / `watchItems`
 - `create` / `rename` / `archive` (reason `manual`) / `restore` (fails if store archived)
+- `finishList` — archives with `archiveReasonFinished`; optional carry-forward via `_insertNewList` (I3); returns `FinishListResult` (`lib/features/lists/finish_list_result.dart`)
 - `addItem` / `updateItem` / `setPurchased` / `removeItem` / `restoreItem` / `reorderActive`
 - `assignInbox` / `copyWishlistItems` — transactional move/copy; return list id+name
 
@@ -79,7 +80,7 @@ Sheets: store form; list form; item edit; inbox quick-add / edit / assign; wishl
 
 - Home body is still a placeholder string.
 - Archive **Lists** segment is `_ArchivedListsPlaceholder`; no list-archive watch UI.
-- Schema allows `archive_reason` `finished`; no writer uses it (only `manual` archive).
+- `finishList` exists; Finish UI / Past trips watches are APP-017b/c.
 - `formatShareText` has no feature caller / share UI.
 - No backup/export/import Dart code.
 - Settings / About are placeholders (entry from Home settings icon exists).
