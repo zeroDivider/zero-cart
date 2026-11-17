@@ -315,7 +315,9 @@ void main() {
     await harness.dispose(tester);
   });
 
-  testWidgets('archive Lists segment shows placeholder', (tester) async {
+  testWidgets('archive Lists segment shows empty state when none', (
+    tester,
+  ) async {
     final harness = await pumpTestApp(
       tester,
       router: AppRouter.create(initialLocation: AppRoutes.archive),
@@ -326,7 +328,7 @@ void main() {
 
     await tester.tap(find.text('Lists'));
     await pumpApp(tester, harness);
-    expect(find.text('Archived lists will show here.'), findsOneWidget);
+    expect(find.text('No archived lists.'), findsOneWidget);
     await harness.dispose(tester);
   });
 }
