@@ -577,9 +577,15 @@ void main() {
     expect(find.text('Weekend'), findsOneWidget);
     expect(find.byKey(const Key('list_add_title')), findsNothing);
     expect(find.byKey(const Key('item_checkbox_milk')), findsNothing);
+    expect(find.byKey(const Key('item_handle_milk')), findsNothing);
     expect(find.byKey(const Key('list_menu')), findsNothing);
     expect(find.byKey(const Key('list_finish')), findsNothing);
+    expect(find.byKey(const Key('list_status_tag')), findsOneWidget);
+    expect(find.text('Archived'), findsOneWidget);
     expect(find.byKey(const Key('list_details_restore')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('item_content_milk')));
+    await pumpApp(tester, harness);
+    expect(find.text('Edit'), findsNothing);
     await harness.dispose(tester);
   });
 

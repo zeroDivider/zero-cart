@@ -402,6 +402,39 @@
   "@restoreStoreFirstHint": {
     "description": "Disabled Restore hint when the list's store is archived (LI-5)"
   },
+  "archiveReasonManualLabel": "manual",
+  "@archiveReasonManualLabel": {
+    "description": "Archive Lists subtitle label for archive_reason = manual"
+  },
+  "archiveReasonFinishedLabel": "finished",
+  "@archiveReasonFinishedLabel": {
+    "description": "Archive Lists subtitle label for archive_reason = finished"
+  },
+  "archivedListSubtitle": "{store} · {reason}",
+  "@archivedListSubtitle": {
+    "description": "Archive Lists row subtitle: store name and archive reason",
+    "placeholders": {
+      "store": { "type": "String" },
+      "reason": { "type": "String" }
+    }
+  },
+  "archivedListSubtitleStoreArchived": "{store} · {reason} · {hint}",
+  "@archivedListSubtitleStoreArchived": {
+    "description": "Archive Lists row subtitle when the store is archived (LI-5)",
+    "placeholders": {
+      "store": { "type": "String" },
+      "reason": { "type": "String" },
+      "hint": { "type": "String" }
+    }
+  },
+  "listStatusFinished": "Finished",
+  "@listStatusFinished": {
+    "description": "Status tag on a finished (Past trips) list detail screen"
+  },
+  "listStatusArchived": "Archived",
+  "@listStatusArchived": {
+    "description": "Status tag on a manually archived list detail screen"
+  },
   "storePastTripsSection": "Past trips",
   "@storePastTripsSection": {
     "description": "Section header for Past trips on store details"

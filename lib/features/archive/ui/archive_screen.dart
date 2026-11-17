@@ -8,6 +8,7 @@ import 'package:zero_cart/core/widgets/async_body.dart';
 import 'package:zero_cart/data/database.dart';
 import 'package:zero_cart/features/lists/archived_list_with_store.dart';
 import 'package:zero_cart/features/lists/lists_providers.dart';
+import 'package:zero_cart/features/lists/lists_repository.dart';
 import 'package:zero_cart/features/stores/stores_providers.dart';
 import 'package:zero_cart/l10n/generated/app_localizations.dart';
 
@@ -206,103 +207,15 @@ class _ArchivedListsPane extends ConsumerWidget {
             ),
           );
         }
-
-        final entries = _buildGroupedEntries(rows);
-        return ListView.builder(
-          itemCount: entries.length,
+        return ListView.separated(
+          itemCount: rows.length,
+          separatorBuilder: (_, _) =>
+              Divider(height: 1, color: colorScheme.outlineVariant),
           itemBuilder: (context, index) {
-            final entry = entries[index];
-            return switch (entry) {
-              _StoreGroupHeader(:final storeName, :final colorKey) =>
-                _ArchivedListStoreHeader(
-                  storeName: storeName,
-                  colorKey: colorKey,
-                ),
-              _ListEntry(:final row) => _ArchivedListRow(row: row),
-            };
+            return _ArchivedListRow(row: rows[index]);
           },
         );
       },
-    );
-  }
-}
-
-sealed class _ArchiveListEntry {
-  const _ArchiveListEntry();
-}
-
-class _StoreGroupHeader extends _ArchiveListEntry {
-  const _StoreGroupHeader({required this.storeName, required this.colorKey});
-
-  final String storeName;
-  final String colorKey;
-}
-
-class _ListEntry extends _ArchiveListEntry {
-  const _ListEntry(this.row);
-
-  final ArchivedListWithStore row;
-}
-
-List<_ArchiveListEntry> _buildGroupedEntries(List<ArchivedListWithStore> rows) {
-  final entries = <_ArchiveListEntry>[];
-  String? lastStoreId;
-  for (final row in rows) {
-    if (row.list.storeId != lastStoreId) {
-      entries.add(
-        _StoreGroupHeader(
-          storeName: row.storeName,
-          colorKey: row.storeColorKey,
-        ),
-      );
-      lastStoreId = row.list.storeId;
-    }
-    entries.add(_ListEntry(row));
-  }
-  return entries;
-}
-
-class _ArchivedListStoreHeader extends StatelessWidget {
-  const _ArchivedListStoreHeader({
-    required this.storeName,
-    required this.colorKey,
-  });
-
-  final String storeName;
-  final String colorKey;
-
-  @override
-  Widget build(BuildContext context) {
-    final tokens = Theme.of(context).extension<AppTokens>()!;
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Padding(
-      padding: EdgeInsets.fromLTRB(
-        tokens.spacing16,
-        tokens.spacing16,
-        tokens.spacing16,
-        tokens.spacing4,
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: tokens.spacing16,
-            height: tokens.spacing16,
-            decoration: BoxDecoration(
-              color: tokens.storeColor(colorKey),
-              shape: BoxShape.circle,
-            ),
-          ),
-          SizedBox(width: tokens.spacing12),
-          Expanded(
-            child: Text(
-              storeName,
-              style: Theme.of(context).textTheme.titleSmall
-                  ?.copyWith(color: colorScheme.onSurfaceVariant),
-            ),
-          ),
-        ],
-      ),
     );
   }
 }
@@ -319,6 +232,17 @@ class _ArchivedListRow extends ConsumerWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final list = row.list;
     final storeArchived = row.isStoreArchived;
+    final reasonLabel =
+        list.archiveReason == ListsRepository.archiveReasonFinished
+        ? l10n.archiveReasonFinishedLabel
+        : l10n.archiveReasonManualLabel;
+    final subtitle = storeArchived
+        ? l10n.archivedListSubtitleStoreArchived(
+            row.storeName,
+            reasonLabel,
+            l10n.restoreStoreFirstHint,
+          )
+        : l10n.archivedListSubtitle(row.storeName, reasonLabel);
 
     return ConstrainedBox(
       constraints: BoxConstraints(minHeight: tokens.spacing48 + 8),
@@ -332,31 +256,33 @@ class _ArchivedListRow extends ConsumerWidget {
             Expanded(
               child: Semantics(
                 button: true,
-                label: list.name,
+                label: '${list.name}, $subtitle',
                 child: InkWell(
                   key: Key('archived_list_row_${list.id}'),
                   onTap: () =>
                       context.push(AppRoutes.listDetailsLocation(list.id)),
                   child: Padding(
                     padding: EdgeInsets.symmetric(vertical: tokens.spacing8),
-                    child: Text(
-                      list.name,
-                      style: Theme.of(context).textTheme.bodyLarge,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          list.name,
+                          style: Theme.of(context).textTheme.bodyLarge,
+                        ),
+                        SizedBox(height: tokens.spacing4),
+                        Text(
+                          key: Key('archived_list_subtitle_${list.id}'),
+                          subtitle,
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(color: colorScheme.onSurfaceVariant),
+                        ),
+                      ],
                     ),
                   ),
                 ),
               ),
             ),
-            if (storeArchived)
-              Padding(
-                padding: EdgeInsets.only(left: tokens.spacing8),
-                child: Text(
-                  key: Key('archived_list_restore_hint_${list.id}'),
-                  l10n.restoreStoreFirstHint,
-                  style: Theme.of(context).textTheme.bodySmall
-                      ?.copyWith(color: colorScheme.onSurfaceVariant),
-                ),
-              ),
             TextButton(
               key: Key('archived_list_restore_${list.id}'),
               onPressed: storeArchived
