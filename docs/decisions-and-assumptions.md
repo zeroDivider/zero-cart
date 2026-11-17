@@ -37,7 +37,7 @@ Binding unless you override. Items marked \[REVIEW\] are the ones I most want yo
 
 **Sharing**
 
-- **D-20** First line is the list name, then one line per unpurchased item in position order: `Title` or `Title - Description` (spaced hyphen). Lines are joined by newlines with no trailing newline. Nothing else is shared: no store name, checkboxes, count or blank lines. No escaping or markdown, UTF-8 as typed. Descriptions are single-line (D-08), so there is no line-break handling. If nothing is left, the Share button stays tappable, shows a snackbar 'Nothing left to share' and does not open the share sheet.
+- **D-20** First line is the list name, second line is exactly `---`, then one line per unpurchased item in position order: `Title` or `Title - Description` (spaced hyphen). Lines are joined by newlines with no trailing newline. Nothing else is shared: no store name, checkboxes, count or blank lines. No escaping or markdown, UTF-8 as typed. Descriptions are single-line (D-08), so there is no line-break handling. If nothing is left, the Share button stays tappable, shows a snackbar 'Nothing left to share' and does not open the share sheet (the formatter returns only the list name in that case; the UI must not open the sheet).
 
 **Settings and accessibility**
 

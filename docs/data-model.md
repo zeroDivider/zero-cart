@@ -166,4 +166,4 @@ Drift `schemaVersion` starts at 1 and uses stepwise migrations. Every PR that ch
 | inbox\_items | Dishwasher tablets; Lightbulb / E27 warm white |
 | wishlist\_items (DM) | Electric toothbrush heads |
 
-Share text of 'Weekend groceries' is three lines: `Weekend groceries`, `Milk - 2L, lactose-free`, `Bread`. Pasta is excluded because it is purchased.
+Share text of 'Weekend groceries' is four lines: `Weekend groceries`, `---`, `Milk - 2L, lactose-free`, `Bread`. Pasta is excluded because it is purchased.
