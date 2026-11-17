@@ -133,10 +133,7 @@ void main() {
     await _selectListsSegment(tester, harness);
 
     expect(find.text('Parked'), findsOneWidget);
-    expect(
-      find.text('Lidl · Restore the store first'),
-      findsOneWidget,
-    );
+    expect(find.text('Lidl · Restore the store first'), findsOneWidget);
     expect(find.textContaining('manual'), findsNothing);
     final restore = tester.widget<TextButton>(
       find.byKey(Key('archived_list_restore_${manual.id}')),
