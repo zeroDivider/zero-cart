@@ -356,6 +356,7 @@ Instruction to give Cursor for each task: 'Implement task APP-0NN according to t
 - **Requirements:** complete `app_sr_Latn.arb` for every key, with ICU plurals using one, few and other. Add a check to `tool/check.sh` that fails on untranslated keys and on hard-coded user-visible strings in `lib/features/` (a simple scripted search for `Text('` and similar). The owner reviews the Serbian wording.
 - **Components:** `lib/l10n/`, `tool/check.sh`.
 - **Depends on:** APP-023.
+- **Reuse:** `lib/l10n/app_en.arb`, `lib/l10n/app_sr_Latn.arb`; `tool/check.sh`; existing ICU keys from shipped features.
 - **Acceptance:** no untranslated keys; plural tests for counts 1, 2, 5, 11, 12, 21, 22 and 25 return the right forms; key screens render in Serbian at 200% text without clipping.
 - **Verify:** unit tests on the plural messages; widget tests in both locales; owner review.
 - **Docs:** none.
@@ -363,9 +364,10 @@ Instruction to give Cursor for each task: 'Implement task APP-0NN according to t
 ### APP-025 Accessibility pass
 
 - **Context:** design system 3.9, PRD NF-1, D-22, D-23.
-- **Requirements:** audit every screen. Add widget tests using Flutter's accessibility guideline matchers for tap target size, labelled targets and text contrast, in both themes. Verify semantics: item rows, checkbox state, Move up, Move down and Remove actions, live announcements for Undo, focus order, sheet and dialog focus. 200% text on all screens. Reduce-motion respected. Write `docs/accessibility-checklist.md` with a TalkBack and VoiceOver script and record the results.
+- **Requirements:** audit every screen. Add widget tests using Flutter's accessibility guideline matchers for tap target size, labelled targets and text contrast, in both themes. Verify semantics: item rows, checkbox state, Move up, Move down and Remove actions, live announcements for Undo via existing `AppMessenger.undo` (do not invent a second snackbar path), focus order, sheet and dialog focus (`FormSheetScaffold` sheets under `ui/sheets/`). 200% text on all screens. Reduce-motion respected. Write `docs/accessibility-checklist.md` with a TalkBack and VoiceOver script and record the results.
 - **Components:** across `features/` and `core/widgets/`; new doc.
 - **Depends on:** APP-024.
+- **Reuse:** `lib/core/widgets/swipe_to_remove_row.dart`; `lib/core/widgets/form_sheet.dart`; `lib/core/widgets/async_body.dart`; `lib/core/ui/app_messenger.dart`; list-row Move up / Move down / Remove semantics; `lib/app/theme/` contrast tokens.
 - **Acceptance:** guideline tests pass on the main screens; the manual checklist is completed and recorded; fixes are made where it fails.
 - **Verify:** automated guideline tests; manual run on one Android and one iOS device or simulators (state what was and was not covered).
 - **Docs:** `docs/accessibility-checklist.md`.
@@ -373,9 +375,10 @@ Instruction to give Cursor for each task: 'Implement task APP-0NN according to t
 ### APP-026 Golden and integration tests
 
 - **Context:** regression safety for the most visual and the most important flows (testing strategy).
-- **Requirements:** goldens (light and dark) for the item row states, Home board, store form sheet and the finish sheet, tagged so they run only on the CI platform. Integration tests (`integration_test`) for: capture, assign to a new store and list, shop, reorder, finish with carry-forward; and backup export then restore. Document how to run them locally.
+- **Requirements:** goldens (light and dark) for the item row states, Home board, store form sheet (`stores/ui/sheets/`) and the finish sheet (`lists/ui/sheets/` from APP-017), tagged so they run only on the CI platform. Integration tests (`integration_test`) for: capture, assign to a new store and list, shop, reorder, finish with carry-forward; and backup export then restore. Use `test/support/test_app.dart` where widget/golden harness helps. Document how to run them locally.
 - **Components:** `test/goldens/`, `integration_test/`.
 - **Depends on:** APP-025.
+- **Reuse:** `test/support/test_app.dart` (`pumpTestApp` / `TestAppHarness`); shipped screens and `ui/sheets/` from the map; finish sheet, Home board and backup UI only after APP-017 / 019 / 023 (not in the map yet).
 - **Acceptance:** goldens are stable across runs; integration tests pass on an Android emulator or simulator.
 - **Verify:** run both suites; CI runs the unit, widget and golden tests; integration tests are run locally unless a stable CI setup is added.
 - **Docs:** `docs/testing-strategy.md` run instructions.
@@ -383,9 +386,10 @@ Instruction to give Cursor for each task: 'Implement task APP-0NN according to t
 ### APP-027 Release readiness (review gate before)
 
 - **Context:** a public, honest first release.
-- **Requirements:** launcher icon and native splash using the theme background in light and dark; app display name ZeroCart; Android: confirm the release merged manifest has no INTERNET permission and set minimum SDK from the current Flutter default; iOS: iPhone only, no extra permissions beyond what packages require; versioning scheme; README split into 'implemented' and 'planned'; CONTRIBUTING and AI-development transparency updated; licences page complete including Roboto and DynaPuff; a manual QA script covering F1 to F18; release builds smoke-tested on both platforms; a short privacy statement ('no data leaves the device').
+- **Requirements:** launcher icon and native splash using the theme background in light and dark; app display name ZeroCart; Android: confirm the release merged manifest has no INTERNET permission and set minimum SDK from the current Flutter default; iOS: iPhone only, no extra permissions beyond what packages require; versioning scheme; README split into 'implemented' and 'planned'; CONTRIBUTING and AI-development transparency updated; licences page complete including Roboto and DynaPuff (existing `LicenseRegistry` registration); a manual QA script covering F1 to F18; release builds smoke-tested on both platforms; a short privacy statement ('no data leaves the device').
 - **Components:** `android/`, `ios/`, `README.md`, `CONTRIBUTING.md`, `docs/`.
 - **Depends on:** APP-026.
+- **Reuse:** font `LicenseRegistry` registration from APP-002; splash / background colours from `lib/app/theme/`; About / licences entry from APP-020 once built (map today: Settings/About placeholders).
 - **Acceptance:** the QA script passes; the owner signs off. Store publishing is outside this plan.
 - **Verify:** release builds, manifest inspection, QA script results recorded.
 - **Docs:** README, CONTRIBUTING.
