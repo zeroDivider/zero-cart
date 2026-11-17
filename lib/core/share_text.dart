@@ -13,21 +13,25 @@ class ShareableItem {
 
 /// Builds plain-text share content for a list (D-20).
 ///
-/// First line is [listName], then one line per unpurchased item in the order
-/// given. No trailing newline. When every item is purchased (or [items] is
-/// empty), the result is only [listName].
+/// First line is [listName], then `---`, then one line per unpurchased item in
+/// the order given. No trailing newline. When every item is purchased (or
+/// [items] is empty), the result is only [listName] (callers must not open the
+/// share sheet in that case).
 String formatShareText(String listName, List<ShareableItem> items) {
-  final lines = <String>[listName];
+  final itemLines = <String>[];
   for (final item in items) {
     if (item.isPurchased) {
       continue;
     }
     final description = item.description;
     if (description == null || description.isEmpty) {
-      lines.add(item.title);
+      itemLines.add(item.title);
     } else {
-      lines.add('${item.title} - $description');
+      itemLines.add('${item.title} - $description');
     }
   }
-  return lines.join('\n');
+  if (itemLines.isEmpty) {
+    return listName;
+  }
+  return [listName, '---', ...itemLines].join('\n');
 }

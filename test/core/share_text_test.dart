@@ -3,7 +3,7 @@ import 'package:zero_cart/core/share_text.dart';
 
 void main() {
   group('formatShareText', () {
-    test('exact_format_list_name_newline_title_dash_description', () {
+    test('exact_format_list_name_separator_title_dash_description', () {
       final text = formatShareText('Weekend groceries', const [
         ShareableItem(
           title: 'Milk',
@@ -18,7 +18,7 @@ void main() {
         ShareableItem(title: 'Bread', isPurchased: false),
       ]);
 
-      expect(text, 'Weekend groceries\nMilk - 2L, lactose-free\nBread');
+      expect(text, 'Weekend groceries\n---\nMilk - 2L, lactose-free\nBread');
       expect(text.endsWith('\n'), isFalse);
     });
 
@@ -28,7 +28,7 @@ void main() {
           ShareableItem(title: 'Bread', description: null, isPurchased: false),
           ShareableItem(title: 'Eggs', description: '', isPurchased: false),
         ]),
-        'List\nBread\nEggs',
+        'List\n---\nBread\nEggs',
       );
     });
 
@@ -51,7 +51,7 @@ void main() {
             isPurchased: false,
           ),
         ]),
-        'Café 🛒\nMilch "Bio" - 2L — lactose-free 😊',
+        'Café 🛒\n---\nMilch "Bio" - 2L — lactose-free 😊',
       );
     });
   });
