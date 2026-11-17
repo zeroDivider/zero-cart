@@ -805,4 +805,43 @@ void main() {
     expect(row!.archivedAt, isNull);
     await harness.dispose(tester);
   });
+
+  testWidgets('Finish Undo failure shows messageFor immediately', (
+    tester,
+  ) async {
+    final harness = await pumpTestApp(
+      tester,
+      router: AppRouter.create(initialLocation: AppRoutes.stores),
+      overrides: _throwingListsOverrides(throwOnRestore: true),
+    );
+    final store = await tester.runAsync(
+      () => _stores(harness).create(name: 'Lidl', colorKey: 'lime'),
+    );
+    final list = await tester.runAsync(
+      () => _lists(harness).create(storeId: store!.id, name: 'Weekend'),
+    );
+    await pumpApp(tester, harness);
+
+    await tester.tap(find.byKey(Key('store_row_${store!.id}')));
+    await pumpApp(tester, harness);
+    await tester.tap(find.byKey(Key('store_list_card_${list!.id}')));
+    await pumpApp(tester, harness);
+
+    await _tapButton(tester, const Key('list_finish'), harness);
+    expect(find.text('List finished'), findsOneWidget);
+
+    final action = tester.widget<SnackBarAction>(find.byType(SnackBarAction));
+    action.onPressed();
+    await tester.pumpAndSettle();
+
+    expect(find.text('List finished'), findsNothing);
+    expect(find.text(_genericError), findsOneWidget);
+    final row = await tester.runAsync(
+      () => (harness.db.select(
+        harness.db.shoppingLists,
+      )..where((t) => t.id.equals(list!.id))).getSingle(),
+    );
+    expect(row!.archivedAt, isNotNull);
+    await harness.dispose(tester);
+  });
 }
