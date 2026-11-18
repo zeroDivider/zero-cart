@@ -83,7 +83,7 @@ Sheets: store form; list form; item edit; finish list; inbox quick-add / edit / 
 
 Store details: `StoreWishlistCard` then `StorePastTripsCard` (live counts; open child routes). Past trips / Archive Lists use lists providers only (never list screens); Restore via `runWrite`; LI-5 disables Restore when the store is archived.
 
-List screen (`/lists/:id`): Share (active) builds D-20 text via `formatShareText`, gates empty with `AppMessenger.info`, else `ShareService` with button origin; Finish opens `finish_list_sheet` when leftovers remain, else `finishListWithUndo` then navigates to the store; Restore (archived) via `runWrite(restore)`. Read-only archived body already hides checkbox, handle, add row and edit.
+List screen (`/lists/:id`): Share (active) builds D-20 text via `formatShareText`, gates empty with `AppMessenger.info`, else `ShareService` with button origin; Finish opens `finish_list_sheet` when leftovers remain, else `finishListWithUndo` then navigates to the store via `AppRouter.goToStoreDetails` (same helper after manual archive — `go(stores)` + `push(store)` so back returns to Stores); Restore (archived) via `runWrite(restore)`. Read-only archived body already hides checkbox, handle, add row and edit.
 
 ## Known gaps (from code, not the plan)
 
