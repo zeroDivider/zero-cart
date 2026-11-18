@@ -1,91 +1,104 @@
 # ZeroCart
 
-> **Status: pre-alpha.** Phases 0–5 of the implementation plan are in place (through APP-018). Home store cards, Settings/About, backup, Serbian and release polish are still ahead.
+**Get your cart to zero.**
 
-ZeroCart is an offline-first shopping-list app for Android and iOS, built with Flutter. The goal is to get your cart to zero: capture items the moment you think of them, sort them into per-store lists later, and shop with a simple checklist.
+Capture groceries the moment you think of them. Sort them into per-store lists later. Shop with a simple checklist. Everything stays on your phone — no accounts, no cloud, no ads.
 
-## Why
+> **Pre-alpha** · Android & iOS · Flutter · Offline-first  
+> Core shopping loop works today (through APP-018). Home board, Settings, backup and Serbian are next.
 
-Items get forgotten because adding them is inconvenient: you remember dishwasher tablets while washing dishes, not while navigating menus. ZeroCart makes capture instant and organisation optional.
+---
+
+## Why it exists
+
+You remember dishwasher tablets while washing dishes — not while hunting through menus. Adding an item should take a second; organising it can wait.
+
+**Capture first, organise later.**
+
+## What you can do today
+
+| | Feature |
+|---|---|
+| ⚡ | **Quick-add Inbox** — dump items instantly from a FAB; edit or remove with Undo |
+| 🏪 | **Stores** — coloured cards with address & note; archive / restore |
+| 📝 | **Named lists per store** — several lists, one wishlist each |
+| ✅ | **Shop a list** — check off, drag to reorder, swipe to remove + Undo, collapse purchased |
+| 🎯 | **Assign from Inbox** — pick a store & list (or create them) and move items in |
+| ⭐ | **Wishlist** — keep “maybe later” items, then copy into a real list |
+| 🏁 | **Finish shopping** — archive the trip; optionally carry leftovers into a new list |
+| 🕘 | **Past trips & Archive** — history on the store; manual archives with restore |
+| 📤 | **Share a list** — plain text via the system share sheet |
+
+Still stubs in the UI: **Home** board, **Settings** / **About**. Data already lives in local SQLite and survives restarts.
+
+Peek at the intended look: open [`design/shopping-app-prototype.html`](design/shopping-app-prototype.html) in a browser (sample data only).
+
+## Coming soon (v1)
+
+- 🏠 Home store-card board (counts, progress, Inbox pill)
+- ⚙️ Settings — light / dark / system theme that sticks
+- 💾 Versioned JSON backup — export & replace-all restore
+- 🇷🇸 Serbian (Latin) localisation
+- ♿️ Accessibility pass, goldens, release polish
+
+**Later (v2):** tablet / landscape layouts; shared lists via a real backend.
 
 ## Principles
 
-Capture first, organise later. Minimal friction. Local-first and offline. Multiple named lists per store. Simple shopping interactions. Playful, accessible design. No registration, accounts or backend. Maintainable, not over-engineered. Your data stays on your device and can be exported as a JSON backup.
+- Minimal friction — no registration, no backend in v1  
+- Local-first — your data stays on the device  
+- Playful & accessible — 48dp targets, scalable text, semantics  
+- Maintainable — deliberate architecture, not over-engineered  
 
-## Implemented
+## Run it
 
-Foundation and shared shell (APP-001–005, APP-014a):
+Verified on **Flutter 3.47.9** (Dart 3.13.7) — pinned in `pubspec.yaml` and mirrored in CI.
 
-- Flutter app for Android and iOS (package `zero_cart`, bundle id `com.zero.cart`), three-tab navigation (Home / Inbox / Stores), theme tokens, gen-l10n (English), CI and `tool/check.sh`.
-- Bundled fonts: Roboto (UI) and DynaPuff (wordmark), with licences registered for the in-app licences page.
-- Shared UI primitives (`AppMessenger`, `runWrite`, `FormSheetScaffold`, `AsyncBody`, swipe-to-remove, Quick-add FAB) per ADR-0007.
+```bash
+flutter pub get
+bash tool/check.sh          # format, analyze, tests (also runs on every PR)
+flutter run                 # Android emulator/device; iOS needs macOS
+```
 
-Data and core features (APP-006–018):
+Optional coverage: `bash tool/coverage.sh` → `coverage/lcov.filtered.info` (Codecov when `CODECOV_TOKEN` is set).
 
-- Drift SQLite schema v1 (`lib/data/`): six tables with foreign keys, CHECKs and indexes; file DB `zero_cart.sqlite` and in-memory constructor for tests.
-- Repositories for Inbox, Stores, Lists/items, Wishlists; typed failures and Undo for hard deletes.
-- Inbox quick-add, edit, remove with Undo, and assign into a store/list (creates store/list when needed).
-- Stores tab: create/edit (colour, address, note), archive and restore; store details with active lists.
-- Per-store wishlist: add/edit/remove with Undo, copy items into a list.
-- List screen: add/edit items, check off, drag reorder, swipe remove with Undo, collapsible purchased section.
-- Finish shopping with optional carry-forward of leftovers; Past trips on the store; Archive for manually archived stores and lists (restore gated when the store is archived).
-- Share an active list as plain text through the system share sheet.
+**Drift codegen** (after schema changes):
 
-Still placeholder in the UI: Home body, Settings and About. Verified layout facts live in `docs/codebase-map.md`.
+```bash
+dart run build_runner build
+dart run drift_dev schema dump lib/data/database.dart drift_schemas/drift_schema_v1.json
+dart run drift_dev schema generate drift_schemas/ test/data/generated_migrations/
+```
 
-## Planned for v1
+`lib/data/database.g.dart` is generated and not committed.
 
-- Home store-card board (counts, progress, Inbox pill)
-- Settings (theme persistence) and About
-- Versioned JSON backup export and replace-all restore
-- Serbian (Latin) localisation
-- Accessibility pass, goldens/integration tests, release readiness
+## Stack
 
-## Planned for v2
+Flutter · Material 3 · Riverpod · Drift (SQLite) · go_router · gen-l10n · share_plus  
 
-Landscape and tablet layouts; shared lists through a backend (accounts, sync, notifications).
+Why these choices: [`docs/architecture.md`](docs/architecture.md) and [`docs/adr/`](docs/adr/).
 
-## Tech stack
+## Docs map
 
-Flutter and Dart, Material 3, Riverpod, Drift (SQLite), go_router, gen-l10n, share_plus. Rationale in `docs/architecture.md` and `docs/adr/`.
-
-## Documentation
-
-| Topic | File |
+| Start here | |
 |---|---|
-| Product requirements and flows | `docs/product-requirements.md`, `docs/user-flows.md` |
-| Decisions and assumptions | `docs/decisions-and-assumptions.md` |
-| Architecture and ADRs | `docs/architecture.md`, `docs/adr/` |
-| Data model and backup format | `docs/data-model.md`, `docs/backup-format.md` |
-| Design system and prototype | `docs/design-system.md`, `design/shopping-app-prototype.html` |
-| Implementation plan | `docs/implementation-plan.md` |
-| Codebase map (reuse facts) | `docs/codebase-map.md` |
-| Deviations | `docs/deviations.md` |
-| Testing | `docs/testing-strategy.md` |
-| AI-assisted workflow | `docs/ai-development-workflow.md`, `AGENTS.md` |
+| 🗺️ What exists in code | [`docs/codebase-map.md`](docs/codebase-map.md) |
+| 📋 Task roadmap | [`docs/implementation-plan.md`](docs/implementation-plan.md) |
+| 📐 Product & flows | [`docs/product-requirements.md`](docs/product-requirements.md), [`docs/user-flows.md`](docs/user-flows.md) |
+| 🧭 Decisions | [`docs/decisions-and-assumptions.md`](docs/decisions-and-assumptions.md), [`docs/deviations.md`](docs/deviations.md) |
+| 🗄️ Data & backup format | [`docs/data-model.md`](docs/data-model.md), [`docs/backup-format.md`](docs/backup-format.md) |
+| 🎨 Design | [`docs/design-system.md`](docs/design-system.md), prototype HTML above |
+| 🧪 Testing & AI workflow | [`docs/testing-strategy.md`](docs/testing-strategy.md), [`AGENTS.md`](AGENTS.md) |
 
-Open `design/shopping-app-prototype.html` in a browser to see the intended design (sample data only).
+## Built with AI (on purpose)
 
-## Getting started
+Planned with Claude, implemented with Cursor Agent, directed and reviewed by a human. Rules live in `AGENTS.md`, `.cursor/` and `docs/ai-development-workflow.md`. Commits carry an `Assisted-by` trailer; the maintainer owns everything merged.
 
-Verified with **Flutter 3.47.9** (stable channel, Dart 3.13.7). The Flutter version is pinned in `pubspec.yaml` (`environment.flutter`) and CI reads that same value.
+## Licence & fonts
 
-1. Install the Flutter stable SDK matching the pin above, Android Studio or the Android SDK, and Xcode (macOS) for iOS.
-2. From the repo root: `flutter pub get`
-3. Quality gate: `bash tool/check.sh` (pub get, gen-l10n, Drift `build_runner`, format, analyze, tests). GitHub Actions runs the same script on every pull request and on pushes to `main`.
-4. Coverage (optional, not a gate): `bash tool/coverage.sh` writes `coverage/lcov.info` and a filtered `coverage/lcov.filtered.info`. CI uploads the filtered report to Codecov when `CODECOV_TOKEN` is set.
-5. Run: `flutter run` (Android emulator/device now; iOS requires macOS)
-
-Drift generates `lib/data/database.g.dart` (not committed). After changing tables, run `dart run build_runner build`, then dump the schema with `dart run drift_dev schema dump lib/data/database.dart drift_schemas/drift_schema_v1.json` when the version changes, and regenerate migration helpers with `dart run drift_dev schema generate drift_schemas/ test/data/generated_migrations/`.
-
-## AI-assisted development
-
-This project is planned with Claude and implemented with Cursor Agent, under human direction and review. The process, rules and guardrails are public in `AGENTS.md`, `.cursor/` and `docs/ai-development-workflow.md`. Commits carry an `Assisted-by` trailer. The maintainer reviews and is responsible for everything merged.
-
-## Licence and credits
-
-Source code: MIT, see `LICENSE`. Fonts are bundled under their own licences (texts in `assets/fonts/`): **DynaPuff** (SIL Open Font License 1.1) for the wordmark and **Roboto** (Apache License 2.0) for the interface. Both are registered with Flutter's `LicenseRegistry` and appear on the in-app licences page. Dependency licences are shown there as well.
+MIT — see [`LICENSE`](LICENSE).  
+Fonts in `assets/fonts/`: **DynaPuff** (SIL OFL 1.1, wordmark) and **Roboto** (Apache 2.0, UI). Both show up on the in-app licences page via `LicenseRegistry`.
 
 ## Contributing
 
-See `CONTRIBUTING.md`.
+See [`CONTRIBUTING.md`](CONTRIBUTING.md). Until the first release, issues and discussion help most.
