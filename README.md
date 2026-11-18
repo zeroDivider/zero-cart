@@ -17,17 +17,15 @@ You remember dishwasher tablets while washing dishes — not while hunting throu
 
 ## What you can do today
 
-| | Feature |
-|---|---|
-| ⚡ | **Quick-add Inbox** — dump items instantly from a FAB; edit or remove with Undo |
-| 🏪 | **Stores** — coloured cards with address & note; archive / restore |
-| 📝 | **Named lists per store** — several lists, one wishlist each |
-| ✅ | **Shop a list** — check off, drag to reorder, swipe to remove + Undo, collapse purchased |
-| 🎯 | **Assign from Inbox** — pick a store & list (or create them) and move items in |
-| ⭐ | **Wishlist** — keep “maybe later” items, then copy into a real list |
-| 🏁 | **Finish shopping** — archive the trip; optionally carry leftovers into a new list |
-| 🕘 | **Past trips & Archive** — history on the store; manual archives with restore |
-| 📤 | **Share a list** — plain text via the system share sheet |
+- ⚡ **Quick-add Inbox** — dump items instantly from a FAB; edit or remove with Undo
+- 🏪 **Stores** — coloured cards with address & note; archive / restore
+- 📝 **Named lists per store** — several lists, one wishlist each
+- ✅ **Shop a list** — check off, drag to reorder, swipe to remove + Undo, collapse purchased
+- 🎯 **Assign from Inbox** — pick a store & list (or create them) and move items in
+- ⭐ **Wishlist** — keep “maybe later” items, then copy into a real list
+- 🏁 **Finish shopping** — archive the trip; optionally carry leftovers into a new list
+- 🕘 **Past trips & Archive** — history on the store; manual archives with restore
+- 📤 **Share a list** — plain text via the system share sheet
 
 Still stubs in the UI: **Home** board, **Settings** / **About**. Data already lives in local SQLite and survives restarts.
 
@@ -80,15 +78,13 @@ Why these choices: [`docs/architecture.md`](docs/architecture.md) and [`docs/adr
 
 ## Docs map
 
-| Start here | |
-|---|---|
-| 🗺️ What exists in code | [`docs/codebase-map.md`](docs/codebase-map.md) |
-| 📋 Task roadmap | [`docs/implementation-plan.md`](docs/implementation-plan.md) |
-| 📐 Product & flows | [`docs/product-requirements.md`](docs/product-requirements.md), [`docs/user-flows.md`](docs/user-flows.md) |
-| 🧭 Decisions | [`docs/decisions-and-assumptions.md`](docs/decisions-and-assumptions.md), [`docs/deviations.md`](docs/deviations.md) |
-| 🗄️ Data & backup format | [`docs/data-model.md`](docs/data-model.md), [`docs/backup-format.md`](docs/backup-format.md) |
-| 🎨 Design | [`docs/design-system.md`](docs/design-system.md), prototype HTML above |
-| 🧪 Testing & AI workflow | [`docs/testing-strategy.md`](docs/testing-strategy.md), [`AGENTS.md`](AGENTS.md) |
+- 🗺️ **What exists in code** — [`docs/codebase-map.md`](docs/codebase-map.md)
+- 📋 **Task roadmap** — [`docs/implementation-plan.md`](docs/implementation-plan.md)
+- 📐 **Product & flows** — [`docs/product-requirements.md`](docs/product-requirements.md), [`docs/user-flows.md`](docs/user-flows.md)
+- 🧭 **Decisions** — [`docs/decisions-and-assumptions.md`](docs/decisions-and-assumptions.md), [`docs/deviations.md`](docs/deviations.md)
+- 🗄️ **Data & backup format** — [`docs/data-model.md`](docs/data-model.md), [`docs/backup-format.md`](docs/backup-format.md)
+- 🎨 **Design** — [`docs/design-system.md`](docs/design-system.md), prototype HTML above
+- 🧪 **Testing & AI workflow** — [`docs/testing-strategy.md`](docs/testing-strategy.md), [`AGENTS.md`](AGENTS.md)
 
 ## Built with AI (on purpose)
 
