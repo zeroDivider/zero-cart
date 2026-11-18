@@ -15,6 +15,7 @@ import 'package:zero_cart/features/lists/ui/sheets/list_form_sheet.dart';
 import 'package:zero_cart/features/stores/stores_repository.dart';
 import 'package:zero_cart/features/stores/ui/store_active_lists_section.dart';
 import 'package:zero_cart/features/stores/ui/store_details_screen.dart';
+import 'package:zero_cart/features/stores/ui/stores_screen.dart';
 
 import '../../support/test_app.dart';
 
@@ -510,10 +511,8 @@ void main() {
   testWidgets('archive list confirms then returns to store details', (
     tester,
   ) async {
-    final harness = await pumpTestApp(
-      tester,
-      router: AppRouter.create(initialLocation: AppRoutes.stores),
-    );
+    final router = AppRouter.create(initialLocation: AppRoutes.stores);
+    final harness = await pumpTestApp(tester, router: router);
     final (store, list) = await _seedList(tester, harness);
     await pumpApp(tester, harness);
     await _openList(tester, harness, store, list);
@@ -530,6 +529,17 @@ void main() {
     expect(find.byType(ListScreen), findsNothing);
     expect(find.byType(StoreDetailsScreen), findsOneWidget);
     expect(find.text(store.name), findsWidgets);
+
+    // go(storeDetails) alone drops the Stores shell; back must still work.
+    expect(router.canPop(), isTrue);
+    router.pop();
+    await pumpApp(tester, harness);
+    expect(find.byType(StoreDetailsScreen), findsNothing);
+    expect(find.byType(StoresScreen), findsOneWidget);
+    expect(
+      router.routerDelegate.currentConfiguration.uri.path,
+      AppRoutes.stores,
+    );
 
     final row = await tester.runAsync(
       () => harness.db.select(harness.db.shoppingLists).getSingle(),

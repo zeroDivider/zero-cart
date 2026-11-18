@@ -3,7 +3,6 @@ import 'dart:ui' show lerpDouble;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:zero_cart/app/router.dart';
 import 'package:zero_cart/app/theme/app_tokens.dart';
 import 'package:zero_cart/core/share_service.dart';
@@ -193,7 +192,7 @@ class _FinishAction extends ConsumerWidget {
         l10n: l10n,
       );
       if (result != null && context.mounted) {
-        context.go(AppRoutes.storeDetailsLocation(list.storeId));
+        AppRouter.goToStoreDetails(context, list.storeId);
       }
       return;
     }
@@ -204,7 +203,7 @@ class _FinishAction extends ConsumerWidget {
       leftCount: leftCount,
     );
     if (result != null && context.mounted) {
-      context.go(AppRoutes.storeDetailsLocation(list.storeId));
+      AppRouter.goToStoreDetails(context, list.storeId);
     }
   }
 }
@@ -284,7 +283,7 @@ class _ListMenu extends ConsumerWidget {
       l10n: l10n,
     );
     if (ok && context.mounted) {
-      context.go(AppRoutes.storeDetailsLocation(list.storeId));
+      AppRouter.goToStoreDetails(context, list.storeId);
     }
   }
 }

@@ -35,6 +35,16 @@ abstract final class AppRoutes {
 
 /// Builds the app [GoRouter] with a stateful three-tab shell.
 abstract final class AppRouter {
+  /// Lands on store details above the Stores tab so AppBar / system back work.
+  ///
+  /// Prefer this over [GoRouter.go] to `/stores/:id`, which drops the shell and
+  /// leaves nothing to pop (back exits the app).
+  static void goToStoreDetails(BuildContext context, String storeId) {
+    final router = GoRouter.of(context);
+    router.go(AppRoutes.stores);
+    router.push(AppRoutes.storeDetailsLocation(storeId));
+  }
+
   static GoRouter create({String initialLocation = AppRoutes.home}) {
     final rootNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'root');
     return GoRouter(
