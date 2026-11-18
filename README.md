@@ -1,6 +1,6 @@
 # ZeroCart
 
-> **Status: pre-alpha. Project skeleton exists (APP-001); features are not implemented yet.**
+> **Status: pre-alpha.** Phases 0–5 of the implementation plan are in place (through APP-018). Home store cards, Settings/About, backup, Serbian and release polish are still ahead.
 
 ZeroCart is an offline-first shopping-list app for Android and iOS, built with Flutter. The goal is to get your cart to zero: capture items the moment you think of them, sort them into per-store lists later, and shop with a simple checklist.
 
@@ -14,20 +14,32 @@ Capture first, organise later. Minimal friction. Local-first and offline. Multip
 
 ## Implemented
 
-- Empty Flutter app shell for Android and iOS (package `zero_cart`, bundle id `com.zero.cart`). See the roadmap in `docs/implementation-plan.md`.
+Foundation and shared shell (APP-001–005, APP-014a):
+
+- Flutter app for Android and iOS (package `zero_cart`, bundle id `com.zero.cart`), three-tab navigation (Home / Inbox / Stores), theme tokens, gen-l10n (English), CI and `tool/check.sh`.
 - Bundled fonts: Roboto (UI) and DynaPuff (wordmark), with licences registered for the in-app licences page.
+- Shared UI primitives (`AppMessenger`, `runWrite`, `FormSheetScaffold`, `AsyncBody`, swipe-to-remove, Quick-add FAB) per ADR-0007.
+
+Data and core features (APP-006–018):
+
 - Drift SQLite schema v1 (`lib/data/`): six tables with foreign keys, CHECKs and indexes; file DB `zero_cart.sqlite` and in-memory constructor for tests.
+- Repositories for Inbox, Stores, Lists/items, Wishlists; typed failures and Undo for hard deletes.
+- Inbox quick-add, edit, remove with Undo, and assign into a store/list (creates store/list when needed).
+- Stores tab: create/edit (colour, address, note), archive and restore; store details with active lists.
+- Per-store wishlist: add/edit/remove with Undo, copy items into a list.
+- List screen: add/edit items, check off, drag reorder, swipe remove with Undo, collapsible purchased section.
+- Finish shopping with optional carry-forward of leftovers; Past trips on the store; Archive for manually archived stores and lists (restore gated when the store is archived).
+- Share an active list as plain text through the system share sheet.
+
+Still placeholder in the UI: Home body, Settings and About. Verified layout facts live in `docs/codebase-map.md`.
 
 ## Planned for v1
 
-- Inbox with instant quick-add, later assigned to a store and a named list
-- Stores (colour, address, note) with several named lists each and one wishlist per store
-- Items with title and optional description, check off, drag to reorder, swipe to remove with Undo, collapsible purchased section
-- Finish shopping with carry-forward of leftovers; archived stores and lists with restore
-- Plain-text sharing of a list through the system share sheet
-- Home screen with a board of store cards
-- Light, dark and system themes; English and Serbian (Latin)
-- Versioned JSON backup and replace-all restore
+- Home store-card board (counts, progress, Inbox pill)
+- Settings (theme persistence) and About
+- Versioned JSON backup export and replace-all restore
+- Serbian (Latin) localisation
+- Accessibility pass, goldens/integration tests, release readiness
 
 ## Planned for v2
 
@@ -35,7 +47,7 @@ Landscape and tablet layouts; shared lists through a backend (accounts, sync, no
 
 ## Tech stack
 
-Flutter and Dart, Material 3, Riverpod, Drift (SQLite), go_router, gen-l10n. Rationale in `docs/architecture.md` and `docs/adr/`.
+Flutter and Dart, Material 3, Riverpod, Drift (SQLite), go_router, gen-l10n, share_plus. Rationale in `docs/architecture.md` and `docs/adr/`.
 
 ## Documentation
 
@@ -47,6 +59,8 @@ Flutter and Dart, Material 3, Riverpod, Drift (SQLite), go_router, gen-l10n. Rat
 | Data model and backup format | `docs/data-model.md`, `docs/backup-format.md` |
 | Design system and prototype | `docs/design-system.md`, `design/shopping-app-prototype.html` |
 | Implementation plan | `docs/implementation-plan.md` |
+| Codebase map (reuse facts) | `docs/codebase-map.md` |
+| Deviations | `docs/deviations.md` |
 | Testing | `docs/testing-strategy.md` |
 | AI-assisted workflow | `docs/ai-development-workflow.md`, `AGENTS.md` |
 
