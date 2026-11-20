@@ -1,0 +1,5 @@
+# Tag definitions for flutter_test. Golden images are compared on the CI
+# platform (testing-strategy / APP-026); they still run in local `flutter test`
+# when PNGs are present so regressions are caught early.
+tags:
+  golden:
