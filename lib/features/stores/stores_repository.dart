@@ -4,6 +4,7 @@ import 'package:zero_cart/core/clock.dart';
 import 'package:zero_cart/core/ids.dart';
 import 'package:zero_cart/core/text_normalize.dart';
 import 'package:zero_cart/data/database.dart';
+import 'package:zero_cart/features/home/store_summary.dart';
 import 'package:zero_cart/features/stores/active_store_summary.dart';
 import 'package:zero_cart/features/stores/store_draft.dart';
 
@@ -75,6 +76,78 @@ ORDER BY s.name COLLATE NOCASE ASC, s.id ASC
                   updatedAt: row.read<DateTime>('updated_at'),
                 ),
                 activeListCount: row.read<int>('active_list_count'),
+              ),
+          ];
+        });
+  }
+
+  /// Active stores for the Home board: list and item counts plus last activity.
+  ///
+  /// Counts cover **active** lists only. [StoreSummary.lastActivity] is the
+  /// newest active-list `updated_at`, falling back to the store's own.
+  /// Ordered newest activity first (ST-2 / design system 3.12). Item writes
+  /// re-emit because [listItems] is in [readsFrom].
+  Stream<List<StoreSummary>> watchHomeStoreSummaries() {
+    return _db
+        .customSelect(
+          '''
+SELECT
+  s.id,
+  s.name,
+  s.color_key,
+  s.address,
+  s.note,
+  s.archived_at,
+  s.created_at,
+  s.updated_at,
+  (
+    SELECT COUNT(*) FROM shopping_lists AS sl
+    WHERE sl.store_id = s.id AND sl.archived_at IS NULL
+  ) AS active_list_count,
+  (
+    SELECT COUNT(*) FROM list_items AS li
+    INNER JOIN shopping_lists AS sl ON sl.id = li.list_id
+    WHERE sl.store_id = s.id
+      AND sl.archived_at IS NULL
+      AND li.is_purchased = 0
+  ) AS unpurchased_count,
+  (
+    SELECT COUNT(*) FROM list_items AS li
+    INNER JOIN shopping_lists AS sl ON sl.id = li.list_id
+    WHERE sl.store_id = s.id AND sl.archived_at IS NULL
+  ) AS total_item_count,
+  COALESCE(
+    (
+      SELECT MAX(sl.updated_at) FROM shopping_lists AS sl
+      WHERE sl.store_id = s.id AND sl.archived_at IS NULL
+    ),
+    s.updated_at
+  ) AS last_activity
+FROM stores AS s
+WHERE s.archived_at IS NULL
+ORDER BY last_activity DESC, s.id DESC
+''',
+          readsFrom: {_db.stores, _db.shoppingLists, _db.listItems},
+        )
+        .watch()
+        .map((rows) {
+          return [
+            for (final row in rows)
+              StoreSummary(
+                store: Store(
+                  id: row.read<String>('id'),
+                  name: row.read<String>('name'),
+                  colorKey: row.read<String>('color_key'),
+                  address: row.readNullable<String>('address'),
+                  note: row.readNullable<String>('note'),
+                  archivedAt: row.readNullable<DateTime>('archived_at'),
+                  createdAt: row.read<DateTime>('created_at'),
+                  updatedAt: row.read<DateTime>('updated_at'),
+                ),
+                activeListCount: row.read<int>('active_list_count'),
+                unpurchasedCount: row.read<int>('unpurchased_count'),
+                totalItemCount: row.read<int>('total_item_count'),
+                lastActivity: row.read<DateTime>('last_activity'),
               ),
           ];
         });
