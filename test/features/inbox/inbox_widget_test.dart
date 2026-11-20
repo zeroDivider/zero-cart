@@ -6,10 +6,14 @@ import 'package:zero_cart/app/root_scaffold_messenger.dart';
 import 'package:zero_cart/app/router.dart';
 import 'package:zero_cart/data/database.dart';
 import 'package:zero_cart/data/providers.dart';
+import 'package:zero_cart/features/home/home_providers.dart';
+import 'package:zero_cart/features/home/store_summary.dart';
 import 'package:zero_cart/features/inbox/inbox_providers.dart';
 import 'package:zero_cart/features/inbox/inbox_repository.dart';
 import 'package:zero_cart/features/inbox/ui/sheets/inbox_edit_sheet.dart';
 import 'package:zero_cart/features/inbox/ui/sheets/quick_add_sheet.dart';
+import 'package:zero_cart/features/stores/active_store_summary.dart';
+import 'package:zero_cart/features/stores/stores_providers.dart';
 
 import '../../support/test_app.dart';
 
@@ -256,6 +260,19 @@ void main() {
         overrides: [
           appDatabaseProvider.overrideWithValue(db),
           inboxItemsProvider.overrideWith((ref) => Stream.value(many)),
+          // Avoid live Drift .watch under FakeAsync (Home/Stores shell tabs).
+          homeStoreSummariesProvider.overrideWith(
+            (ref) => Stream.value(const <StoreSummary>[]),
+          ),
+          activeStoreSummariesProvider.overrideWith(
+            (ref) => Stream.value(const <ActiveStoreSummary>[]),
+          ),
+          activeStoresProvider.overrideWith(
+            (ref) => Stream.value(const <Store>[]),
+          ),
+          archivedStoresProvider.overrideWith(
+            (ref) => Stream.value(const <Store>[]),
+          ),
         ],
         child: ZeroCartApp(),
       ),
