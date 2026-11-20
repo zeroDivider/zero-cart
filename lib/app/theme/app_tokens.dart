@@ -19,6 +19,15 @@ class AppTokens extends ThemeExtension<AppTokens> {
     required this.radiusXl,
     required this.radiusCheckbox,
     required this.radiusPill,
+    required this.homeBoardGap,
+    required this.homeBoardRightOffset,
+    required this.homeCardMinHeight,
+    required this.homeCardTallMinHeight,
+    required this.homeCardTiltDegrees,
+    required this.homeCardColorMix,
+    required this.homeCardBlobSize,
+    required this.homeCardProgressHeight,
+    required this.homeTextScaleSingleColumn,
     required this.storePalette,
     required this.success,
     required this.onSuccess,
@@ -42,6 +51,19 @@ class AppTokens extends ThemeExtension<AppTokens> {
   final double radiusXl;
   final double radiusCheckbox;
   final double radiusPill;
+
+  /// Home board layout from design system 3.12 (minimum heights may grow).
+  final double homeBoardGap;
+  final double homeBoardRightOffset;
+  final double homeCardMinHeight;
+  final double homeCardTallMinHeight;
+  final double homeCardTiltDegrees;
+  final double homeCardColorMix;
+  final double homeCardBlobSize;
+  final double homeCardProgressHeight;
+
+  /// Text scale above this uses a single column with no card tilt.
+  final double homeTextScaleSingleColumn;
 
   /// Decorative store colours; same hexes in light and dark.
   final Map<String, Color> storePalette;
@@ -88,6 +110,15 @@ class AppTokens extends ThemeExtension<AppTokens> {
     radiusXl: 28,
     radiusCheckbox: 6,
     radiusPill: 999,
+    homeBoardGap: 12,
+    homeBoardRightOffset: 26,
+    homeCardMinHeight: 170,
+    homeCardTallMinHeight: 230,
+    homeCardTiltDegrees: 1,
+    homeCardColorMix: 0.38,
+    homeCardBlobSize: 96,
+    homeCardProgressHeight: 4,
+    homeTextScaleSingleColumn: 1.3,
     storePalette: storePaletteColors,
     success: Color(0xFFA5D5B6),
     onSuccess: Color(0xFF123B24),
@@ -109,6 +140,17 @@ class AppTokens extends ThemeExtension<AppTokens> {
     radiusXl: 28,
     radiusCheckbox: 6,
     radiusPill: 999,
+    homeBoardGap: 12,
+    homeBoardRightOffset: 26,
+    homeCardMinHeight: 170,
+    homeCardTallMinHeight: 230,
+    homeCardTiltDegrees: 1,
+    // Slightly less store colour than light so pastel fills stay readable
+    // against onSurface / onSurfaceVariant in dark mode (APP-019).
+    homeCardColorMix: 0.26,
+    homeCardBlobSize: 96,
+    homeCardProgressHeight: 4,
+    homeTextScaleSingleColumn: 1.3,
     storePalette: storePaletteColors,
     success: Color(0xFFA5D5B6),
     onSuccess: Color(0xFF123B24),
@@ -120,6 +162,11 @@ class AppTokens extends ThemeExtension<AppTokens> {
     final color = storePalette[key];
     assert(color != null, 'Unknown store palette key: $key');
     return color!;
+  }
+
+  /// Store colour mixed into [background] for Home cards (design system 3.1).
+  Color homeCardFill(String colorKey, Color background) {
+    return Color.lerp(background, storeColor(colorKey), homeCardColorMix)!;
   }
 
   @override
@@ -137,6 +184,15 @@ class AppTokens extends ThemeExtension<AppTokens> {
     double? radiusXl,
     double? radiusCheckbox,
     double? radiusPill,
+    double? homeBoardGap,
+    double? homeBoardRightOffset,
+    double? homeCardMinHeight,
+    double? homeCardTallMinHeight,
+    double? homeCardTiltDegrees,
+    double? homeCardColorMix,
+    double? homeCardBlobSize,
+    double? homeCardProgressHeight,
+    double? homeTextScaleSingleColumn,
     Map<String, Color>? storePalette,
     Color? success,
     Color? onSuccess,
@@ -157,6 +213,18 @@ class AppTokens extends ThemeExtension<AppTokens> {
       radiusXl: radiusXl ?? this.radiusXl,
       radiusCheckbox: radiusCheckbox ?? this.radiusCheckbox,
       radiusPill: radiusPill ?? this.radiusPill,
+      homeBoardGap: homeBoardGap ?? this.homeBoardGap,
+      homeBoardRightOffset: homeBoardRightOffset ?? this.homeBoardRightOffset,
+      homeCardMinHeight: homeCardMinHeight ?? this.homeCardMinHeight,
+      homeCardTallMinHeight:
+          homeCardTallMinHeight ?? this.homeCardTallMinHeight,
+      homeCardTiltDegrees: homeCardTiltDegrees ?? this.homeCardTiltDegrees,
+      homeCardColorMix: homeCardColorMix ?? this.homeCardColorMix,
+      homeCardBlobSize: homeCardBlobSize ?? this.homeCardBlobSize,
+      homeCardProgressHeight:
+          homeCardProgressHeight ?? this.homeCardProgressHeight,
+      homeTextScaleSingleColumn:
+          homeTextScaleSingleColumn ?? this.homeTextScaleSingleColumn,
       storePalette: storePalette ?? this.storePalette,
       success: success ?? this.success,
       onSuccess: onSuccess ?? this.onSuccess,
@@ -184,6 +252,47 @@ class AppTokens extends ThemeExtension<AppTokens> {
       radiusXl: lerpDouble(radiusXl, other.radiusXl, t)!,
       radiusCheckbox: lerpDouble(radiusCheckbox, other.radiusCheckbox, t)!,
       radiusPill: lerpDouble(radiusPill, other.radiusPill, t)!,
+      homeBoardGap: lerpDouble(homeBoardGap, other.homeBoardGap, t)!,
+      homeBoardRightOffset: lerpDouble(
+        homeBoardRightOffset,
+        other.homeBoardRightOffset,
+        t,
+      )!,
+      homeCardMinHeight: lerpDouble(
+        homeCardMinHeight,
+        other.homeCardMinHeight,
+        t,
+      )!,
+      homeCardTallMinHeight: lerpDouble(
+        homeCardTallMinHeight,
+        other.homeCardTallMinHeight,
+        t,
+      )!,
+      homeCardTiltDegrees: lerpDouble(
+        homeCardTiltDegrees,
+        other.homeCardTiltDegrees,
+        t,
+      )!,
+      homeCardColorMix: lerpDouble(
+        homeCardColorMix,
+        other.homeCardColorMix,
+        t,
+      )!,
+      homeCardBlobSize: lerpDouble(
+        homeCardBlobSize,
+        other.homeCardBlobSize,
+        t,
+      )!,
+      homeCardProgressHeight: lerpDouble(
+        homeCardProgressHeight,
+        other.homeCardProgressHeight,
+        t,
+      )!,
+      homeTextScaleSingleColumn: lerpDouble(
+        homeTextScaleSingleColumn,
+        other.homeTextScaleSingleColumn,
+        t,
+      )!,
       storePalette: <String, Color>{
         for (final key in storePaletteKeys)
           key: Color.lerp(storePalette[key], other.storePalette[key], t)!,
