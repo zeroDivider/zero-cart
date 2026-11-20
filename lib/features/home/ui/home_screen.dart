@@ -23,7 +23,10 @@ class HomeScreen extends ConsumerWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final tokens = Theme.of(context).extension<AppTokens>()!;
     final summariesAsync = ref.watch(homeStoreSummariesProvider);
-    final inboxAsync = ref.watch(inboxItemsProvider);
+    // Pill is optional chrome; a load hiccup must not hide the board.
+    final inboxCount = ref
+        .watch(inboxItemsProvider)
+        .maybeWhen(data: (items) => items.length, orElse: () => 0);
 
     return Scaffold(
       appBar: AppBar(
@@ -57,19 +60,10 @@ class HomeScreen extends ConsumerWidget {
         value: summariesAsync,
         onRetry: () => ref.invalidate(homeStoreSummariesProvider),
         builder: (context, summaries) {
-          return AsyncBody(
-            value: inboxAsync,
-            onRetry: () => ref.invalidate(inboxItemsProvider),
-            builder: (context, inboxItems) {
-              if (summaries.isEmpty) {
-                return _HomeEmptyState(inboxCount: inboxItems.length);
-              }
-              return _HomeBoard(
-                summaries: summaries,
-                inboxCount: inboxItems.length,
-              );
-            },
-          );
+          if (summaries.isEmpty) {
+            return _HomeEmptyState(inboxCount: inboxCount);
+          }
+          return _HomeBoard(summaries: summaries, inboxCount: inboxCount);
         },
       ),
     );
