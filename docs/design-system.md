@@ -123,5 +123,6 @@ Home has no list shortcuts. It is a staggered two-column board of large store ca
 - **Fill:** the store colour mixed into the background (about 38% light / 26% dark), a solid store-colour circle clipped at the top-right corner, corner radius 28. Card heights are minimums and may grow with text scale.
 - **Content:** the number of unpurchased items across the store's active lists in storeCount style with the label 'left to buy'; store name in Bold 20sp; a thin progress bar (purchased share of all items); the list count. At zero the label reads 'cart is empty' (the idea of the name); a store without lists reads 'no lists yet'.
 - **Layout:** the right column sits 26dp lower; every third card is taller (230dp against a 170dp minimum); cards tilt about 1 degree, alternating. Above 1.3x text scale the board becomes one column with no tilt.
+- **Inbox pill:** full width of the Home body up to 400dp (same as the prototype phone frame), left-aligned on wider screens.
 - **Behaviour:** tapping a card opens store details, where the lists live. Order: most recently active store first. Accessibility label: store name, items left, list count.
 - **Alternatives considered:** a horizontal swipe deck of big cards, and single-column full-width cards. Both are easy to swap in later since only the Home screen changes.

@@ -164,37 +164,42 @@ class _InboxPill extends StatelessWidget {
 
     return Align(
       alignment: Alignment.centerLeft,
-      child: Material(
-        color: colorScheme.secondaryContainer,
-        borderRadius: BorderRadius.circular(tokens.radiusPill),
-        child: InkWell(
-          key: const Key('home_inbox_pill'),
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxWidth: tokens.homeInboxPillMaxWidth,
+          minHeight: tokens.spacing48,
+        ),
+        child: Material(
+          color: colorScheme.secondaryContainer,
           borderRadius: BorderRadius.circular(tokens.radiusPill),
-          onTap: () => context.go(AppRoutes.inbox),
-          child: ConstrainedBox(
-            constraints: BoxConstraints(minHeight: tokens.spacing48),
-            child: Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: tokens.spacing16,
-                vertical: tokens.spacing8,
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.edit_outlined,
-                    size: tokens.spacing16,
-                    color: colorScheme.onSecondaryContainer,
-                  ),
-                  SizedBox(width: tokens.spacing8),
-                  Flexible(
-                    child: Text(
-                      l10n.homeInboxPill(count),
-                      style: Theme.of(context).textTheme.labelLarge
-                          ?.copyWith(color: colorScheme.onSecondaryContainer),
+          child: InkWell(
+            key: const Key('home_inbox_pill'),
+            borderRadius: BorderRadius.circular(tokens.radiusPill),
+            onTap: () => context.go(AppRoutes.inbox),
+            child: SizedBox(
+              width: double.infinity,
+              child: Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: tokens.spacing16,
+                  vertical: tokens.spacing8,
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.edit_outlined,
+                      size: tokens.spacing16,
+                      color: colorScheme.onSecondaryContainer,
                     ),
-                  ),
-                ],
+                    SizedBox(width: tokens.spacing8),
+                    Expanded(
+                      child: Text(
+                        l10n.homeInboxPill(count),
+                        style: Theme.of(context).textTheme.labelLarge
+                            ?.copyWith(color: colorScheme.onSecondaryContainer),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),

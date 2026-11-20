@@ -117,6 +117,25 @@ void main() {
     await harness.dispose(tester);
   });
 
+  testWidgets('Inbox pill caps at phone width on a wide screen', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1200, 1600);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final harness = await pumpTestApp(tester);
+    await tester.runAsync(() => _inbox(harness).add(title: 'Milk'));
+    await pumpApp(tester, harness);
+
+    final pillWidth = tester
+        .getSize(find.byKey(const Key('home_inbox_pill')))
+        .width;
+    expect(pillWidth, 400);
+    await harness.dispose(tester);
+  });
+
   testWidgets('store card tap opens store details', (tester) async {
     final harness = await pumpTestApp(tester);
     await _seedStoreWithItems(
