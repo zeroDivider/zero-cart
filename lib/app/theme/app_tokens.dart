@@ -27,6 +27,7 @@ class AppTokens extends ThemeExtension<AppTokens> {
     required this.homeCardColorMix,
     required this.homeCardBlobSize,
     required this.homeCardProgressHeight,
+    required this.homeInboxPillMaxWidth,
     required this.homeTextScaleSingleColumn,
     required this.storePalette,
     required this.success,
@@ -61,6 +62,9 @@ class AppTokens extends ThemeExtension<AppTokens> {
   final double homeCardColorMix;
   final double homeCardBlobSize;
   final double homeCardProgressHeight;
+
+  /// Inbox pill grows with the board up to this width (prototype phone frame).
+  final double homeInboxPillMaxWidth;
 
   /// Text scale above this uses a single column with no card tilt.
   final double homeTextScaleSingleColumn;
@@ -118,6 +122,7 @@ class AppTokens extends ThemeExtension<AppTokens> {
     homeCardColorMix: 0.38,
     homeCardBlobSize: 96,
     homeCardProgressHeight: 4,
+    homeInboxPillMaxWidth: 400,
     homeTextScaleSingleColumn: 1.3,
     storePalette: storePaletteColors,
     success: Color(0xFFA5D5B6),
@@ -150,6 +155,7 @@ class AppTokens extends ThemeExtension<AppTokens> {
     homeCardColorMix: 0.26,
     homeCardBlobSize: 96,
     homeCardProgressHeight: 4,
+    homeInboxPillMaxWidth: 400,
     homeTextScaleSingleColumn: 1.3,
     storePalette: storePaletteColors,
     success: Color(0xFFA5D5B6),
@@ -192,6 +198,7 @@ class AppTokens extends ThemeExtension<AppTokens> {
     double? homeCardColorMix,
     double? homeCardBlobSize,
     double? homeCardProgressHeight,
+    double? homeInboxPillMaxWidth,
     double? homeTextScaleSingleColumn,
     Map<String, Color>? storePalette,
     Color? success,
@@ -223,6 +230,8 @@ class AppTokens extends ThemeExtension<AppTokens> {
       homeCardBlobSize: homeCardBlobSize ?? this.homeCardBlobSize,
       homeCardProgressHeight:
           homeCardProgressHeight ?? this.homeCardProgressHeight,
+      homeInboxPillMaxWidth:
+          homeInboxPillMaxWidth ?? this.homeInboxPillMaxWidth,
       homeTextScaleSingleColumn:
           homeTextScaleSingleColumn ?? this.homeTextScaleSingleColumn,
       storePalette: storePalette ?? this.storePalette,
@@ -286,6 +295,11 @@ class AppTokens extends ThemeExtension<AppTokens> {
       homeCardProgressHeight: lerpDouble(
         homeCardProgressHeight,
         other.homeCardProgressHeight,
+        t,
+      )!,
+      homeInboxPillMaxWidth: lerpDouble(
+        homeInboxPillMaxWidth,
+        other.homeInboxPillMaxWidth,
         t,
       )!,
       homeTextScaleSingleColumn: lerpDouble(
