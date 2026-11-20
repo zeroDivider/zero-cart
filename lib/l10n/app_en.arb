@@ -28,6 +28,51 @@
   "@homePlaceholder": {
     "description": "Placeholder body title on the Home tab"
   },
+  "homeLeftToBuy": "left to buy",
+  "@homeLeftToBuy": {
+    "description": "Home store-card label when unpurchased items remain"
+  },
+  "homeCartIsEmpty": "cart is empty",
+  "@homeCartIsEmpty": {
+    "description": "Home store-card label when every item is purchased"
+  },
+  "homeNoListsYet": "no lists yet",
+  "@homeNoListsYet": {
+    "description": "Home store-card label when the store has no active lists"
+  },
+  "homeListCount": "{count, plural, one{{count} list} other{{count} lists}}",
+  "@homeListCount": {
+    "description": "List count line on a Home store card",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "homeStoreCardSemantics": "{name}, {unpurchased, plural, one{{unpurchased} left} other{{unpurchased} left}}, {lists, plural, one{{lists} list} other{{lists} lists}}",
+  "@homeStoreCardSemantics": {
+    "description": "Accessibility label for a Home store card (design system 3.12)",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "unpurchased": {
+        "type": "int"
+      },
+      "lists": {
+        "type": "int"
+      }
+    }
+  },
+  "homeInboxPill": "{count, plural, one{{count} in Inbox · sort them} other{{count} in Inbox · sort them}}",
+  "@homeInboxPill": {
+    "description": "Home pill that opens the Inbox tab when it has items",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "inboxPlaceholder": "Inbox",
   "@inboxPlaceholder": {
     "description": "Placeholder body title on the Inbox tab"
