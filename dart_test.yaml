@@ -1,5 +1,7 @@
-# Tag definitions for flutter_test. Golden images are compared on the CI
-# platform (testing-strategy / APP-026); they still run in local `flutter test`
-# when PNGs are present so regressions are caught early.
+# Tag definitions for flutter_test.
+# Home board goldens (APP-019) are tagged `golden`. Baselines must be
+# generated on the CI OS (Linux); Windows pixels differ (~0.3%).
+# `tool/check.sh` runs `flutter test --exclude-tags golden`.
+# APP-026 adds the CI job that compares them on ubuntu-latest.
 tags:
   golden:
