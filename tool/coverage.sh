@@ -7,8 +7,8 @@ cd "$(dirname "$0")/.."
 
 mkdir -p coverage
 
-echo "==> flutter test --coverage"
-flutter test --coverage --reporter compact
+echo "==> flutter test --coverage (excluding golden; CI-platform goldens are APP-026)"
+flutter test --coverage --exclude-tags golden --reporter compact
 
 RAW="coverage/lcov.info"
 FILTERED="coverage/lcov.filtered.info"
