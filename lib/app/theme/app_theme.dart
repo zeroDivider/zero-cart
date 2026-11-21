@@ -59,7 +59,9 @@ abstract final class AppTheme {
     surfaceContainerLow: Color(0xFF191D26),
     surfaceContainer: Color(0xFF1D212C),
     surfaceContainerHigh: Color(0xFF262B38),
-    onSurfaceVariant: Color(0xFFB4B8C8),
+    // Lightened for Home card fills (38%/26% store mix) to meet WCAG AA
+    // against tangerine/lemon/lime (APP-019).
+    onSurfaceVariant: Color(0xFFC4C8D6),
     outline: Color(0xFF8A8FA3),
     outlineVariant: Color(0xFF3A3F4E),
   );

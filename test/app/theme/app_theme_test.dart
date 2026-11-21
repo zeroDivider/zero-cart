@@ -47,7 +47,7 @@ void main() {
       expect(scheme.surfaceContainer, const Color(0xFF1D212C));
       expect(scheme.surfaceContainerHigh, const Color(0xFF262B38));
       expect(scheme.onSurface, const Color(0xFFE8E9F0));
-      expect(scheme.onSurfaceVariant, const Color(0xFFB4B8C8));
+      expect(scheme.onSurfaceVariant, const Color(0xFFC4C8D6));
       expect(scheme.outline, const Color(0xFF8A8FA3));
       expect(scheme.outlineVariant, const Color(0xFF3A3F4E));
       expect(scheme.primary, const Color(0xFFA5BDF4));

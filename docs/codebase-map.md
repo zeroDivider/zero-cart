@@ -1,6 +1,6 @@
 # Codebase map
 
-Facts verified against the tree as of APP-018. Prefer this over recreating shared code.
+Facts verified against the tree as of APP-019. Prefer this over recreating shared code.
 
 ## Shared primitives
 
@@ -26,10 +26,11 @@ Facts verified against the tree as of APP-018. Prefer this over recreating share
 ## Repositories (public ops)
 
 ### `StoresRepository` — `lib/features/stores/stores_repository.dart`
-- `watchActive` / `watchActiveWithListCounts` / `watchArchived` / `watchById`
+- `watchActive` / `watchActiveWithListCounts` / `watchHomeStoreSummaries` / `watchArchived` / `watchById`
 - `create` / `createFromDraft` / `update` / `updateFromDraft` — normalize name; validate colour
 - `archive` / `restore` — soft archive; restore clears `archivedAt` only
 - `countActiveLists` / `nextFreeColorKey`
+- Home: `StoreSummary` in `lib/features/home/store_summary.dart` (list + item counts, last activity); do not reuse `ActiveStoreSummary`
 
 ### `ListsRepository` — `lib/features/lists/lists_repository.dart`
 - `watchActiveForStore` / `watchById` / `watchActiveByRecency` / `watchItems`
@@ -51,7 +52,7 @@ Facts verified against the tree as of APP-018. Prefer this over recreating share
 - `lib/data/providers.dart` — `appDatabaseProvider` (must override), `nowProvider`, `idGeneratorProvider`
 - `lib/core/share_service.dart` — `shareServiceProvider` (override with `FakeShareService` in tests)
 - Feature `*RepositoryProvider`s — app-lifetime; wire clock/ids from above
-- Streams: `inboxItemsProvider`; `activeStoresProvider`, `activeStoreSummariesProvider`, `archivedStoresProvider`, `storeByIdProvider`; `activeListsForStoreProvider`, `listByIdProvider`, `activeListsByRecencyProvider`, `finishedListsForStoreProvider`, `finishedCountForStoreProvider`, `manualArchivedListsProvider`, `listItemsProvider`; `wishlistItemsProvider`, `wishlistCountProvider`
+- Streams: `inboxItemsProvider`; `homeStoreSummariesProvider`; `activeStoresProvider`, `activeStoreSummariesProvider`, `archivedStoresProvider`, `storeByIdProvider`; `activeListsForStoreProvider`, `listByIdProvider`, `activeListsByRecencyProvider`, `finishedListsForStoreProvider`, `finishedCountForStoreProvider`, `manualArchivedListsProvider`, `listItemsProvider`; `wishlistItemsProvider`, `wishlistCountProvider`
 - UI Notifiers: `inboxSelectionProvider`; `wishlistSelectionProvider` (autoDispose); `purchasedExpandedProvider` / `addItemNotifierProvider` (autoDispose family)
 
 ## Patterns established
@@ -74,7 +75,7 @@ Facts verified against the tree as of APP-018. Prefer this over recreating share
 ## Screens and routes done
 
 Routes in `lib/app/router.dart` (`AppRoutes` / `AppRouter`):
-- Tabs: `/home` `HomeScreen`, `/inbox` `InboxScreen`, `/stores` `StoresScreen`
+- Tabs: `/home` `HomeScreen` (staggered `StoreCard` board + Inbox pill; empty → `showStoreFormSheet`), `/inbox` `InboxScreen`, `/stores` `StoresScreen`
 - `/stores/:id` `StoreDetailsScreen`, `/stores/:id/wishlist` `WishlistScreen`, `/stores/:id/past-trips` `PastTripsScreen`
 - `/lists/:id` `ListScreen`, `/archive` `ArchiveScreen` (Stores + manual Lists)
 - `/settings` / `/settings/about` — placeholder screens only
@@ -87,6 +88,5 @@ List screen (`/lists/:id`): Share (active) builds D-20 text via `formatShareText
 
 ## Known gaps (from code, not the plan)
 
-- Home body is still a placeholder string.
 - No backup/export/import Dart code (`ShareService` is ready for APP-021 file share).
 - Settings / About are placeholders (entry from Home settings icon exists).

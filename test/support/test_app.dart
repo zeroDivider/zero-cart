@@ -11,6 +11,8 @@ import 'package:zero_cart/core/clock.dart';
 import 'package:zero_cart/core/ids.dart';
 import 'package:zero_cart/data/database.dart';
 import 'package:zero_cart/data/providers.dart';
+import 'package:zero_cart/features/home/home_providers.dart';
+import 'package:zero_cart/features/home/store_summary.dart';
 import 'package:zero_cart/features/inbox/inbox_providers.dart';
 import 'package:zero_cart/features/lists/active_list_progress.dart';
 import 'package:zero_cart/features/lists/archived_list_with_store.dart';
@@ -53,6 +55,7 @@ class TestAppHarness {
     required StreamController<List<InboxItem>> inboxUpdates,
     required StreamController<List<Store>> storeUpdates,
     required StreamController<List<ActiveStoreSummary>> storeSummaryUpdates,
+    required StreamController<List<StoreSummary>> homeSummaryUpdates,
     required StreamController<List<Store>> archivedStoreUpdates,
     required StreamController<List<Store>> allStoreUpdates,
     required StreamController<void> listsTickUpdates,
@@ -61,6 +64,7 @@ class TestAppHarness {
   }) : _inboxController = inboxUpdates,
        _storeController = storeUpdates,
        _storeSummaryController = storeSummaryUpdates,
+       _homeSummaryController = homeSummaryUpdates,
        _archivedStoreController = archivedStoreUpdates,
        _allStoreController = allStoreUpdates,
        _listsTickController = listsTickUpdates,
@@ -75,6 +79,7 @@ class TestAppHarness {
   final StreamController<List<InboxItem>> _inboxController;
   final StreamController<List<Store>> _storeController;
   final StreamController<List<ActiveStoreSummary>> _storeSummaryController;
+  final StreamController<List<StoreSummary>> _homeSummaryController;
   final StreamController<List<Store>> _archivedStoreController;
   final StreamController<List<Store>> _allStoreController;
   final StreamController<void> _listsTickController;
@@ -87,6 +92,7 @@ class TestAppHarness {
     await _inboxController.close();
     await _storeController.close();
     await _storeSummaryController.close();
+    await _homeSummaryController.close();
     await _archivedStoreController.close();
     await _allStoreController.close();
     await _listsTickController.close();
@@ -102,7 +108,7 @@ class TestAppHarness {
 /// They do **not** prove live Drift `.watch()` → Riverpod wiring: under
 /// FakeAsync on Windows, `.watch()` does not emit, so [inboxItemsProvider],
 /// [activeStoresProvider], [activeStoreSummariesProvider],
-/// [archivedStoresProvider], [storeByIdProvider],
+/// [homeStoreSummariesProvider], [archivedStoresProvider], [storeByIdProvider],
 /// [activeListsForStoreProvider], [activeListsByRecencyProvider],
 /// [listByIdProvider], [listItemsProvider], [finishedListsForStoreProvider],
 /// [finishedCountForStoreProvider] and [manualArchivedListsProvider] are
@@ -137,6 +143,8 @@ Future<TestAppHarness> pumpTestApp(
   final storeController = StreamController<List<Store>>.broadcast();
   final storeSummaryController =
       StreamController<List<ActiveStoreSummary>>.broadcast();
+  final homeSummaryController =
+      StreamController<List<StoreSummary>>.broadcast();
   final archivedStoreController = StreamController<List<Store>>.broadcast();
   final allStoreController = StreamController<List<Store>>.broadcast();
   final listsTickController = StreamController<void>.broadcast();
@@ -146,6 +154,7 @@ Future<TestAppHarness> pumpTestApp(
   var latestInbox = <InboxItem>[];
   var latestActive = <Store>[];
   var latestSummaries = <ActiveStoreSummary>[];
+  var latestHomeSummaries = <StoreSummary>[];
   var latestArchived = <Store>[];
   var latestAll = <Store>[];
   final latestListsByStore = <String, List<ActiveListProgress>>{};
@@ -195,12 +204,36 @@ Future<TestAppHarness> pumpTestApp(
 
   Future<void> publishSummaries() async {
     final lists = await db.select(db.shoppingLists).get();
+    final items = await db.select(db.listItems).get();
     final counts = <String, int>{};
+    final lastActivityByStore = <String, DateTime>{};
+    final activeListIds = <String>{};
     for (final list in lists) {
       if (list.archivedAt != null) {
         continue;
       }
       counts[list.storeId] = (counts[list.storeId] ?? 0) + 1;
+      activeListIds.add(list.id);
+      final previous = lastActivityByStore[list.storeId];
+      if (previous == null || list.updatedAt.isAfter(previous)) {
+        lastActivityByStore[list.storeId] = list.updatedAt;
+      }
+    }
+    final unpurchasedByStore = <String, int>{};
+    final totalByStore = <String, int>{};
+    final listStoreId = {for (final list in lists) list.id: list.storeId};
+    for (final item in items) {
+      if (!activeListIds.contains(item.listId)) {
+        continue;
+      }
+      final storeId = listStoreId[item.listId];
+      if (storeId == null) {
+        continue;
+      }
+      totalByStore[storeId] = (totalByStore[storeId] ?? 0) + 1;
+      if (!item.isPurchased) {
+        unpurchasedByStore[storeId] = (unpurchasedByStore[storeId] ?? 0) + 1;
+      }
     }
     latestSummaries = [
       for (final store in latestActive)
@@ -211,6 +244,27 @@ Future<TestAppHarness> pumpTestApp(
     ];
     if (!storeSummaryController.isClosed) {
       storeSummaryController.add(latestSummaries);
+    }
+
+    latestHomeSummaries =
+        [
+          for (final store in latestActive)
+            StoreSummary(
+              store: store,
+              activeListCount: counts[store.id] ?? 0,
+              unpurchasedCount: unpurchasedByStore[store.id] ?? 0,
+              totalItemCount: totalByStore[store.id] ?? 0,
+              lastActivity: lastActivityByStore[store.id] ?? store.updatedAt,
+            ),
+        ]..sort((a, b) {
+          final byActivity = b.lastActivity.compareTo(a.lastActivity);
+          if (byActivity != 0) {
+            return byActivity;
+          }
+          return b.store.id.compareTo(a.store.id);
+        });
+    if (!homeSummaryController.isClosed) {
+      homeSummaryController.add(latestHomeSummaries);
     }
   }
 
@@ -378,6 +432,11 @@ Future<TestAppHarness> pumpTestApp(
     yield* storeSummaryController.stream;
   }
 
+  Stream<List<StoreSummary>> homeSummariesBridge() async* {
+    yield latestHomeSummaries;
+    yield* homeSummaryController.stream;
+  }
+
   Stream<List<Store>> archivedStoresBridge() async* {
     yield latestArchived;
     yield* archivedStoreController.stream;
@@ -488,6 +547,7 @@ Future<TestAppHarness> pumpTestApp(
         activeStoreSummariesProvider.overrideWith(
           (ref) => storeSummariesBridge(),
         ),
+        homeStoreSummariesProvider.overrideWith((ref) => homeSummariesBridge()),
         archivedStoresProvider.overrideWith((ref) => archivedStoresBridge()),
         storeByIdProvider.overrideWith((ref, id) => storeByIdBridge(id)),
         activeListsForStoreProvider.overrideWith(
@@ -539,6 +599,7 @@ Future<TestAppHarness> pumpTestApp(
     inboxUpdates: inboxController,
     storeUpdates: storeController,
     storeSummaryUpdates: storeSummaryController,
+    homeSummaryUpdates: homeSummaryController,
     archivedStoreUpdates: archivedStoreController,
     allStoreUpdates: allStoreController,
     listsTickUpdates: listsTickController,

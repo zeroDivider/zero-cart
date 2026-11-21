@@ -14,7 +14,7 @@ Both schemes are written out explicitly rather than generated from a seed, to ke
 | surfaceContainer | #F0F4FC | #1D212C |
 | surfaceContainerHigh | #E6ECF8 | #262B38 |
 | onSurface | #1E2230 | #E8E9F0 |
-| onSurfaceVariant | #4D5368 | #B4B8C8 |
+| onSurfaceVariant | #4D5368 | #C4C8D6 |
 | outline | #7B8094 | #8A8FA3 |
 | outlineVariant (ruled lines) | #D8DFEE | #3A3F4E |
 | primary / onPrimary | #334E8C / #FFFFFF | #A5BDF4 / #14264F |
@@ -39,7 +39,7 @@ Usage: primary for filled buttons, checked checkboxes, links and the wordmark; c
 | lemon | #D9A400 | grape | #8E6CCB |
 | lime | #7DB84A | bubblegum | #E96FA6 |
 
-On Home, store cards are filled with the store colour mixed about 38% into the theme background, with normal theme text on top (verify contrast for every palette colour in both themes). Elsewhere a store shows only its dot. The same hexes serve both themes; check each against the dark surface when building.
+On Home, store cards are filled with the store colour mixed into the theme background (about 38% in light, 26% in dark so pastel fills stay readable), with normal theme text on top (verify contrast for every palette colour in both themes). Elsewhere a store shows only its dot. The same hexes serve both themes; check each against the dark surface when building.
 
 ## 3.2 Typography
 
@@ -120,8 +120,9 @@ The wordmark is the text 'ZeroCart' in DynaPuff Bold, primary colour, with a sma
 
 Home has no list shortcuts. It is a staggered two-column board of large store cards, one per active store (the prototype shows it):
 
-- **Fill:** the store colour mixed about 38% into the background, a solid store-colour circle clipped at the top-right corner, corner radius 28.
+- **Fill:** the store colour mixed into the background (about 38% light / 26% dark), a solid store-colour circle clipped at the top-right corner, corner radius 28. Card heights are minimums and may grow with text scale.
 - **Content:** the number of unpurchased items across the store's active lists in storeCount style with the label 'left to buy'; store name in Bold 20sp; a thin progress bar (purchased share of all items); the list count. At zero the label reads 'cart is empty' (the idea of the name); a store without lists reads 'no lists yet'.
 - **Layout:** the right column sits 26dp lower; every third card is taller (230dp against a 170dp minimum); cards tilt about 1 degree, alternating. Above 1.3x text scale the board becomes one column with no tilt.
+- **Inbox pill:** full width of the Home body up to 400dp (same as the prototype phone frame), left-aligned on wider screens.
 - **Behaviour:** tapping a card opens store details, where the lists live. Order: most recently active store first. Accessibility label: store name, items left, list count.
 - **Alternatives considered:** a horizontal swipe deck of big cards, and single-column full-width cards. Both are easy to swap in later since only the Home screen changes.
