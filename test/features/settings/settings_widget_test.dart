@@ -138,7 +138,12 @@ void main() {
 
     expect(find.byType(AboutScreen), findsOneWidget);
     expect(find.text('Version 0.1.0'), findsOneWidget);
-    expect(find.text('Released under the MIT licence.'), findsOneWidget);
+    expect(
+      find.text(
+        'Copyright (c) 2026 Željka Živanović.\nReleased under the MIT licence.',
+      ),
+      findsOneWidget,
+    );
     expect(find.text('Open-source licences'), findsOneWidget);
     expect(find.text(kRepositoryUrl), findsOneWidget);
 

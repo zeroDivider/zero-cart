@@ -219,10 +219,11 @@
       }
     }
   },
-  "mitNotice": "Released under the MIT licence.",
+  "mitNotice": "Copyright (c) 2026 Željka Živanović.\nReleased under the MIT licence.",
   "@mitNotice": {
-    "description": "Short MIT licence notice on the About screen"
+    "description": "Copyright and short MIT notice on About (full text is in LICENSE)"
   },
+
   "openSourceLicences": "Open-source licences",
   "@openSourceLicences": {
     "description": "About action that opens Flutter's licence page"
