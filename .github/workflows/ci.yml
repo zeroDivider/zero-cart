@@ -29,8 +29,9 @@ jobs:
       - name: Collect coverage
         run: bash tool/coverage.sh
 
+      # v7 uses github-script@v8 (Node 24); v5 still pulled Node-20 github-script.
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v7
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: coverage/lcov.filtered.info
