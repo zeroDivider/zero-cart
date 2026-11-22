@@ -5,8 +5,8 @@ import 'package:zero_cart/features/archive/ui/archive_screen.dart';
 import 'package:zero_cart/features/home/ui/home_screen.dart';
 import 'package:zero_cart/features/inbox/ui/inbox_screen.dart';
 import 'package:zero_cart/features/lists/ui/list_screen.dart';
-import 'package:zero_cart/features/settings/ui/about_placeholder_screen.dart';
-import 'package:zero_cart/features/settings/ui/settings_placeholder_screen.dart';
+import 'package:zero_cart/features/settings/ui/about_screen.dart';
+import 'package:zero_cart/features/settings/ui/settings_screen.dart';
 import 'package:zero_cart/features/stores/ui/past_trips_screen.dart';
 import 'package:zero_cart/features/stores/ui/store_details_screen.dart';
 import 'package:zero_cart/features/stores/ui/stores_screen.dart';
@@ -124,12 +124,12 @@ abstract final class AppRouter {
         GoRoute(
           path: AppRoutes.settings,
           parentNavigatorKey: rootNavigatorKey,
-          builder: (context, state) => const SettingsPlaceholderScreen(),
+          builder: (context, state) => const SettingsScreen(),
           routes: [
             GoRoute(
               path: 'about',
               parentNavigatorKey: rootNavigatorKey,
-              builder: (context, state) => const AboutPlaceholderScreen(),
+              builder: (context, state) => const AboutScreen(),
             ),
           ],
         ),

@@ -3,7 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:zero_cart/app/router.dart';
 import 'package:zero_cart/features/home/ui/home_screen.dart';
 import 'package:zero_cart/features/inbox/ui/inbox_screen.dart';
-import 'package:zero_cart/features/settings/ui/settings_placeholder_screen.dart';
+import 'package:zero_cart/features/settings/ui/settings_screen.dart';
 import 'package:zero_cart/features/stores/ui/stores_screen.dart';
 
 import '../support/test_app.dart';
@@ -70,7 +70,7 @@ void main() {
     await tester.tap(find.byKey(const Key('home_settings_button')));
     await pumpApp(tester, harness);
 
-    expect(find.byType(SettingsPlaceholderScreen), findsOneWidget);
+    expect(find.byType(SettingsScreen), findsOneWidget);
     expect(router.canPop(), isTrue);
     expect(
       router.routerDelegate.currentConfiguration.matches.last.matchedLocation,
@@ -80,7 +80,7 @@ void main() {
     router.pop();
     await pumpApp(tester, harness);
 
-    expect(find.byType(SettingsPlaceholderScreen), findsNothing);
+    expect(find.byType(SettingsScreen), findsNothing);
     expect(find.byType(HomeScreen), findsOneWidget);
     expect(router.canPop(), isFalse);
     expect(router.routerDelegate.currentConfiguration.uri.path, AppRoutes.home);

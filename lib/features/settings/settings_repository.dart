@@ -1,4 +1,3 @@
-import 'package:drift/drift.dart';
 import 'package:flutter/material.dart' show ThemeMode;
 import 'package:zero_cart/data/database.dart';
 
