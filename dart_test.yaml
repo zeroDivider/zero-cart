@@ -1,7 +1,0 @@
-# Tag definitions for flutter_test.
-# Home board goldens (APP-019) are tagged `golden`. Baselines must be
-# generated on the CI OS (Linux); Windows pixels differ (~0.3%).
-# `tool/check.sh` and `tool/coverage.sh` run with `--exclude-tags golden`.
-# APP-026 adds the CI job that compares them on ubuntu-latest.
-tags:
-  golden:
