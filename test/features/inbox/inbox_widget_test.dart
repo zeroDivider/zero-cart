@@ -12,6 +12,7 @@ import 'package:zero_cart/features/inbox/inbox_providers.dart';
 import 'package:zero_cart/features/inbox/inbox_repository.dart';
 import 'package:zero_cart/features/inbox/ui/sheets/inbox_edit_sheet.dart';
 import 'package:zero_cart/features/inbox/ui/sheets/quick_add_sheet.dart';
+import 'package:zero_cart/features/settings/settings_providers.dart';
 import 'package:zero_cart/features/stores/active_store_summary.dart';
 import 'package:zero_cart/features/stores/stores_providers.dart';
 
@@ -272,6 +273,10 @@ void main() {
           ),
           archivedStoresProvider.overrideWith(
             (ref) => Stream.value(const <Store>[]),
+          ),
+          // ZeroCartApp watches themeModeProvider (APP-020).
+          themeModeProvider.overrideWith(
+            (ref) => Stream.value(ThemeMode.system),
           ),
         ],
         child: ZeroCartApp(),

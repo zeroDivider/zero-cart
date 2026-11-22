@@ -1,6 +1,6 @@
 # Codebase map
 
-Facts verified against the tree as of APP-019. Prefer this over recreating shared code.
+Facts verified against the tree as of APP-020. Prefer this over recreating shared code.
 
 ## Shared primitives
 
@@ -47,12 +47,18 @@ Facts verified against the tree as of APP-019. Prefer this over recreating share
 ### `WishlistRepository` — `lib/features/wishlist/wishlist_repository.dart`
 - `watch` / `watchCount` / `add` / `update` / `remove` (snapshot) / `restore` — rejects archived store
 
+### `SettingsRepository` — `lib/features/settings/settings_repository.dart`
+- `watchThemeMode` / `setThemeMode` — key `theme_mode` (`system`|`light`|`dark`); absent/unknown → system
+- Upsert on write (stores explicit `system` for backup); helpers `themeModeFromStorage` / `themeModeToStorage`
+- About: `kRepositoryUrl` in `repository_url.dart` (display-only placeholder)
+
 ## Providers worth reusing
 
 - `lib/data/providers.dart` — `appDatabaseProvider` (must override), `nowProvider`, `idGeneratorProvider`
 - `lib/core/share_service.dart` — `shareServiceProvider` (override with `FakeShareService` in tests)
 - Feature `*RepositoryProvider`s — app-lifetime; wire clock/ids from above
-- Streams: `inboxItemsProvider`; `homeStoreSummariesProvider`; `activeStoresProvider`, `activeStoreSummariesProvider`, `archivedStoresProvider`, `storeByIdProvider`; `activeListsForStoreProvider`, `listByIdProvider`, `activeListsByRecencyProvider`, `finishedListsForStoreProvider`, `finishedCountForStoreProvider`, `manualArchivedListsProvider`, `listItemsProvider`; `wishlistItemsProvider`, `wishlistCountProvider`
+- Streams: `inboxItemsProvider`; `homeStoreSummariesProvider`; `activeStoresProvider`, `activeStoreSummariesProvider`, `archivedStoresProvider`, `storeByIdProvider`; `activeListsForStoreProvider`, `listByIdProvider`, `activeListsByRecencyProvider`, `finishedListsForStoreProvider`, `finishedCountForStoreProvider`, `manualArchivedListsProvider`, `listItemsProvider`; `wishlistItemsProvider`, `wishlistCountProvider`; `themeModeProvider`
+- Settings: `settingsRepositoryProvider`; `packageInfoProvider` (About version)
 - UI Notifiers: `inboxSelectionProvider`; `wishlistSelectionProvider` (autoDispose); `purchasedExpandedProvider` / `addItemNotifierProvider` (autoDispose family)
 
 ## Patterns established
@@ -67,7 +73,7 @@ Facts verified against the tree as of APP-019. Prefer this over recreating share
 
 ## Test helpers and fakes
 
-- `test/support/test_app.dart` — `pumpTestApp` / `TestAppHarness`: in-memory Drift, fixed clock/ids, bridged stream providers (FakeAsync caveat on Windows); `refresh*` after writes.
+- `test/support/test_app.dart` — `pumpTestApp` / `TestAppHarness`: in-memory Drift, fixed clock/ids, bridged stream providers including `themeModeProvider` (FakeAsync caveat on Windows); `refresh*` / `refreshThemeMode` after writes.
 - `test/support/fake_share_service.dart` — records `shareText` calls; optional throw for failure paths.
 - No Fake repository classes; repository tests use real memory DB. Platform edges: override clock/ids/share.
 - `test/guards/adr0007_scanner.dart` — static ADR-0007 source guards.
@@ -78,7 +84,10 @@ Routes in `lib/app/router.dart` (`AppRoutes` / `AppRouter`):
 - Tabs: `/home` `HomeScreen` (staggered `StoreCard` board + Inbox pill; empty → `showStoreFormSheet`), `/inbox` `InboxScreen`, `/stores` `StoresScreen`
 - `/stores/:id` `StoreDetailsScreen`, `/stores/:id/wishlist` `WishlistScreen`, `/stores/:id/past-trips` `PastTripsScreen`
 - `/lists/:id` `ListScreen`, `/archive` `ArchiveScreen` (Stores + manual Lists)
-- `/settings` / `/settings/about` — placeholder screens only
+- `/settings` `SettingsScreen` — Appearance `SegmentedButton` via `runWrite(setThemeMode)`; Backup section placeholder (APP-023); About row → `/settings/about`
+- `/settings/about` `AboutScreen` — version (`package_info_plus`), MIT notice, `showLicensePage`, `kRepositoryUrl`
+
+`ZeroCartApp` is a `ConsumerWidget`: `themeMode` from `themeModeProvider` (fallback system while loading).
 
 Sheets: store form; list form; item edit; finish list; inbox quick-add / edit / assign; wishlist add / edit / copy-to-list.
 
@@ -88,5 +97,4 @@ List screen (`/lists/:id`): Share (active) builds D-20 text via `formatShareText
 
 ## Known gaps (from code, not the plan)
 
-- No backup/export/import Dart code (`ShareService` is ready for APP-021 file share).
-- Settings / About are placeholders (entry from Home settings icon exists).
+- No backup/export/import Dart code (`ShareService` is ready for APP-021 file share; Settings has a Backup section placeholder for APP-023).
