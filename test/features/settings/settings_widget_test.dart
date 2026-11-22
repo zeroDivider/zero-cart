@@ -2,12 +2,25 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:zero_cart/app/router.dart';
+import 'package:zero_cart/data/providers.dart';
 import 'package:zero_cart/features/settings/repository_url.dart';
+import 'package:zero_cart/features/settings/settings_providers.dart';
 import 'package:zero_cart/features/settings/settings_repository.dart';
 import 'package:zero_cart/features/settings/ui/about_screen.dart';
 import 'package:zero_cart/features/settings/ui/settings_screen.dart';
 
 import '../../support/test_app.dart';
+
+const _genericError = 'Something went wrong. Try again.';
+
+class _ThrowingSettingsRepository extends SettingsRepository {
+  _ThrowingSettingsRepository({required super.database});
+
+  @override
+  Future<void> setThemeMode(ThemeMode mode) {
+    throw Exception('theme write failed');
+  }
+}
 
 void main() {
   setUpAll(() {
@@ -149,6 +162,31 @@ void main() {
       find.text('Export and import will be available here.'),
       findsOneWidget,
     );
+    await harness.dispose(tester);
+  });
+
+  testWidgets('theme write failure shows localised error snackbar', (
+    tester,
+  ) async {
+    final harness = await pumpTestApp(
+      tester,
+      router: AppRouter.create(initialLocation: AppRoutes.settings),
+      overrides: [
+        settingsRepositoryProvider.overrideWith((ref) {
+          return _ThrowingSettingsRepository(
+            database: ref.watch(appDatabaseProvider),
+          );
+        }),
+      ],
+    );
+    await pumpApp(tester, harness);
+
+    await tester.tap(find.text('Dark'));
+    await pumpApp(tester, harness);
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.text(_genericError), findsOneWidget);
+    expect(materialThemeMode(tester), ThemeMode.system);
     await harness.dispose(tester);
   });
 }
