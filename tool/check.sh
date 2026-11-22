@@ -19,5 +19,5 @@ dart format --output=none --set-exit-if-changed .
 echo "==> flutter analyze"
 flutter analyze
 
-echo "==> flutter test (excluding golden; CI-platform goldens are APP-026)"
-flutter test --exclude-tags golden
+echo "==> flutter test"
+flutter test
