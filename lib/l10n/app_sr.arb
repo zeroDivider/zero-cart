@@ -13,7 +13,24 @@
   "listDetailsPlaceholder": "Lista",
   "wishlistPlaceholder": "Lista želja",
   "archivePlaceholder": "Arhiva",
-  "aboutPlaceholder": "O aplikaciji",
+  "about": "O aplikaciji",
+  "appearance": "Izgled",
+  "themeModeSystem": "Sistem",
+  "themeModeLight": "Svetla",
+  "themeModeDark": "Tamna",
+  "backupAndRestore": "Rezervna kopija",
+  "backupPlaceholderBody": "Izvoz i uvoz će biti dostupni ovde.",
+  "aboutAppVersion": "Verzija {version}",
+  "@aboutAppVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "mitNotice": "Objavljeno pod MIT licencom.",
+  "openSourceLicences": "Licence otvorenog koda",
+  "repositoryLinkLabel": "Izvorni kod",
   "itemTitleLabel": "Naziv",
   "itemTitleHint": "Šta ti treba?",
   "itemDescriptionLabel": "Detalji",

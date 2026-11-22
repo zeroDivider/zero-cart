@@ -182,10 +182,56 @@
   "@archivePlaceholder": {
     "description": "Placeholder title for the archive screen"
   },
-  "aboutPlaceholder": "About",
-  "@aboutPlaceholder": {
-    "description": "Placeholder title for the about screen"
+  "about": "About",
+  "@about": {
+    "description": "About screen title and Settings row"
   },
+  "appearance": "Appearance",
+  "@appearance": {
+    "description": "Settings section heading for theme mode"
+  },
+  "themeModeSystem": "System",
+  "@themeModeSystem": {
+    "description": "Theme segmented-button label: follow device"
+  },
+  "themeModeLight": "Light",
+  "@themeModeLight": {
+    "description": "Theme segmented-button label: light"
+  },
+  "themeModeDark": "Dark",
+  "@themeModeDark": {
+    "description": "Theme segmented-button label: dark"
+  },
+  "backupAndRestore": "Backup and restore",
+  "@backupAndRestore": {
+    "description": "Settings section heading; actions arrive in APP-023"
+  },
+  "backupPlaceholderBody": "Export and import will be available here.",
+  "@backupPlaceholderBody": {
+    "description": "Placeholder under Backup and restore until APP-023"
+  },
+  "aboutAppVersion": "Version {version}",
+  "@aboutAppVersion": {
+    "description": "About screen version line from package_info_plus",
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "mitNotice": "Released under the MIT licence.",
+  "@mitNotice": {
+    "description": "Short MIT licence notice on the About screen"
+  },
+  "openSourceLicences": "Open-source licences",
+  "@openSourceLicences": {
+    "description": "About action that opens Flutter's licence page"
+  },
+  "repositoryLinkLabel": "Source code",
+  "@repositoryLinkLabel": {
+    "description": "About label for the repository URL constant"
+  },
+
   "itemTitleLabel": "Title",
   "@itemTitleLabel": {
     "description": "Label for item title field in add/edit sheets"

@@ -18,6 +18,8 @@ import 'package:zero_cart/features/lists/active_list_progress.dart';
 import 'package:zero_cart/features/lists/archived_list_with_store.dart';
 import 'package:zero_cart/features/lists/lists_providers.dart';
 import 'package:zero_cart/features/lists/lists_repository.dart';
+import 'package:zero_cart/features/settings/settings_providers.dart';
+import 'package:zero_cart/features/settings/settings_repository.dart';
 import 'package:zero_cart/features/stores/active_store_summary.dart';
 import 'package:zero_cart/features/stores/stores_providers.dart';
 import 'package:zero_cart/features/wishlist/wishlist_providers.dart';
@@ -52,6 +54,7 @@ class TestAppHarness {
     required this.refreshStores,
     required this.refreshLists,
     required this.refreshWishlist,
+    required this.refreshThemeMode,
     required StreamController<List<InboxItem>> inboxUpdates,
     required StreamController<List<Store>> storeUpdates,
     required StreamController<List<ActiveStoreSummary>> storeSummaryUpdates,
@@ -61,6 +64,7 @@ class TestAppHarness {
     required StreamController<void> listsTickUpdates,
     required StreamController<void> listDetailsTickUpdates,
     required StreamController<void> wishlistTickUpdates,
+    required StreamController<ThemeMode> themeModeUpdates,
   }) : _inboxController = inboxUpdates,
        _storeController = storeUpdates,
        _storeSummaryController = storeSummaryUpdates,
@@ -69,13 +73,15 @@ class TestAppHarness {
        _allStoreController = allStoreUpdates,
        _listsTickController = listsTickUpdates,
        _listDetailsTickController = listDetailsTickUpdates,
-       _wishlistTickController = wishlistTickUpdates;
+       _wishlistTickController = wishlistTickUpdates,
+       _themeModeController = themeModeUpdates;
 
   final AppDatabase db;
   final Future<void> Function() refreshInbox;
   final Future<void> Function() refreshStores;
   final Future<void> Function() refreshLists;
   final Future<void> Function() refreshWishlist;
+  final Future<void> Function() refreshThemeMode;
   final StreamController<List<InboxItem>> _inboxController;
   final StreamController<List<Store>> _storeController;
   final StreamController<List<ActiveStoreSummary>> _storeSummaryController;
@@ -85,6 +91,7 @@ class TestAppHarness {
   final StreamController<void> _listsTickController;
   final StreamController<void> _listDetailsTickController;
   final StreamController<void> _wishlistTickController;
+  final StreamController<ThemeMode> _themeModeController;
 
   Future<void> dispose(WidgetTester tester) async {
     await tester.pumpWidget(const SizedBox.shrink());
@@ -98,6 +105,7 @@ class TestAppHarness {
     await _listsTickController.close();
     await _listDetailsTickController.close();
     await _wishlistTickController.close();
+    await _themeModeController.close();
     await tester.runAsync(db.close);
   }
 }
@@ -111,9 +119,9 @@ class TestAppHarness {
 /// [homeStoreSummariesProvider], [archivedStoresProvider], [storeByIdProvider],
 /// [activeListsForStoreProvider], [activeListsByRecencyProvider],
 /// [listByIdProvider], [listItemsProvider], [finishedListsForStoreProvider],
-/// [finishedCountForStoreProvider] and [manualArchivedListsProvider] are
-/// bridged by broadcast streams that [pumpApp] refreshes after real writes
-/// against [TestAppHarness.db].
+/// [finishedCountForStoreProvider], [manualArchivedListsProvider] and
+/// [themeModeProvider] are bridged by broadcast streams that [pumpApp]
+/// refreshes after real writes against [TestAppHarness.db].
 /// See `inbox_providers_test.dart` for a live-stream check without FakeAsync.
 Future<TestAppHarness> pumpTestApp(
   WidgetTester tester, {
@@ -150,6 +158,7 @@ Future<TestAppHarness> pumpTestApp(
   final listsTickController = StreamController<void>.broadcast();
   final listDetailsTickController = StreamController<void>.broadcast();
   final wishlistTickController = StreamController<void>.broadcast();
+  final themeModeController = StreamController<ThemeMode>.broadcast();
 
   var latestInbox = <InboxItem>[];
   var latestActive = <Store>[];
@@ -163,6 +172,7 @@ Future<TestAppHarness> pumpTestApp(
   final latestListById = <String, ShoppingList?>{};
   final latestItemsByList = <String, List<ListItem>>{};
   final latestWishlistByStore = <String, List<WishlistItem>>{};
+  var latestThemeMode = ThemeMode.system;
 
   Future<List<ActiveListProgress>> loadActiveLists(String storeId) async {
     final lists =
@@ -417,6 +427,17 @@ Future<TestAppHarness> pumpTestApp(
     }
   }
 
+  Future<void> refreshThemeMode() async {
+    final row =
+        await (db.select(db.appSettings)
+              ..where((t) => t.key.equals(SettingsRepository.themeModeKey)))
+            .getSingleOrNull();
+    latestThemeMode = SettingsRepository.themeModeFromStorage(row?.value);
+    if (!themeModeController.isClosed) {
+      themeModeController.add(latestThemeMode);
+    }
+  }
+
   Stream<List<InboxItem>> inboxBridge() async* {
     yield latestInbox;
     yield* inboxController.stream;
@@ -536,6 +557,11 @@ Future<TestAppHarness> pumpTestApp(
     }
   }
 
+  Stream<ThemeMode> themeModeBridge() async* {
+    yield latestThemeMode;
+    yield* themeModeController.stream;
+  }
+
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
@@ -575,6 +601,7 @@ Future<TestAppHarness> pumpTestApp(
         wishlistCountProvider.overrideWith(
           (ref, storeId) => wishlistCountBridge(storeId),
         ),
+        themeModeProvider.overrideWith((ref) => themeModeBridge()),
         ...overrides,
       ],
       child: ZeroCartApp(router: router),
@@ -586,6 +613,7 @@ Future<TestAppHarness> pumpTestApp(
     await refreshStores();
     await refreshLists();
     await refreshWishlist();
+    await refreshThemeMode();
   });
   await tester.pump();
   await tester.pump(const Duration(milliseconds: 50));
@@ -596,6 +624,7 @@ Future<TestAppHarness> pumpTestApp(
     refreshStores: refreshStores,
     refreshLists: refreshLists,
     refreshWishlist: refreshWishlist,
+    refreshThemeMode: refreshThemeMode,
     inboxUpdates: inboxController,
     storeUpdates: storeController,
     storeSummaryUpdates: storeSummaryController,
@@ -605,6 +634,7 @@ Future<TestAppHarness> pumpTestApp(
     listsTickUpdates: listsTickController,
     listDetailsTickUpdates: listDetailsTickController,
     wishlistTickUpdates: wishlistTickController,
+    themeModeUpdates: themeModeController,
   );
 }
 
@@ -624,6 +654,7 @@ Future<void> pumpApp(WidgetTester tester, [TestAppHarness? harness]) async {
       await harness.refreshStores();
       await harness.refreshLists();
       await harness.refreshWishlist();
+      await harness.refreshThemeMode();
     });
   }
   await tester.pump();
