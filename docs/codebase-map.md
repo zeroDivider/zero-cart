@@ -21,6 +21,7 @@ Facts verified against the tree as of APP-020. Prefer this over recreating share
 - `ordering.dart` — `computeDenseReorder` (+ `StaleOrderException`).
 - `share_text.dart` — `formatShareText` (D-20 plain text; unpurchased only).
 - `share_service.dart` — `ShareService` / `PlatformShareService` / `shareServiceProvider` (wraps `share_plus`; fake in tests).
+- `url_launcher.dart` — `UrlLauncher` / `PlatformUrlLauncher` / `urlLauncherProvider` (external browser; fake in tests).
 - `repository_exceptions.dart` — sealed typed failures for `messageFor`.
 
 ## Repositories (public ops)
@@ -50,7 +51,7 @@ Facts verified against the tree as of APP-020. Prefer this over recreating share
 ### `SettingsRepository` — `lib/features/settings/settings_repository.dart`
 - `watchThemeMode` / `setThemeMode` — key `theme_mode` (`system`|`light`|`dark`); absent/unknown → system
 - Upsert on write (stores explicit `system` for backup); helpers `themeModeFromStorage` / `themeModeToStorage`
-- About: `kRepositoryUrl` in `repository_url.dart` (display-only; `https://github.com/zeroDivider/zero-cart`)
+- About: `kRepositoryUrl` in `repository_url.dart`; tap opens via `urlLauncherProvider` (external browser)
 
 ## Providers worth reusing
 
@@ -75,7 +76,8 @@ Facts verified against the tree as of APP-020. Prefer this over recreating share
 
 - `test/support/test_app.dart` — `pumpTestApp` / `TestAppHarness`: in-memory Drift, fixed clock/ids, bridged stream providers including `themeModeProvider` (FakeAsync caveat on Windows); `refresh*` / `refreshThemeMode` after writes.
 - `test/support/fake_share_service.dart` — records `shareText` calls; optional throw for failure paths.
-- No Fake repository classes; repository tests use real memory DB. Platform edges: override clock/ids/share.
+- No Fake repository classes; repository tests use real memory DB. Platform edges: override clock/ids/share/url launcher.
+- `test/support/fake_url_launcher.dart` — records `openExternal`; optional throw for failure paths.
 - `test/guards/adr0007_scanner.dart` — static ADR-0007 source guards.
 
 ## Screens and routes done
