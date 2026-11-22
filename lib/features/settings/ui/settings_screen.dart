@@ -20,16 +20,19 @@ class SettingsScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.settings)),
-      body: ListView(
-        padding: EdgeInsets.all(tokens.spacing16),
-        children: [
-          Text(l10n.appearance, style: Theme.of(context).textTheme.titleMedium),
-          SizedBox(height: tokens.spacing8),
-          AsyncBody(
-            value: asyncTheme,
-            onRetry: () => ref.invalidate(themeModeProvider),
-            builder: (context, mode) {
-              return SegmentedButton<ThemeMode>(
+      body: AsyncBody(
+        value: asyncTheme,
+        onRetry: () => ref.invalidate(themeModeProvider),
+        builder: (context, mode) {
+          return ListView(
+            padding: EdgeInsets.all(tokens.spacing16),
+            children: [
+              Text(
+                l10n.appearance,
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              SizedBox(height: tokens.spacing8),
+              SegmentedButton<ThemeMode>(
                 segments: [
                   ButtonSegment(
                     value: ThemeMode.system,
@@ -54,29 +57,29 @@ class SettingsScreen extends ConsumerWidget {
                     l10n: l10n,
                   );
                 },
-              );
-            },
-          ),
-          SizedBox(height: tokens.spacing24),
-          Text(
-            l10n.backupAndRestore,
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
-          SizedBox(height: tokens.spacing8),
-          Text(
-            l10n.backupPlaceholderBody,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
-          ),
-          SizedBox(height: tokens.spacing24),
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            title: Text(l10n.about),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => context.push(AppRoutes.about),
-          ),
-        ],
+              ),
+              SizedBox(height: tokens.spacing24),
+              Text(
+                l10n.backupAndRestore,
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              SizedBox(height: tokens.spacing8),
+              Text(
+                l10n.backupPlaceholderBody,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
+              SizedBox(height: tokens.spacing24),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text(l10n.about),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => context.push(AppRoutes.about),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
