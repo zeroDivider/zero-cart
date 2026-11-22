@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:zero_cart/app/router.dart';
+import 'package:zero_cart/core/url_launcher.dart';
 import 'package:zero_cart/data/providers.dart';
 import 'package:zero_cart/features/settings/repository_url.dart';
 import 'package:zero_cart/features/settings/settings_providers.dart';
@@ -9,6 +10,7 @@ import 'package:zero_cart/features/settings/settings_repository.dart';
 import 'package:zero_cart/features/settings/ui/about_screen.dart';
 import 'package:zero_cart/features/settings/ui/settings_screen.dart';
 
+import '../../support/fake_url_launcher.dart';
 import '../../support/test_app.dart';
 
 const _genericError = 'Something went wrong. Try again.';
@@ -130,9 +132,11 @@ void main() {
   testWidgets('About shows version MIT notice licences and repository link', (
     tester,
   ) async {
+    final fakeLauncher = FakeUrlLauncher();
     final harness = await pumpTestApp(
       tester,
       router: AppRouter.create(initialLocation: AppRoutes.about),
+      overrides: [urlLauncherProvider.overrideWithValue(fakeLauncher)],
     );
     await pumpApp(tester, harness);
 
@@ -147,9 +151,34 @@ void main() {
     expect(find.text('Open-source licences'), findsOneWidget);
     expect(find.text(kRepositoryUrl), findsOneWidget);
 
+    await tester.tap(find.text(kRepositoryUrl));
+    await pumpApp(tester, harness);
+    expect(fakeLauncher.calls, [Uri.parse(kRepositoryUrl)]);
+
     await tester.tap(find.text('Open-source licences'));
     await pumpApp(tester, harness);
     expect(find.byType(LicensePage), findsOneWidget);
+    await harness.dispose(tester);
+  });
+
+  testWidgets('repository link open failure shows localised error', (
+    tester,
+  ) async {
+    final fakeLauncher = FakeUrlLauncher()
+      ..errorToThrow = Exception('launch failed');
+    final harness = await pumpTestApp(
+      tester,
+      router: AppRouter.create(initialLocation: AppRoutes.about),
+      overrides: [urlLauncherProvider.overrideWithValue(fakeLauncher)],
+    );
+    await pumpApp(tester, harness);
+
+    await tester.tap(find.text(kRepositoryUrl));
+    await pumpApp(tester, harness);
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.text(_genericError), findsOneWidget);
+    expect(fakeLauncher.calls, isEmpty);
     await harness.dispose(tester);
   });
 
