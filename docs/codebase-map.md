@@ -50,7 +50,7 @@ Facts verified against the tree as of APP-020. Prefer this over recreating share
 ### `SettingsRepository` — `lib/features/settings/settings_repository.dart`
 - `watchThemeMode` / `setThemeMode` — key `theme_mode` (`system`|`light`|`dark`); absent/unknown → system
 - Upsert on write (stores explicit `system` for backup); helpers `themeModeFromStorage` / `themeModeToStorage`
-- About: `kRepositoryUrl` in `repository_url.dart` (display-only placeholder)
+- About: `kRepositoryUrl` in `repository_url.dart` (display-only; `https://github.com/zeroDivider/zero-cart`)
 
 ## Providers worth reusing
 
