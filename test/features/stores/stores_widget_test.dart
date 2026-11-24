@@ -214,10 +214,9 @@ void main() {
     );
 
     final context = tester.element(find.byType(StoresScreen));
-    final draftFuture = showStoreFormSheet(
+    final draftFuture = showStoreFormDraftSheet(
       context,
       initialColorKey: 'sky',
-      draftMode: true,
     );
     await pumpApp(tester, harness);
     await tester.enterText(find.byKey(const Key('store_form_name')), 'Ghost');

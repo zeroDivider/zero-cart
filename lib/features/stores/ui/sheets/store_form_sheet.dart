@@ -7,22 +7,43 @@ import 'package:zero_cart/features/stores/store_draft.dart';
 import 'package:zero_cart/features/stores/stores_repository.dart';
 import 'package:zero_cart/l10n/generated/app_localizations.dart';
 
-/// Opens the store create/edit form.
+/// Opens the store create/edit form and persists on Save.
 ///
-/// When [draftMode] is true, Save returns a [StoreDraft] and writes nothing
-/// (APP-015 assignment). Otherwise [repository] is required and the sheet
-/// persists on submit; failure keeps the sheet open with an inline error.
-Future<StoreDraft?> showStoreFormSheet(
+/// [repository] performs the write; failure keeps the sheet open with an
+/// inline error (ADR-0007). Returns the created or updated [Store].
+Future<Store?> showStoreFormSheet(
   BuildContext context, {
   Store? existing,
   String? initialColorKey,
-  bool draftMode = false,
-  StoresRepository? repository,
+  required StoresRepository repository,
 }) {
-  assert(
-    draftMode || repository != null,
-    'repository is required when draftMode is false',
+  return showModalBottomSheet<Store>(
+    context: context,
+    useRootNavigator: true,
+    isScrollControlled: true,
+    showDragHandle: true,
+    builder: (sheetContext) {
+      return Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.viewInsetsOf(sheetContext).bottom,
+        ),
+        child: StoreFormSheet(
+          existing: existing,
+          initialColorKey: initialColorKey,
+          repository: repository,
+        ),
+      );
+    },
   );
+}
+
+/// Opens the store form in draft mode: Save returns a [StoreDraft] and
+/// writes nothing (widget tests / rare callers).
+Future<StoreDraft?> showStoreFormDraftSheet(
+  BuildContext context, {
+  Store? existing,
+  String? initialColorKey,
+}) {
   return showModalBottomSheet<StoreDraft>(
     context: context,
     useRootNavigator: true,
@@ -36,8 +57,7 @@ Future<StoreDraft?> showStoreFormSheet(
         child: StoreFormSheet(
           existing: existing,
           initialColorKey: initialColorKey,
-          draftMode: draftMode,
-          repository: repository,
+          draftMode: true,
         ),
       );
     },
@@ -120,7 +140,7 @@ class _StoreFormSheetState extends State<StoreFormSheet> {
     );
   }
 
-  Future<StoreDraft> _onSubmit() async {
+  Future<Object> _onSubmit() async {
     final l10n = AppLocalizations.of(context);
     if (_nameIsBlank) {
       setState(() => _nameError = l10n.storeNameRequired);
@@ -133,11 +153,9 @@ class _StoreFormSheetState extends State<StoreFormSheet> {
     final repository = widget.repository!;
     final existing = widget.existing;
     if (existing != null) {
-      await repository.updateFromDraft(existing.id, draft);
-    } else {
-      await repository.createFromDraft(draft);
+      return repository.updateFromDraft(existing.id, draft);
     }
-    return draft;
+    return repository.createFromDraft(draft);
   }
 
   @override
@@ -145,7 +163,7 @@ class _StoreFormSheetState extends State<StoreFormSheet> {
     final l10n = AppLocalizations.of(context);
     final tokens = Theme.of(context).extension<AppTokens>()!;
 
-    return FormSheetScaffold<StoreDraft>(
+    return FormSheetScaffold<Object>(
       title: Text(_isEdit ? l10n.editStore : l10n.newStore),
       submitLabel: l10n.save,
       submitKey: const Key('store_form_save'),

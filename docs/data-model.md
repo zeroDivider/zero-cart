@@ -75,12 +75,17 @@ reorderActive(listId, orderedActiveIds):
 
 The pure function `computeDenseReorder(all, orderedActiveIds)` does the middle steps. Move up / Move down actions call the same operation.
 
-**5 and 6. Assign Inbox item(s), including new store/list**
+**5 and 6. Assign Inbox item(s)**
+
+UI creates a new store or list in their form sheets before Confirm when needed.
+`assignInbox` always targets an existing store and list (repository still accepts
+`NewStore` / `NewList` for wishlist copy and legacy callers).
 
 ```
 assignInbox(inboxIds, target):
-  # target = ExistingList(listId) | NewList(store, name)
-  # store  = ExistingStore(id) | NewStore(name, colorKey?)
+  # Assign UI: ExistingStore + ExistingList
+  # target list = ExistingList(listId) | NewList(name)  (wishlist / legacy)
+  # store       = ExistingStore(id) | NewStore(draft)   (legacy assign path)
   TX { items = select inbox where id in inboxIds, ordered by created_at asc; abort if any missing
        store = resolve (insert if new; abort if archived)
        list  = resolve (insert if new in store; else assert active and in store)
@@ -89,7 +94,8 @@ assignInbox(inboxIds, target):
        delete the inbox rows }
 ```
 
-Any failure rolls back everything, including newly created store and list; the Inbox is unchanged.
+Confirm failure rolls back the move only; the Inbox is unchanged. Store/list rows
+created earlier in form sheets are not part of this transaction.
 
 **7. Copy wishlist item(s)**
 
