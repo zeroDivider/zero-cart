@@ -92,6 +92,7 @@ Routes in `lib/app/router.dart` (`AppRoutes` / `AppRouter`):
 `ZeroCartApp` is a `ConsumerWidget`: `themeMode` from `themeModeProvider` (fallback system while loading).
 
 Sheets: store form; list form; item edit; finish list; inbox quick-add / edit / assign; wishlist add / edit / copy-to-list.
+Assign drafts: new store/list show as selected chips (store colour dot); after a new-store draft the list form opens next (still no write until Confirm).
 
 Store details: `StoreWishlistCard` then `StorePastTripsCard` (live counts; open child routes). Past trips / Archive Lists use lists providers only (never list screens); Restore via `runWrite`; LI-5 disables Restore when the store is archived.
 

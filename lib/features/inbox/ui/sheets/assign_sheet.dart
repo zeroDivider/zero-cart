@@ -145,6 +145,9 @@ class _AssignSheetState extends ConsumerState<AssignSheet> {
       _newListName = null;
       _targetError = null;
     });
+    // A new store has no existing lists (D-16); prompt for the list name next
+    // so the draft is not left looking like a failed create (F4 / ST-1).
+    await _pickNewList();
   }
 
   Future<void> _pickNewList() async {
@@ -250,19 +253,11 @@ class _AssignSheetState extends ConsumerState<AssignSheet> {
                 _StoreChipsSection(
                   stores: stores,
                   selectedId: _newStoreDraft == null ? _storeId : null,
-                  hasNewStoreDraft: _newStoreDraft != null,
+                  newStoreDraft: _newStoreDraft,
                   enabled: !controller.isSubmitting,
                   onStoreSelected: _selectStore,
                   onNewStore: _pickNewStore,
                 ),
-                if (_newStoreDraft != null) ...[
-                  SizedBox(height: tokens.spacing8),
-                  Text(
-                    _newStoreDraft!.name,
-                    key: const Key('assign_new_store_name'),
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
-                ],
                 SizedBox(height: tokens.spacing16),
                 Text(
                   l10n.assignListLabel,
@@ -274,19 +269,11 @@ class _AssignSheetState extends ConsumerState<AssignSheet> {
                   selectedId: _newListName == null ? _listId : null,
                   showExistingLists: _newStoreDraft == null,
                   showNewList: _hasStore,
-                  hasNewListDraft: _newListName != null,
+                  newListName: _newListName,
                   enabled: !controller.isSubmitting,
                   onListSelected: _selectList,
                   onNewList: _pickNewList,
                 ),
-                if (_newListName != null) ...[
-                  SizedBox(height: tokens.spacing8),
-                  Text(
-                    _newListName!,
-                    key: const Key('assign_new_list_name'),
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
-                ],
                 if (_targetError != null) ...[
                   SizedBox(height: tokens.spacing8),
                   Text(
@@ -308,7 +295,7 @@ class _StoreChipsSection extends StatelessWidget {
   const _StoreChipsSection({
     required this.stores,
     required this.selectedId,
-    required this.hasNewStoreDraft,
+    required this.newStoreDraft,
     required this.enabled,
     required this.onStoreSelected,
     required this.onNewStore,
@@ -316,7 +303,7 @@ class _StoreChipsSection extends StatelessWidget {
 
   final List<Store> stores;
   final String? selectedId;
-  final bool hasNewStoreDraft;
+  final StoreDraft? newStoreDraft;
   final bool enabled;
   final ValueChanged<String> onStoreSelected;
   final VoidCallback onNewStore;
@@ -325,6 +312,7 @@ class _StoreChipsSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final tokens = Theme.of(context).extension<AppTokens>()!;
+    final draft = newStoreDraft;
     return Wrap(
       spacing: tokens.spacing8,
       runSpacing: tokens.spacing8,
@@ -334,12 +322,21 @@ class _StoreChipsSection extends StatelessWidget {
             key: Key('assign_store_${store.id}'),
             label: store.name,
             selected: selectedId == store.id,
+            color: tokens.storeColor(store.colorKey),
             onSelected: enabled ? () => onStoreSelected(store.id) : null,
+          ),
+        if (draft != null)
+          _ChoiceChip(
+            key: const Key('assign_new_store_name'),
+            label: draft.name,
+            selected: true,
+            color: tokens.storeColor(draft.colorKey),
+            // Absorb taps; draft is replaced via "+ New store".
+            onSelected: enabled ? () {} : null,
           ),
         ActionChip(
           key: const Key('assign_new_store'),
           label: Text(l10n.newStoreAction),
-          avatar: hasNewStoreDraft ? const Icon(Icons.check, size: 18) : null,
           onPressed: enabled ? onNewStore : null,
         ),
       ],
@@ -353,7 +350,7 @@ class _ListChipsSection extends StatelessWidget {
     required this.selectedId,
     required this.showExistingLists,
     required this.showNewList,
-    required this.hasNewListDraft,
+    required this.newListName,
     required this.enabled,
     required this.onListSelected,
     required this.onNewList,
@@ -363,7 +360,7 @@ class _ListChipsSection extends StatelessWidget {
   final String? selectedId;
   final bool showExistingLists;
   final bool showNewList;
-  final bool hasNewListDraft;
+  final String? newListName;
   final bool enabled;
   final ValueChanged<String> onListSelected;
   final VoidCallback onNewList;
@@ -372,6 +369,7 @@ class _ListChipsSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final tokens = Theme.of(context).extension<AppTokens>()!;
+    final draftName = newListName;
     return Wrap(
       spacing: tokens.spacing8,
       runSpacing: tokens.spacing8,
@@ -384,11 +382,18 @@ class _ListChipsSection extends StatelessWidget {
               selected: selectedId == list.id,
               onSelected: enabled ? () => onListSelected(list.id) : null,
             ),
+        if (draftName != null)
+          _ChoiceChip(
+            key: const Key('assign_new_list_name'),
+            label: draftName,
+            selected: true,
+            // Absorb taps; draft is replaced via "+ New list".
+            onSelected: enabled ? () {} : null,
+          ),
         if (showNewList)
           ActionChip(
             key: const Key('assign_new_list'),
             label: Text(l10n.newListAction),
-            avatar: hasNewListDraft ? const Icon(Icons.check, size: 18) : null,
             onPressed: enabled ? onNewList : null,
           ),
       ],
@@ -401,17 +406,31 @@ class _ChoiceChip extends StatelessWidget {
     required this.label,
     required this.selected,
     required this.onSelected,
+    this.color,
     super.key,
   });
 
   final String label;
   final bool selected;
   final VoidCallback? onSelected;
+  final Color? color;
 
   @override
   Widget build(BuildContext context) {
     final tokens = Theme.of(context).extension<AppTokens>()!;
+    final dot = color;
     return FilterChip(
+      avatar: dot == null
+          ? null
+          : ExcludeSemantics(
+              child: SizedBox(
+                width: tokens.spacing16,
+                height: tokens.spacing16,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(color: dot, shape: BoxShape.circle),
+                ),
+              ),
+            ),
       label: Text(label),
       selected: selected,
       showCheckmark: false,
