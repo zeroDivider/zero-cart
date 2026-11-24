@@ -167,66 +167,61 @@ class _CopyToListSheetState extends ConsumerState<CopyToListSheet> {
           error: (error, _) => Text(l10n.asyncLoadFailed),
           data: (progressLists) {
             final lists = [for (final progress in progressLists) progress.list];
-            return SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(
-                    l10n.storeListsSection,
-                    style: Theme.of(context).textTheme.titleSmall,
-                  ),
-                  SizedBox(height: tokens.spacing8),
-                  Wrap(
-                    spacing: tokens.spacing8,
-                    runSpacing: tokens.spacing8,
-                    children: [
-                      for (final list in lists)
-                        FilterChip(
-                          key: Key('copy_list_${list.id}'),
-                          label: Text(list.name),
-                          selected: _newListName == null && _listId == list.id,
-                          showCheckmark: false,
-                          onSelected: controller.isSubmitting
-                              ? null
-                              : (_) => _selectList(list.id),
-                          materialTapTargetSize: MaterialTapTargetSize.padded,
-                          visualDensity: VisualDensity.standard,
-                          padding: EdgeInsets.symmetric(
-                            horizontal: tokens.spacing8,
-                            vertical: tokens.spacing8,
-                          ),
-                        ),
-                      ActionChip(
-                        key: const Key('copy_new_list'),
-                        label: Text(l10n.newListAction),
-                        avatar: _newListName != null
-                            ? const Icon(Icons.check, size: 18)
-                            : null,
-                        onPressed: controller.isSubmitting
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  l10n.storeListsSection,
+                  style: Theme.of(context).textTheme.titleSmall,
+                ),
+                SizedBox(height: tokens.spacing8),
+                Wrap(
+                  spacing: tokens.spacing8,
+                  runSpacing: tokens.spacing8,
+                  children: [
+                    for (final list in lists)
+                      FilterChip(
+                        key: Key('copy_list_${list.id}'),
+                        label: Text(list.name),
+                        selected: _newListName == null && _listId == list.id,
+                        showCheckmark: false,
+                        onSelected: controller.isSubmitting
                             ? null
-                            : _pickNewList,
+                            : (_) => _selectList(list.id),
+                        materialTapTargetSize: MaterialTapTargetSize.padded,
+                        visualDensity: VisualDensity.standard,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: tokens.spacing8,
+                          vertical: tokens.spacing8,
+                        ),
                       ),
-                    ],
+                    ActionChip(
+                      key: const Key('copy_new_list'),
+                      label: Text(l10n.newListAction),
+                      avatar: _newListName != null
+                          ? const Icon(Icons.check, size: 18)
+                          : null,
+                      onPressed: controller.isSubmitting ? null : _pickNewList,
+                    ),
+                  ],
+                ),
+                if (_newListName != null) ...[
+                  SizedBox(height: tokens.spacing8),
+                  Text(
+                    _newListName!,
+                    key: const Key('copy_new_list_name'),
+                    style: Theme.of(context).textTheme.bodyMedium,
                   ),
-                  if (_newListName != null) ...[
-                    SizedBox(height: tokens.spacing8),
-                    Text(
-                      _newListName!,
-                      key: const Key('copy_new_list_name'),
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                  ],
-                  if (_targetError != null) ...[
-                    SizedBox(height: tokens.spacing8),
-                    Text(
-                      _targetError!,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Theme.of(context).colorScheme.error,
-                      ),
-                    ),
-                  ],
                 ],
-              ),
+                if (_targetError != null) ...[
+                  SizedBox(height: tokens.spacing8),
+                  Text(
+                    _targetError!,
+                    style: Theme.of(context).textTheme.bodyMedium
+                        ?.copyWith(color: Theme.of(context).colorScheme.error),
+                  ),
+                ],
+              ],
             );
           },
         );

@@ -239,66 +239,63 @@ class _AssignSheetState extends ConsumerState<AssignSheet> {
               if (progressLists != null)
                 for (final progress in progressLists) progress.list,
             ];
-            return SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(
-                    l10n.assignStoreLabel,
-                    style: Theme.of(context).textTheme.titleSmall,
-                  ),
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  l10n.assignStoreLabel,
+                  style: Theme.of(context).textTheme.titleSmall,
+                ),
+                SizedBox(height: tokens.spacing8),
+                _StoreChipsSection(
+                  stores: stores,
+                  selectedId: _newStoreDraft == null ? _storeId : null,
+                  hasNewStoreDraft: _newStoreDraft != null,
+                  enabled: !controller.isSubmitting,
+                  onStoreSelected: _selectStore,
+                  onNewStore: _pickNewStore,
+                ),
+                if (_newStoreDraft != null) ...[
                   SizedBox(height: tokens.spacing8),
-                  _StoreChipsSection(
-                    stores: stores,
-                    selectedId: _newStoreDraft == null ? _storeId : null,
-                    hasNewStoreDraft: _newStoreDraft != null,
-                    enabled: !controller.isSubmitting,
-                    onStoreSelected: _selectStore,
-                    onNewStore: _pickNewStore,
-                  ),
-                  if (_newStoreDraft != null) ...[
-                    SizedBox(height: tokens.spacing8),
-                    Text(
-                      _newStoreDraft!.name,
-                      key: const Key('assign_new_store_name'),
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                  ],
-                  SizedBox(height: tokens.spacing16),
                   Text(
-                    l10n.assignListLabel,
-                    style: Theme.of(context).textTheme.titleSmall,
+                    _newStoreDraft!.name,
+                    key: const Key('assign_new_store_name'),
+                    style: Theme.of(context).textTheme.bodyMedium,
                   ),
-                  SizedBox(height: tokens.spacing8),
-                  _ListChipsSection(
-                    lists: lists,
-                    selectedId: _newListName == null ? _listId : null,
-                    showExistingLists: _newStoreDraft == null,
-                    showNewList: _hasStore,
-                    hasNewListDraft: _newListName != null,
-                    enabled: !controller.isSubmitting,
-                    onListSelected: _selectList,
-                    onNewList: _pickNewList,
-                  ),
-                  if (_newListName != null) ...[
-                    SizedBox(height: tokens.spacing8),
-                    Text(
-                      _newListName!,
-                      key: const Key('assign_new_list_name'),
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                  ],
-                  if (_targetError != null) ...[
-                    SizedBox(height: tokens.spacing8),
-                    Text(
-                      _targetError!,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Theme.of(context).colorScheme.error,
-                      ),
-                    ),
-                  ],
                 ],
-              ),
+                SizedBox(height: tokens.spacing16),
+                Text(
+                  l10n.assignListLabel,
+                  style: Theme.of(context).textTheme.titleSmall,
+                ),
+                SizedBox(height: tokens.spacing8),
+                _ListChipsSection(
+                  lists: lists,
+                  selectedId: _newListName == null ? _listId : null,
+                  showExistingLists: _newStoreDraft == null,
+                  showNewList: _hasStore,
+                  hasNewListDraft: _newListName != null,
+                  enabled: !controller.isSubmitting,
+                  onListSelected: _selectList,
+                  onNewList: _pickNewList,
+                ),
+                if (_newListName != null) ...[
+                  SizedBox(height: tokens.spacing8),
+                  Text(
+                    _newListName!,
+                    key: const Key('assign_new_list_name'),
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                ],
+                if (_targetError != null) ...[
+                  SizedBox(height: tokens.spacing8),
+                  Text(
+                    _targetError!,
+                    style: Theme.of(context).textTheme.bodyMedium
+                        ?.copyWith(color: Theme.of(context).colorScheme.error),
+                  ),
+                ],
+              ],
             );
           },
         );
