@@ -151,82 +151,80 @@ class _StoreFormSheetState extends State<StoreFormSheet> {
       submitKey: const Key('store_form_save'),
       onSubmit: _onSubmit,
       body: (context, controller) {
-        return SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              TextField(
-                key: const Key('store_form_name'),
-                controller: _nameController,
-                focusNode: _nameFocus,
-                autofocus: true,
-                enabled: !controller.isSubmitting,
-                textInputAction: TextInputAction.next,
-                maxLength: maxStoreNameLength,
-                decoration: InputDecoration(
-                  labelText: l10n.storeNameLabel,
-                  hintText: l10n.storeNameHint,
-                  errorText: _nameError,
-                ),
-                onChanged: (_) => controller.clearError(),
-                onSubmitted: (_) {
-                  if (!controller.isSubmitting) {
-                    // Scaffold submit is the Save button; Enter still validates.
-                    FocusScope.of(context).unfocus();
-                  }
-                },
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            TextField(
+              key: const Key('store_form_name'),
+              controller: _nameController,
+              focusNode: _nameFocus,
+              autofocus: true,
+              enabled: !controller.isSubmitting,
+              textInputAction: TextInputAction.next,
+              maxLength: maxStoreNameLength,
+              decoration: InputDecoration(
+                labelText: l10n.storeNameLabel,
+                hintText: l10n.storeNameHint,
+                errorText: _nameError,
               ),
-              SizedBox(height: tokens.spacing12),
-              Text(
-                l10n.storeColorLabel,
-                style: Theme.of(context).textTheme.titleSmall,
+              onChanged: (_) => controller.clearError(),
+              onSubmitted: (_) {
+                if (!controller.isSubmitting) {
+                  // Scaffold submit is the Save button; Enter still validates.
+                  FocusScope.of(context).unfocus();
+                }
+              },
+            ),
+            SizedBox(height: tokens.spacing12),
+            Text(
+              l10n.storeColorLabel,
+              style: Theme.of(context).textTheme.titleSmall,
+            ),
+            SizedBox(height: tokens.spacing8),
+            Wrap(
+              spacing: tokens.spacing8,
+              runSpacing: tokens.spacing8,
+              children: [
+                for (final key in AppTokens.storePaletteKeys)
+                  _ColorChip(
+                    colorKey: key,
+                    selected: _colorKey == key,
+                    color: tokens.storeColor(key),
+                    onSelected: controller.isSubmitting
+                        ? null
+                        : () {
+                            setState(() => _colorKey = key);
+                            controller.clearError();
+                          },
+                  ),
+              ],
+            ),
+            SizedBox(height: tokens.spacing16),
+            TextField(
+              key: const Key('store_form_address'),
+              controller: _addressController,
+              enabled: !controller.isSubmitting,
+              textInputAction: TextInputAction.next,
+              decoration: InputDecoration(
+                labelText: l10n.storeAddressLabel,
+                hintText: l10n.storeAddressHint,
               ),
-              SizedBox(height: tokens.spacing8),
-              Wrap(
-                spacing: tokens.spacing8,
-                runSpacing: tokens.spacing8,
-                children: [
-                  for (final key in AppTokens.storePaletteKeys)
-                    _ColorChip(
-                      colorKey: key,
-                      selected: _colorKey == key,
-                      color: tokens.storeColor(key),
-                      onSelected: controller.isSubmitting
-                          ? null
-                          : () {
-                              setState(() => _colorKey = key);
-                              controller.clearError();
-                            },
-                    ),
-                ],
+              onChanged: (_) => controller.clearError(),
+            ),
+            SizedBox(height: tokens.spacing12),
+            TextField(
+              key: const Key('store_form_note'),
+              controller: _noteController,
+              enabled: !controller.isSubmitting,
+              textInputAction: TextInputAction.done,
+              decoration: InputDecoration(
+                labelText: l10n.storeNoteLabel,
+                hintText: l10n.storeNoteHint,
               ),
-              SizedBox(height: tokens.spacing16),
-              TextField(
-                key: const Key('store_form_address'),
-                controller: _addressController,
-                enabled: !controller.isSubmitting,
-                textInputAction: TextInputAction.next,
-                decoration: InputDecoration(
-                  labelText: l10n.storeAddressLabel,
-                  hintText: l10n.storeAddressHint,
-                ),
-                onChanged: (_) => controller.clearError(),
-              ),
-              SizedBox(height: tokens.spacing12),
-              TextField(
-                key: const Key('store_form_note'),
-                controller: _noteController,
-                enabled: !controller.isSubmitting,
-                textInputAction: TextInputAction.done,
-                decoration: InputDecoration(
-                  labelText: l10n.storeNoteLabel,
-                  hintText: l10n.storeNoteHint,
-                ),
-                onChanged: (_) => controller.clearError(),
-              ),
-            ],
-          ),
+              onChanged: (_) => controller.clearError(),
+            ),
+          ],
         );
       },
     );

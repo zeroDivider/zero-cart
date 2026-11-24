@@ -232,7 +232,19 @@ class _FormSheetScaffoldState<T> extends State<FormSheetScaffold<T>> {
                 child: widget.title,
               ),
               SizedBox(height: tokens.spacing16),
-              widget.body(context, controller),
+              // Shrink-wrap when the fields fit. Scroll only the body when
+              // the keyboard leaves less room than the fields need, so the
+              // title, inline error and actions stay above the keyboard.
+              // Zero padding: a default ListView would re-apply the status-bar
+              // inset that SafeArea intentionally leaves in MediaQuery.
+              Flexible(
+                child: ListView(
+                  primary: false,
+                  shrinkWrap: true,
+                  padding: EdgeInsets.zero,
+                  children: [widget.body(context, controller)],
+                ),
+              ),
               if (_error != null) ...[
                 SizedBox(height: tokens.spacing8),
                 Text(
