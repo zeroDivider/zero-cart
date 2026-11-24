@@ -10,7 +10,7 @@ Facts verified against the tree as of APP-020. Prefer this over recreating share
 - `error_messages.dart` — `messageFor(l10n, error)` maps `RepositoryException` subtypes; else generic.
 
 ### `lib/core/widgets/`
-- `form_sheet.dart` — `FormSheetScaffold`, `FormValidationAbort`, `FormSheetSecondaryAction` (submit/button).
+- `form_sheet.dart` — `FormSheetScaffold` scrolls its body when the sheet is taller than the space above the keyboard and shrink-wraps when the fields fit. Callers pad `viewInsets` once and do not add a second scroll view. Also `FormValidationAbort`, `FormSheetSecondaryAction` (submit/button).
 - `async_body.dart` — `AsyncBody` loading / Retry / data for `AsyncValue`.
 - `swipe_to_remove_row.dart` — end-to-start dismiss + semantic Remove.
 - `quick_add_fab.dart` — coral Quick-add FAB shell.
@@ -65,7 +65,7 @@ Facts verified against the tree as of APP-020. Prefer this over recreating share
 ## Patterns established
 
 - **Writes / failures:** direct actions → `runWrite`; forms → `FormSheetScaffold.onSubmit` (inline error). No `ScaffoldMessenger.of(context)` outside `lib/core/ui/`.
-- **Forms / sheets:** bottom sheets under `lib/features/<feature>/ui/sheets/`; wrap body in `FormSheetScaffold`.
+- **Forms / sheets:** bottom sheets under `lib/features/<feature>/ui/sheets/`; wrap body in `FormSheetScaffold`. The scaffold owns scrolling; sheet bodies are plain columns.
 - **Undo:** hard delete → snapshot → `AppMessenger.undo` with captured repository (`removeListItemWithUndo` in `lists/remove_item_undo.dart`; same pattern in inbox/wishlist). Zero-leftover Finish uses `finishListWithUndo` (`lists/finish_list_undo.dart`) the same way.
 - **Errors:** throw `RepositoryException` subtypes; UI uses `messageFor` / `AsyncBody`.
 - **Async loading:** screens wrap `AsyncValue` in `AsyncBody` + `ref.invalidate` Retry.
