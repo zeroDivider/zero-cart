@@ -168,19 +168,33 @@ void main() {
     await pumpApp(tester, harness);
     await _tapButton(tester, const Key('store_form_save'), harness);
     expect(find.byType(StoreFormSheet), findsNothing);
-    expect(find.byKey(const Key('assign_new_store_name')), findsOneWidget);
+    // New store has no lists — list form opens next (F4 / D-16).
+    expect(find.byKey(const Key('list_form_name')), findsOneWidget);
 
     final storesBeforeConfirm = await tester.runAsync(
       () => harness.db.select(harness.db.stores).get(),
     );
     expect(storesBeforeConfirm, isEmpty);
 
-    await _tapActionChip(tester, const Key('assign_new_list'), harness);
-    expect(find.byKey(const Key('list_form_name')), findsOneWidget);
     await tester.enterText(find.byKey(const Key('list_form_name')), 'Run');
     await pumpApp(tester, harness);
     await _tapButton(tester, const Key('list_form_save'), harness);
+    expect(find.byKey(const Key('assign_new_store_name')), findsOneWidget);
     expect(find.byKey(const Key('assign_new_list_name')), findsOneWidget);
+    FilterChip selectedDraftChip(Key key) {
+      return tester.widget<FilterChip>(
+        find.descendant(of: find.byKey(key), matching: find.byType(FilterChip)),
+      );
+    }
+
+    expect(
+      selectedDraftChip(const Key('assign_new_store_name')).selected,
+      isTrue,
+    );
+    expect(
+      selectedDraftChip(const Key('assign_new_list_name')).selected,
+      isTrue,
+    );
 
     await _tapButton(tester, const Key('assign_confirm'), harness);
     expect(find.byType(AssignSheet), findsNothing);
