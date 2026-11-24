@@ -4,10 +4,8 @@ import 'package:zero_cart/app/theme/app_tokens.dart';
 import 'package:zero_cart/core/widgets/form_sheet.dart';
 import 'package:zero_cart/data/database.dart';
 import 'package:zero_cart/features/lists/assign_inbox_target.dart';
-import 'package:zero_cart/features/lists/list_draft.dart';
 import 'package:zero_cart/features/lists/lists_providers.dart';
 import 'package:zero_cart/features/lists/ui/sheets/list_form_sheet.dart';
-import 'package:zero_cart/features/stores/store_draft.dart';
 import 'package:zero_cart/features/stores/stores_providers.dart';
 import 'package:zero_cart/features/stores/ui/sheets/store_form_sheet.dart';
 import 'package:zero_cart/l10n/generated/app_localizations.dart';
@@ -35,7 +33,10 @@ Future<AssignInboxResult?> showAssignSheet(
   );
 }
 
-/// Store/list chips plus Confirm; drafts write nothing until Confirm (D-16).
+/// Store/list chips plus Confirm.
+///
+/// New store / New list persist in their form sheets; Confirm only assigns
+/// Inbox rows to the selected existing store and list (D-16 / D-17).
 class AssignSheet extends ConsumerStatefulWidget {
   const AssignSheet({required this.inboxIds, this.itemTitle, super.key});
 
@@ -49,16 +50,14 @@ class AssignSheet extends ConsumerStatefulWidget {
 class _AssignSheetState extends ConsumerState<AssignSheet> {
   String? _storeId;
   String? _listId;
-  StoreDraft? _newStoreDraft;
-  String? _newListName;
   bool _preselected = false;
   String? _targetError;
   ProviderSubscription<AsyncValue<List<Store>>>? _storesSub;
   ProviderSubscription<AsyncValue<List<ShoppingList>>>? _listsSub;
 
-  bool get _hasStore => _storeId != null || _newStoreDraft != null;
+  bool get _hasStore => _storeId != null;
 
-  bool get _hasList => _listId != null || _newListName != null;
+  bool get _hasList => _listId != null;
 
   @override
   void initState() {
@@ -103,8 +102,6 @@ class _AssignSheetState extends ConsumerState<AssignSheet> {
       setState(() {
         _storeId = list.storeId;
         _listId = list.id;
-        _newStoreDraft = null;
-        _newListName = null;
       });
       return;
     }
@@ -118,8 +115,6 @@ class _AssignSheetState extends ConsumerState<AssignSheet> {
       setState(() {
         _storeId = newest!.id;
         _listId = null;
-        _newStoreDraft = null;
-        _newListName = null;
       });
     }
   }
@@ -130,37 +125,41 @@ class _AssignSheetState extends ConsumerState<AssignSheet> {
     if (!mounted) {
       return;
     }
-    final draft = await showStoreFormSheet(
+    final store = await showStoreFormSheet(
       context,
-      draftMode: true,
       initialColorKey: colorKey,
+      repository: storesRepo,
     );
-    if (!mounted || draft == null) {
+    if (!mounted || store == null) {
       return;
     }
     setState(() {
-      _newStoreDraft = draft;
-      _storeId = null;
+      _storeId = store.id;
       _listId = null;
-      _newListName = null;
       _targetError = null;
     });
-    // A new store has no existing lists (D-16); prompt for the list name next
-    // so the draft is not left looking like a failed create (F4 / ST-1).
+    // New store has no lists yet; offer Create so the user can pick a target.
     await _pickNewList();
   }
 
   Future<void> _pickNewList() async {
-    final draft = await showListFormSheet<ListDraft>(
+    final storeId = _storeId;
+    if (storeId == null) {
+      return;
+    }
+    final list = await showListFormSheet(
       context,
-      onSubmit: (listDraft) async => listDraft,
+      onSubmit: (draft) {
+        return ref
+            .read(listsRepositoryProvider)
+            .create(storeId: storeId, name: draft.name);
+      },
     );
-    if (!mounted || draft == null) {
+    if (!mounted || list == null) {
       return;
     }
     setState(() {
-      _newListName = draft.name;
-      _listId = null;
+      _listId = list.id;
       _targetError = null;
     });
   }
@@ -168,9 +167,7 @@ class _AssignSheetState extends ConsumerState<AssignSheet> {
   void _selectStore(String id) {
     setState(() {
       _storeId = id;
-      _newStoreDraft = null;
       _listId = null;
-      _newListName = null;
       _targetError = null;
     });
   }
@@ -178,7 +175,6 @@ class _AssignSheetState extends ConsumerState<AssignSheet> {
   void _selectList(String id) {
     setState(() {
       _listId = id;
-      _newListName = null;
       _targetError = null;
     });
   }
@@ -190,27 +186,14 @@ class _AssignSheetState extends ConsumerState<AssignSheet> {
       throw const FormValidationAbort();
     }
 
-    final AssignStoreTarget storeTarget;
-    final newStore = _newStoreDraft;
-    if (newStore != null) {
-      storeTarget = NewStore(newStore);
-    } else {
-      storeTarget = ExistingStore(_storeId!);
-    }
-
-    final AssignListTarget listTarget;
-    final newListName = _newListName;
-    if (newListName != null) {
-      listTarget = NewList(newListName);
-    } else {
-      listTarget = ExistingList(_listId!);
-    }
-
     return ref
         .read(listsRepositoryProvider)
         .assignInbox(
           widget.inboxIds,
-          AssignInboxTarget(store: storeTarget, list: listTarget),
+          AssignInboxTarget(
+            store: ExistingStore(_storeId!),
+            list: ExistingList(_listId!),
+          ),
         );
   }
 
@@ -252,8 +235,7 @@ class _AssignSheetState extends ConsumerState<AssignSheet> {
                 SizedBox(height: tokens.spacing8),
                 _StoreChipsSection(
                   stores: stores,
-                  selectedId: _newStoreDraft == null ? _storeId : null,
-                  newStoreDraft: _newStoreDraft,
+                  selectedId: _storeId,
                   enabled: !controller.isSubmitting,
                   onStoreSelected: _selectStore,
                   onNewStore: _pickNewStore,
@@ -266,10 +248,8 @@ class _AssignSheetState extends ConsumerState<AssignSheet> {
                 SizedBox(height: tokens.spacing8),
                 _ListChipsSection(
                   lists: lists,
-                  selectedId: _newListName == null ? _listId : null,
-                  showExistingLists: _newStoreDraft == null,
+                  selectedId: _listId,
                   showNewList: _hasStore,
-                  newListName: _newListName,
                   enabled: !controller.isSubmitting,
                   onListSelected: _selectList,
                   onNewList: _pickNewList,
@@ -295,7 +275,6 @@ class _StoreChipsSection extends StatelessWidget {
   const _StoreChipsSection({
     required this.stores,
     required this.selectedId,
-    required this.newStoreDraft,
     required this.enabled,
     required this.onStoreSelected,
     required this.onNewStore,
@@ -303,7 +282,6 @@ class _StoreChipsSection extends StatelessWidget {
 
   final List<Store> stores;
   final String? selectedId;
-  final StoreDraft? newStoreDraft;
   final bool enabled;
   final ValueChanged<String> onStoreSelected;
   final VoidCallback onNewStore;
@@ -312,7 +290,6 @@ class _StoreChipsSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final tokens = Theme.of(context).extension<AppTokens>()!;
-    final draft = newStoreDraft;
     return Wrap(
       spacing: tokens.spacing8,
       runSpacing: tokens.spacing8,
@@ -324,15 +301,6 @@ class _StoreChipsSection extends StatelessWidget {
             selected: selectedId == store.id,
             color: tokens.storeColor(store.colorKey),
             onSelected: enabled ? () => onStoreSelected(store.id) : null,
-          ),
-        if (draft != null)
-          _ChoiceChip(
-            key: const Key('assign_new_store_name'),
-            label: draft.name,
-            selected: true,
-            color: tokens.storeColor(draft.colorKey),
-            // Absorb taps; draft is replaced via "+ New store".
-            onSelected: enabled ? () {} : null,
           ),
         ActionChip(
           key: const Key('assign_new_store'),
@@ -348,9 +316,7 @@ class _ListChipsSection extends StatelessWidget {
   const _ListChipsSection({
     required this.lists,
     required this.selectedId,
-    required this.showExistingLists,
     required this.showNewList,
-    required this.newListName,
     required this.enabled,
     required this.onListSelected,
     required this.onNewList,
@@ -358,9 +324,7 @@ class _ListChipsSection extends StatelessWidget {
 
   final List<ShoppingList> lists;
   final String? selectedId;
-  final bool showExistingLists;
   final bool showNewList;
-  final String? newListName;
   final bool enabled;
   final ValueChanged<String> onListSelected;
   final VoidCallback onNewList;
@@ -369,26 +333,16 @@ class _ListChipsSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final tokens = Theme.of(context).extension<AppTokens>()!;
-    final draftName = newListName;
     return Wrap(
       spacing: tokens.spacing8,
       runSpacing: tokens.spacing8,
       children: [
-        if (showExistingLists)
-          for (final list in lists)
-            _ChoiceChip(
-              key: Key('assign_list_${list.id}'),
-              label: list.name,
-              selected: selectedId == list.id,
-              onSelected: enabled ? () => onListSelected(list.id) : null,
-            ),
-        if (draftName != null)
+        for (final list in lists)
           _ChoiceChip(
-            key: const Key('assign_new_list_name'),
-            label: draftName,
-            selected: true,
-            // Absorb taps; draft is replaced via "+ New list".
-            onSelected: enabled ? () {} : null,
+            key: Key('assign_list_${list.id}'),
+            label: list.name,
+            selected: selectedId == list.id,
+            onSelected: enabled ? () => onListSelected(list.id) : null,
           ),
         if (showNewList)
           ActionChip(

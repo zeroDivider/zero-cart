@@ -60,11 +60,7 @@ Future<AppLocalizations> _openEditStore(
           return Scaffold(
             body: ElevatedButton(
               onPressed: () {
-                showStoreFormSheet(
-                  context,
-                  draftMode: true,
-                  existing: _store(),
-                );
+                showStoreFormDraftSheet(context, existing: _store());
               },
               child: const Text('Open'),
             ),

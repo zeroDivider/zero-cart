@@ -132,7 +132,7 @@ void main() {
     await harness.dispose(tester);
   });
 
-  testWidgets('new store and new list drafts persist only on confirm', (
+  testWidgets('new store and new list persist on form save before confirm', (
     tester,
   ) async {
     var id = 0;
@@ -168,42 +168,43 @@ void main() {
     await pumpApp(tester, harness);
     await _tapButton(tester, const Key('store_form_save'), harness);
     expect(find.byType(StoreFormSheet), findsNothing);
-    // New store has no lists — list form opens next (F4 / D-16).
+    // New store has no lists — list form opens next.
     expect(find.byKey(const Key('list_form_name')), findsOneWidget);
 
-    final storesBeforeConfirm = await tester.runAsync(
+    final storesAfterStoreSave = await tester.runAsync(
       () => harness.db.select(harness.db.stores).get(),
     );
-    expect(storesBeforeConfirm, isEmpty);
+    expect(storesAfterStoreSave!.single.name, 'DM');
 
     await tester.enterText(find.byKey(const Key('list_form_name')), 'Run');
     await pumpApp(tester, harness);
     await _tapButton(tester, const Key('list_form_save'), harness);
-    expect(find.byKey(const Key('assign_new_store_name')), findsOneWidget);
-    expect(find.byKey(const Key('assign_new_list_name')), findsOneWidget);
-    FilterChip selectedDraftChip(Key key) {
-      return tester.widget<FilterChip>(
-        find.descendant(of: find.byKey(key), matching: find.byType(FilterChip)),
-      );
-    }
+    await harness.refreshStores();
+    await harness.refreshLists();
+    await pumpApp(tester, harness);
 
+    final listsAfterListSave = await tester.runAsync(
+      () => harness.db.select(harness.db.shoppingLists).get(),
+    );
+    expect(listsAfterListSave!.single.name, 'Run');
     expect(
-      selectedDraftChip(const Key('assign_new_store_name')).selected,
-      isTrue,
+      find.byKey(Key('assign_store_${storesAfterStoreSave.single.id}')),
+      findsOneWidget,
     );
     expect(
-      selectedDraftChip(const Key('assign_new_list_name')).selected,
-      isTrue,
+      find.byKey(Key('assign_list_${listsAfterListSave.single.id}')),
+      findsOneWidget,
     );
+
+    final inboxBeforeConfirm = await tester.runAsync(
+      () => harness.db.select(harness.db.inboxItems).get(),
+    );
+    expect(inboxBeforeConfirm, isNotEmpty);
 
     await _tapButton(tester, const Key('assign_confirm'), harness);
     expect(find.byType(AssignSheet), findsNothing);
     expect(find.text('Added to Run'), findsOneWidget);
 
-    final stores = await tester.runAsync(
-      () => harness.db.select(harness.db.stores).get(),
-    );
-    expect(stores!.single.name, 'DM');
     final inboxLeft = await tester.runAsync(
       () => harness.db.select(harness.db.inboxItems).get(),
     );
