@@ -27,7 +27,7 @@ These are authoritative but not immutable. If a change is needed, stop, explain 
 2. Analyze: read the task, the requirement and decision ids it cites, the ADRs and the existing code. Run the `spec-checker` subagent.
 3. Plan: state in at most 10 lines what you will change and which tests you will add.
 4. Implement in small steps and commit after each step (see Commits).
-5. Verify: run `tool/check.sh` (before APP-005 exists: `dart format`, `flutter analyze`, `flutter test`). Use the `verifier` subagent for long output. Fix failures; never weaken or delete a test to pass.
+5. Verify: during implementation steps, run `tool/check_fast.sh test/features/<feature>/` (or the relevant test path) for fast feedback. Run the full `tool/check.sh` only before the **final commit** of the task. Use the `verifier` subagent for long output. Fix failures; never weaken or delete a test to pass.
 6. Review: run the `code-reviewer` subagent on `git diff main...HEAD`. Fix blocking findings.
 7. Document: update only the docs the task lists. Log deviations.
 8. Report with the template in `docs/ai-development-workflow.md`. Stop at review gates (APP-008, APP-014, APP-022, APP-027).
@@ -69,6 +69,7 @@ Never claim a command ran or a test passed unless you ran it in this session. In
 - Read only your task's section in docs/implementation-plan.md (search "### APP-0NN") and only the requirement, decision and ADR sections it cites. Never open whole documents.
 - Read targeted files; do not re-read files you just wrote.
 - Run tests with compact output (flutter test --reporter compact). Let the verifier subagent run analyze, build_runner and long suites; never paste long logs into the chat.
+- Use `tool/check_fast.sh <path>` for intermediate steps; reserve `tool/check.sh` for the final verification commit.
 - If a task needs more than about 15 changed files, or the context is getting large, stop at the next clean commit, report what remains, and propose splitting the task.
 - Keep reports short.
 

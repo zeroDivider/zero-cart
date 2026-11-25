@@ -19,5 +19,5 @@ dart format --output=none --set-exit-if-changed .
 echo "==> flutter analyze"
 flutter analyze
 
-echo "==> flutter test"
-flutter test
+echo "==> flutter test --reporter compact"
+flutter test --reporter compact
