@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # Single quality gate for local agents, humans, and CI (APP-005).
+# Always collects coverage and writes coverage/lcov.filtered.info.
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
@@ -19,5 +20,15 @@ dart format --output=none --set-exit-if-changed .
 echo "==> flutter analyze"
 flutter analyze
 
-echo "==> flutter test --reporter compact"
-flutter test --reporter compact
+mkdir -p coverage
+echo "==> flutter test --coverage --reporter compact"
+flutter test --coverage --reporter compact
+
+RAW="coverage/lcov.info"
+FILTERED="coverage/lcov.filtered.info"
+if [[ ! -f "$RAW" ]]; then
+  echo "error: expected $RAW after flutter test --coverage" >&2
+  exit 1
+fi
+echo "==> filter generated files (*.g.dart, l10n/generated)"
+dart run tool/filter_lcov.dart "$RAW" "$FILTERED"

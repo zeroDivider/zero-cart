@@ -58,7 +58,7 @@ bash tool/check.sh          # format, analyze, tests (also runs on every PR)
 flutter run                 # Android emulator/device; iOS needs macOS
 ```
 
-Optional coverage: `bash tool/coverage.sh` → `coverage/lcov.filtered.info` (Codecov when `CODECOV_TOKEN` is set).
+Coverage is always collected by `tool/check.sh` → `coverage/lcov.filtered.info` (Codecov when `CODECOV_TOKEN` is set).
 
 **Drift codegen** (after schema changes):
 

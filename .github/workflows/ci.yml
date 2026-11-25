@@ -25,9 +25,6 @@ jobs:
       - name: Run quality gate
         run: bash tool/check.sh
 
-      # Coverage is tracked, not enforced (docs/testing-strategy.md).
-      - name: Collect coverage
-        run: bash tool/coverage.sh
 
       # v7 uses github-script@v8 (Node 24); v5 still pulled Node-20 github-script.
       - name: Upload coverage to Codecov
