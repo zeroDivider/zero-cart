@@ -51,12 +51,12 @@ Every task must pass, locally and in CI:
 6. Hard-coded colour and string checks (scripted in `tool/check.sh` from APP-003 and APP-024).
 7. Docs listed by the task are updated; deviations logged.
 
-Coverage is tracked, not enforced; the priority list above matters more than a percentage. Locally run `bash tool/coverage.sh` (`flutter test --coverage`, then `dart run tool/filter_lcov.dart` to drop `*.g.dart` and `l10n/generated` into `coverage/lcov.filtered.info` and print a line summary). Optional HTML: `genhtml coverage/lcov.filtered.info -o coverage/html`. CI uploads the filtered report to Codecov with `fail_ci_if_error: false` so a missing `CODECOV_TOKEN` does not fail the gate.
+Coverage is tracked, not enforced; the priority list above matters more than a percentage. `tool/check.sh` always runs `flutter test --coverage` and filters `*.g.dart` and `l10n/generated` into `coverage/lcov.filtered.info`. Optional HTML: `genhtml coverage/lcov.filtered.info -o coverage/html`. CI uploads the filtered report to Codecov with `fail_ci_if_error: false` so a missing `CODECOV_TOKEN` does not fail the gate. Intermediate agent steps use `tool/check_fast.sh` (no coverage).
 
 ## 6. GitHub Actions setup
 
 One workflow, `.github/workflows/ci.yml`, triggered on pull requests and pushes to `main`:
-- Job `check` on `ubuntu-latest`: checkout, set up the pinned Flutter version (check the setup action's current documentation), cache pub, run `tool/check.sh`, then `tool/coverage.sh` and a non-blocking Codecov upload.
+- Job `check` on `ubuntu-latest`: checkout, set up the pinned Flutter version (check the setup action's current documentation), cache pub, run `tool/check.sh` once (format, analyze, codegen, tests with coverage), then a non-blocking Codecov upload.
 - No matrix, no deployment, no signing. The only optional secret is `CODECOV_TOKEN` for coverage upload; the quality gate does not require it. Add an Android build job only when release work starts (APP-027).
 - Integration tests run locally on an emulator or simulator until a stable CI setup is worth the effort.
 `tool/check.sh` is the single source of the quality-gate steps so humans, agents and CI run the same gate.
