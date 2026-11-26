@@ -73,90 +73,97 @@ class ItemRow extends StatelessWidget {
       container: true,
       label: rowLabel,
       customSemanticsActions: customActions.isEmpty ? null : customActions,
-      child: ConstrainedBox(
-        constraints: BoxConstraints(minHeight: tokens.spacing48 + 8),
-        child: Padding(
-          padding: EdgeInsets.symmetric(
-            horizontal: tokens.spacing16,
-            vertical: tokens.spacing12,
-          ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (!readOnly) ...[
-                SizedBox(
-                  width: tokens.spacing48,
-                  height: tokens.spacing48,
-                  child: Center(
-                    child: Checkbox(
-                      key: Key('item_checkbox_${item.id}'),
-                      value: purchased,
-                      semanticLabel: l10n.itemCheckboxSemantics(item.title),
-                      onChanged: onPurchasedChanged == null
-                          ? null
-                          : (value) {
-                              if (value == null) {
-                                return;
-                              }
-                              HapticFeedback.lightImpact();
-                              onPurchasedChanged!(value);
-                            },
-                    ),
-                  ),
-                ),
-                SizedBox(width: tokens.spacing12),
-              ],
-              Expanded(
-                child: Material(
-                  type: MaterialType.transparency,
-                  child: InkWell(
-                    key: Key('item_content_${item.id}'),
-                    onTap: readOnly ? null : onOpenEdit,
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints(minHeight: tokens.spacing48),
-                      child: Padding(
-                        padding: EdgeInsets.symmetric(
-                          vertical: tokens.spacing4,
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(item.title, style: titleStyle),
-                            if (hasDescription) ...[
-                              SizedBox(height: tokens.spacing4),
-                              Text(
-                                item.description!,
-                                style: descriptionStyle,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ],
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              if (!purchased && !readOnly && reorderIndex != null)
-                ReorderableDragStartListener(
-                  index: reorderIndex!,
-                  child: SizedBox(
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          border: Border(bottom: BorderSide(color: colorScheme.outlineVariant)),
+        ),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(minHeight: tokens.spacing48 + 8),
+          child: Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: tokens.spacing16,
+              vertical: tokens.spacing12,
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (!readOnly) ...[
+                  SizedBox(
                     width: tokens.spacing48,
                     height: tokens.spacing48,
-                    child: Semantics(
-                      label: l10n.reorderHandle,
-                      button: true,
-                      child: Icon(
-                        Icons.drag_handle,
-                        key: Key('item_handle_${item.id}'),
-                        color: colorScheme.outline,
+                    child: Center(
+                      child: Checkbox(
+                        key: Key('item_checkbox_${item.id}'),
+                        value: purchased,
+                        semanticLabel: l10n.itemCheckboxSemantics(item.title),
+                        onChanged: onPurchasedChanged == null
+                            ? null
+                            : (value) {
+                                if (value == null) {
+                                  return;
+                                }
+                                HapticFeedback.lightImpact();
+                                onPurchasedChanged!(value);
+                              },
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: tokens.spacing12),
+                ],
+                Expanded(
+                  child: Material(
+                    type: MaterialType.transparency,
+                    child: InkWell(
+                      key: Key('item_content_${item.id}'),
+                      onTap: readOnly ? null : onOpenEdit,
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(
+                          minHeight: tokens.spacing48,
+                        ),
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(
+                            vertical: tokens.spacing4,
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(item.title, style: titleStyle),
+                              if (hasDescription) ...[
+                                SizedBox(height: tokens.spacing4),
+                                Text(
+                                  item.description!,
+                                  style: descriptionStyle,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
                       ),
                     ),
                   ),
                 ),
-            ],
+                if (!purchased && !readOnly && reorderIndex != null)
+                  ReorderableDragStartListener(
+                    index: reorderIndex!,
+                    child: SizedBox(
+                      width: tokens.spacing48,
+                      height: tokens.spacing48,
+                      child: Semantics(
+                        label: l10n.reorderHandle,
+                        button: true,
+                        child: Icon(
+                          Icons.drag_handle,
+                          key: Key('item_handle_${item.id}'),
+                          color: colorScheme.outline,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
           ),
         ),
       ),

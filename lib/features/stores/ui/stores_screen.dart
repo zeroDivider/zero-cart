@@ -91,39 +91,40 @@ class _StoresList extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
-    final colorScheme = Theme.of(context).colorScheme;
     final tokens = Theme.of(context).extension<AppTokens>()!;
 
-    return ListView.separated(
+    return ListView.builder(
+      padding: EdgeInsets.fromLTRB(
+        tokens.spacing16,
+        tokens.spacing8,
+        tokens.spacing16,
+        tokens.spacing24,
+      ),
       itemCount: summaries.length + 1,
-      separatorBuilder: (_, _) =>
-          Divider(height: 1, color: colorScheme.outlineVariant),
       itemBuilder: (context, index) {
         if (index == summaries.length) {
-          return Padding(
-            padding: EdgeInsets.symmetric(
-              horizontal: tokens.spacing16,
-              vertical: tokens.spacing8,
-            ),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: TextButton(
-                key: const Key('stores_new_store'),
-                onPressed: () => _createStore(context, ref),
-                child: Text(l10n.newStoreAction),
-              ),
+          return Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton(
+              key: const Key('stores_new_store'),
+              onPressed: () => _createStore(context, ref),
+              child: Text(l10n.newStoreAction),
             ),
           );
         }
         final summary = summaries[index];
-        return _StoreRow(summary: summary);
+        return Padding(
+          padding: EdgeInsets.only(bottom: tokens.spacing8),
+          child: _StoreCard(summary: summary),
+        );
       },
     );
   }
 }
 
-class _StoreRow extends StatelessWidget {
-  const _StoreRow({required this.summary});
+/// Filled store card matching design-system §3.7 / prototype `.card`.
+class _StoreCard extends StatelessWidget {
+  const _StoreCard({required this.summary});
 
   final ActiveStoreSummary summary;
 
@@ -135,45 +136,54 @@ class _StoreRow extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final countLabel = l10n.storeActiveLists(summary.activeListCount);
 
-    return InkWell(
-      key: Key('store_row_${store.id}'),
-      onTap: () => context.push(AppRoutes.storeDetailsLocation(store.id)),
-      child: ConstrainedBox(
-        constraints: BoxConstraints(minHeight: tokens.spacing48 + 8),
-        child: Padding(
-          padding: EdgeInsets.symmetric(
-            horizontal: tokens.spacing16,
-            vertical: tokens.spacing12,
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: tokens.spacing16,
-                height: tokens.spacing16,
-                decoration: BoxDecoration(
-                  color: tokens.storeColor(store.colorKey),
-                  shape: BoxShape.circle,
-                ),
+    return Semantics(
+      button: true,
+      label: '${store.name}, $countLabel',
+      child: Material(
+        color: colorScheme.surfaceContainer,
+        borderRadius: BorderRadius.circular(tokens.radiusMd),
+        child: InkWell(
+          key: Key('store_row_${store.id}'),
+          borderRadius: BorderRadius.circular(tokens.radiusMd),
+          onTap: () => context.push(AppRoutes.storeDetailsLocation(store.id)),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: tokens.spacing48),
+            child: Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: tokens.spacing16,
+                vertical: tokens.spacing12,
               ),
-              SizedBox(width: tokens.spacing12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      store.name,
-                      style: Theme.of(context).textTheme.bodyLarge,
-                    ),
-                    SizedBox(height: tokens.spacing4),
-                    Text(
-                      countLabel,
-                      style: Theme.of(context).textTheme.bodyMedium
-                          ?.copyWith(color: colorScheme.onSurfaceVariant),
-                    ),
-                  ],
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        width: tokens.spacing12,
+                        height: tokens.spacing12,
+                        decoration: BoxDecoration(
+                          color: tokens.storeColor(store.colorKey),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      SizedBox(width: tokens.spacing8),
+                      Expanded(
+                        child: Text(
+                          store.name,
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: tokens.spacing4),
+                  Text(
+                    countLabel,
+                    style: Theme.of(context).textTheme.bodyMedium
+                        ?.copyWith(color: colorScheme.onSurfaceVariant),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),

@@ -28,7 +28,7 @@ class StoreWishlistCard extends ConsumerWidget {
           button: true,
           label: l10n.wishlistCardSemantics(count),
           child: Material(
-            color: colorScheme.surfaceContainerHighest,
+            color: colorScheme.surfaceContainer,
             borderRadius: BorderRadius.circular(tokens.radiusMd),
             child: InkWell(
               key: const Key('store_wishlist_card'),
@@ -46,7 +46,7 @@ class StoreWishlistCard extends ConsumerWidget {
                     children: [
                       Text(
                         l10n.storeWishlistSection,
-                        style: Theme.of(context).textTheme.titleSmall,
+                        style: Theme.of(context).textTheme.titleMedium,
                       ),
                       SizedBox(height: tokens.spacing4),
                       Text(

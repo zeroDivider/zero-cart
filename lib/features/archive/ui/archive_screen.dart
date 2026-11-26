@@ -41,21 +41,32 @@ class _ArchiveScreenState extends ConsumerState<ArchiveScreen> {
               tokens.spacing16,
               tokens.spacing8,
             ),
-            child: SegmentedButton<_ArchiveSegment>(
-              segments: [
-                ButtonSegment(
-                  value: _ArchiveSegment.stores,
-                  label: Text(l10n.archiveSegmentStores),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxWidth: tokens.homeInboxPillMaxWidth,
                 ),
-                ButtonSegment(
-                  value: _ArchiveSegment.lists,
-                  label: Text(l10n.archiveSegmentLists),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: SegmentedButton<_ArchiveSegment>(
+                    segments: [
+                      ButtonSegment(
+                        value: _ArchiveSegment.stores,
+                        label: Text(l10n.archiveSegmentStores),
+                      ),
+                      ButtonSegment(
+                        value: _ArchiveSegment.lists,
+                        label: Text(l10n.archiveSegmentLists),
+                      ),
+                    ],
+                    selected: {_segment},
+                    onSelectionChanged: (next) {
+                      setState(() => _segment = next.single);
+                    },
+                  ),
                 ),
-              ],
-              selected: {_segment},
-              onSelectionChanged: (next) {
-                setState(() => _segment = next.single);
-              },
+              ),
             ),
           ),
           Expanded(
