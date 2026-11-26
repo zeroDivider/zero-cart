@@ -28,7 +28,7 @@ class StorePastTripsCard extends ConsumerWidget {
           button: true,
           label: l10n.pastTripsCardSemantics(count),
           child: Material(
-            color: colorScheme.surfaceContainerHighest,
+            color: colorScheme.surfaceContainer,
             borderRadius: BorderRadius.circular(tokens.radiusMd),
             child: InkWell(
               key: const Key('store_past_trips_card'),
@@ -46,7 +46,7 @@ class StorePastTripsCard extends ConsumerWidget {
                     children: [
                       Text(
                         l10n.storePastTripsSection,
-                        style: Theme.of(context).textTheme.titleSmall,
+                        style: Theme.of(context).textTheme.titleMedium,
                       ),
                       SizedBox(height: tokens.spacing4),
                       Text(

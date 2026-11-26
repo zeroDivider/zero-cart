@@ -104,7 +104,7 @@ class _ListCard extends StatelessWidget {
       button: true,
       label: l10n.listCardSemantics(list.name, progress.itemsLeft),
       child: Material(
-        color: colorScheme.surfaceContainerHighest,
+        color: colorScheme.surfaceContainer,
         borderRadius: BorderRadius.circular(tokens.radiusMd),
         child: InkWell(
           key: Key('store_list_card_${list.id}'),
@@ -122,7 +122,7 @@ class _ListCard extends StatelessWidget {
                 children: [
                   Text(
                     list.name,
-                    style: Theme.of(context).textTheme.titleSmall,
+                    style: Theme.of(context).textTheme.titleMedium,
                   ),
                   SizedBox(height: tokens.spacing4),
                   Text(
