@@ -83,9 +83,9 @@ Facts verified against the tree as of APP-020. Prefer this over recreating share
 ## Screens and routes done
 
 Routes in `lib/app/router.dart` (`AppRoutes` / `AppRouter`):
-- Tabs: `/home` `HomeScreen` (staggered `StoreCard` board + Inbox pill; empty → `showStoreFormSheet`), `/inbox` `InboxScreen`, `/stores` `StoresScreen`
+- Tabs: `/home` `HomeScreen` (staggered `StoreCard` board + Inbox pill; empty → `showStoreFormSheet`), `/inbox` `InboxScreen`, `/stores` `StoresScreen` (filled `surfaceContainer` store cards, same pattern as store-details list/wishlist/past-trips cards)
 - `/stores/:id` `StoreDetailsScreen`, `/stores/:id/wishlist` `WishlistScreen`, `/stores/:id/past-trips` `PastTripsScreen`
-- `/lists/:id` `ListScreen`, `/archive` `ArchiveScreen` (Stores + manual Lists)
+- `/lists/:id` `ListScreen` (`ItemRow` ruled notebook lines), `/archive` `ArchiveScreen` (Stores|Lists `SegmentedButton` max-width `homeInboxPillMaxWidth` 400)
 - `/settings` `SettingsScreen` — Appearance `SegmentedButton` via `runWrite(setThemeMode)`; Backup section placeholder (APP-023); About row → `/settings/about`
 - `/settings/about` `AboutScreen` — version (`package_info_plus`), MIT notice, `showLicensePage`, `kRepositoryUrl`
 
